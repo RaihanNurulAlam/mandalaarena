@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "824515157247",
+    "project_id": "mandalaarenaapp-95d0d",
+    "storage_bucket": "mandalaarenaapp-95d0d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:824515157247:android:c29a516d42f1a1482300ca",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "824515157247-sj54icbq02tnq8v7une29mjee3bda8ol.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.app",
+            "certificate_hash": "216b261b37fd8eed5e9752ac351715da4841a50a"
+          }
+        },
+        {
+          "client_id": "824515157247-if0rhm5ivlr26s1jamo6onac5leo89t3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_wSmnX20pnoOijQL90oeMasCfCxfdcL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "824515157247-if0rhm5ivlr26s1jamo6onac5leo89t3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "824515157247-a7po38s60naamsge84u58cf7m6boi80o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mandalaarenaapp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:824515157247:android:b0270e7df7d93d0d2300ca",
+        "android_client_info": {
+          "package_name": "com.example.mandalaarenaapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "824515157247-ka7dqg7s39i1ni2o4n8705prklcvolmi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mandalaarenaapp",
+            "certificate_hash": "216b261b37fd8eed5e9752ac351715da4841a50a"
+          }
+        },
+        {
+          "client_id": "824515157247-if0rhm5ivlr26s1jamo6onac5leo89t3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_wSmnX20pnoOijQL90oeMasCfCxfdcL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "824515157247-if0rhm5ivlr26s1jamo6onac5leo89t3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "824515157247-a7po38s60naamsge84u58cf7m6boi80o.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mandalaarenaapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
