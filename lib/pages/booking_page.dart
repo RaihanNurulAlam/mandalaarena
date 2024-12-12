@@ -14,7 +14,7 @@ class _BookingPageState extends State<BookingPage> {
   int selectedDuration = 1;
 
   final List<Map<String, dynamic>> fields = [
-    {'id': 1, 'name': 'Lapangan A', 'photo': 'assets/images/mandalaarena1.jpg'},
+    {'id': 1, 'name': 'Lapangan A', 'photo': 'assets/lapangan_a.jpg'},
     {'id': 2, 'name': 'Lapangan B', 'photo': 'assets/lapangan_b.jpg'},
     {'id': 3, 'name': 'Lapangan C', 'photo': 'assets/lapangan_c.jpg'},
   ];
