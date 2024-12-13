@@ -1,4 +1,4 @@
-// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, use_build_context_synchronously
+// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, use_build_context_synchronously, unnecessary_string_escapes
 
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/sign_up_page.dart';
@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/images/futsal_players.png', // Ganti dengan path gambar Anda
+                      'assets\iconmini.jpg', // Ganti dengan path gambar Anda
                       height: 200,
                     ),
                     const SizedBox(height: 24.0),

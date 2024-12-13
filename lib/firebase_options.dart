@@ -44,6 +44,7 @@ class DefaultFirebaseOptions {
     apiKey: 'AIzaSyAlNhiLGmW_kgVYQEYZ8KDI0k9t551pP34',
     appId: '1:824515157247:web:e5917ff217cf1cd02300ca',
     messagingSenderId: '824515157247',
+    databaseURL: "https://mandalaarenaapp-95d0d-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: 'mandalaarenaapp-95d0d',
     authDomain: 'mandalaarenaapp-95d0d.firebaseapp.com',
     storageBucket: 'mandalaarenaapp-95d0d.firebasestorage.app',
