@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets\iconmini.jpg', // Ganti dengan path gambar Anda
+                      'assets/iconmini.jpg', // Ganti dengan path gambar Anda
                       height: 200,
                     ),
                     const SizedBox(height: 24.0),

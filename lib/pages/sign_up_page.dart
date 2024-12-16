@@ -47,12 +47,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets\iconmini.jpg', // Ganti dengan path gambar Anda
+                      'assets/iconmini.jpg', // Ganti dengan path gambar Anda
                       height: 200,
                     ),
                     const SizedBox(height: 24.0),
                     const Text(
-                      'Welcome to MyFutsal',
+                      'Welcome to Mandala Arena App',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
