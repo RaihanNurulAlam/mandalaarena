@@ -1,29 +1,25 @@
-// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use
+// lib/pages/home_page.dart
+
+// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables
 
 import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mandalaarenaapp/pages/about_page.dart';
-import 'package:mandalaarenaapp/pages/booking_page.dart';
 import 'package:mandalaarenaapp/pages/checkout_page.dart';
 import 'package:mandalaarenaapp/pages/detail_page.dart';
 import 'package:mandalaarenaapp/pages/galery_page.dart';
-import 'package:mandalaarenaapp/pages/information_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:provider/provider.dart';
-
-// BLoC State
-enum NavigationState { home, booking, gallery, information, about, checkout }
-
-class NavigationCubit extends Cubit<NavigationState> {
-  NavigationCubit() : super(NavigationState.home);
-
-  void navigateTo(NavigationState state) => emit(state);
-}
+import '../cubit/navigation_cubit.dart';
+import '../widgets/drawer_widget.dart';
+import '../pages/booking_page.dart';
+import '../pages/information_page.dart';
+import '../pages/about_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -65,7 +61,7 @@ class _HomePageState extends State<HomePage> {
     getLapangs();
     super.initState();
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -73,16 +69,14 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 80,
-          elevation: 0,
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
               Text(
-                'Raihan Nurul Alam',
+                'Mandala Arena',
                 style: TextStyle(
                   color: Colors.black,
-                  fontSize: 30,
-                ),
+                  fontSize: 28),
               ),
               Row(
                 children: [
@@ -107,7 +101,7 @@ class _HomePageState extends State<HomePage> {
             IconButton(
               onPressed: () {
                 Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => SearchPage()));
+                  MaterialPageRoute(builder: (context) => SearchPage()));
               },
               icon: Icon(
                 CupertinoIcons.search,
@@ -156,44 +150,30 @@ class _HomePageState extends State<HomePage> {
             )
           ],
         ),
-        drawer: _buildDrawer(context),
+        drawer: DrawerWidget(),
         body: BlocBuilder<NavigationCubit, NavigationState>(
           builder: (context, state) {
-            Widget currentPage;
-
             switch (state) {
               case NavigationState.booking:
-                currentPage = BookingPage();
-                break;
+                return BookingPage();
               case NavigationState.gallery:
-                currentPage = GalleryPage();
-                break;
+                return GalleryPage();
               case NavigationState.information:
-                currentPage = InformationPage();
-                break;
+                return InformationPage();
               case NavigationState.about:
-                currentPage = AboutPage();
-                break;
+                return AboutPage();
               case NavigationState.checkout:
-                currentPage = CheckoutPage(
-                  totalPayment: '',
-                );
-                break;
+                return CheckoutPage(totalPayment: "");
               default:
-                currentPage = _buildHomePage(context);
+                return _buildHomeContent(context);
             }
-
-            return SingleChildScrollView(
-              physics: BouncingScrollPhysics(),
-              child: currentPage,
-            );
           },
         ),
       ),
     );
   }
 
-  Widget _buildHomePage(BuildContext context) {
+  Widget _buildHomeContent(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -385,68 +365,6 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(color: Colors.blue),
-            child: Text('Navigation',
-                style: TextStyle(color: Colors.white, fontSize: 24)),
-          ),
-          ListTile(
-            leading: Icon(Icons.home),
-            title: Text('Home'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/home');
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.calendar_today),
-            title: Text('Jadwal Booking'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/booking');
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.photo_library),
-            title: Text('Galeri Aktivitas'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/gallery');
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.article),
-            title: Text('Informasi Terkini'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/information');
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.info),
-            title: Text('Tentang Aplikasi'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/about');
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.payment),
-            title: Text('Checkout'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/checkout');
-            },
           ),
         ],
       ),

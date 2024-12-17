@@ -198,7 +198,7 @@ class _DetailPageState extends State<DetailPage> {
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(50),
-                  color: Colors.redAccent,
+                  color: Colors.black,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -413,7 +413,7 @@ class _DetailPageState extends State<DetailPage> {
                       icon: Icon(
                         CupertinoIcons.minus,
                         size: 34,
-                        color: Colors.red,
+                        color: Colors.black,
                       ),
                     ),
                     SizedBox(width: 5),
@@ -433,7 +433,7 @@ class _DetailPageState extends State<DetailPage> {
                       icon: Icon(
                         CupertinoIcons.plus,
                         size: 34,
-                        color: Colors.red,
+                        color: Colors.black,
                       ),
                     ),
                   ],

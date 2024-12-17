@@ -74,8 +74,11 @@ class _CartPageState extends State<CartPage> {
                       ),
                       SizedBox(height: 10),
                       CupertinoButton(
-                        color: Theme.of(context).primaryColor,
-                        child: Text('Tambah Booking Lapang'),
+                        color: Colors.black,
+                        child: Text('Tambah Booking Lapang',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),),
                         onPressed: () {
                           Navigator.pushAndRemoveUntil(
                             context,
@@ -162,7 +165,7 @@ class _CartPageState extends State<CartPage> {
                       child: Text(
                         'Tambah Booking Lapang',
                         style: TextStyle(
-                          color: Colors.redAccent,
+                          color: Colors.black,
                         ),
                       ),
                       onPressed: () {
@@ -178,7 +181,7 @@ class _CartPageState extends State<CartPage> {
           bottomNavigationBar: price == 0
               ? null
               : Container(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: Colors.black,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -263,7 +266,7 @@ class _CartPageState extends State<CartPage> {
                         margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
                         width: MediaQuery.of(context).size.width,
                         child: CupertinoButton(
-                          color: Colors.redAccent,
+                          color: Colors.black,
                           borderRadius: BorderRadius.circular(50),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
