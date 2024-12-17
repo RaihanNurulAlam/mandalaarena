@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:mandalaarenaapp/pages/checkout_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:provider/provider.dart';
@@ -26,30 +27,34 @@ class _CartPageState extends State<CartPage> {
               int.parse(cartModel.price.toString()).toDouble();
           totalPrice += price;
 
-          taxAndService = (totalPrice * 0.11).toDouble();
-          totalPayment = (totalPrice + taxAndService).toDouble();
+          taxAndService = double.parse((totalPrice * 0.11).toStringAsFixed(2));
+          totalPayment =
+              double.parse((totalPrice + taxAndService).toStringAsFixed(2));
         }
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('Cart'),
             actions: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: IconButton(
-                  onPressed: () {
-                    value.clearCart();
-                    setState(() {
-                      price = 0;
-                      totalPrice = 0;
-                      taxAndService = 0;
-                      totalPayment = 0;
-                    });
-                  },
-                  icon: Row(
-                    children: const [
-                      Text('Clear cart'),
-                    ],
+              Visibility(
+                visible: value.cart.isNotEmpty ? true : false,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: IconButton(
+                    onPressed: () {
+                      value.clearCart();
+                      setState(() {
+                        price = 0;
+                        totalPrice = 0;
+                        taxAndService = 0;
+                        totalPayment = 0;
+                      });
+                    },
+                    icon: Row(
+                      children: const [
+                        Text('Clear cart'),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -74,8 +79,7 @@ class _CartPageState extends State<CartPage> {
                         onPressed: () {
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(
-                                builder: (context) => HomePage()),
+                            MaterialPageRoute(builder: (context) => HomePage()),
                             (route) => false,
                           );
                         },
@@ -102,7 +106,13 @@ class _CartPageState extends State<CartPage> {
                               ),
                             ),
                           ),
-                          title: Text(lapang.name.toString()),
+                          title: Text(
+                            lapang.name.toString(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                           subtitle: Row(
                             children: [
                               Text('IDR ${lapang.price} x ${lapang.quantity}'),
@@ -110,7 +120,28 @@ class _CartPageState extends State<CartPage> {
                           ),
                           trailing: IconButton(
                             onPressed: () {
-                              value.deleteItemCart(lapang);
+                              setState(() {
+                                // Hapus item dari keranjang
+                                value.deleteItemCart(lapang);
+
+                                //Hitung ulang total harga
+                                totalPrice = 0;
+                                for (var cartModel in value.cart) {
+                                  double itemPrice =
+                                      int.parse(cartModel.quantity.toString()) *
+                                          int.parse(cartModel.price.toString())
+                                              .toDouble();
+                                  totalPrice += itemPrice;
+                                }
+
+                                // Hitung ulang pajak dan total pembayaran
+                                taxAndService = double.parse(
+                                    (totalPrice * 0.11).toStringAsFixed(2));
+                                totalPayment = double.parse(
+                                    (totalPrice + taxAndService)
+                                        .toStringAsFixed(2));
+                              });
+
                               if (value.cart.isEmpty) {
                                 price = 0;
                                 totalPrice = 0;
@@ -128,7 +159,12 @@ class _CartPageState extends State<CartPage> {
                     ),
                     SizedBox(height: 80),
                     CupertinoButton(
-                      child: Text('Tambah Booking Lapang'),
+                      child: Text(
+                        'Tambah Booking Lapang',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                        ),
+                      ),
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(
                           context,
@@ -162,23 +198,62 @@ class _CartPageState extends State<CartPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Price'),
-                                Text('IDR $totalPrice'),
+                                Text(
+                                  'Price',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                                Text(
+                                  'IDR $totalPrice',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Tax and Service'),
-                                Text('IDR $taxAndService'),
+                                Text(
+                                  'Tax and Service',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                                Text(
+                                  'IDR $taxAndService',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
                             ),
                             Divider(),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Total Price'),
-                                Text('IDR $totalPayment'),
+                                Text(
+                                  'Total Price',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                                Text(
+                                  'IDR $totalPayment',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -188,16 +263,34 @@ class _CartPageState extends State<CartPage> {
                         margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
                         width: MediaQuery.of(context).size.width,
                         child: CupertinoButton(
-                          color: Theme.of(context).primaryColor,
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(50),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: const [
-                              Text('Pay Now'),
+                              Text(
+                                'Pay Now',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Urbanist',
+                                ),
+                              ),
                               SizedBox(width: 10),
                               Icon(CupertinoIcons.arrow_right),
                             ],
                           ),
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CheckoutPage(
+                                  totalPayment: totalPayment.toString(),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],

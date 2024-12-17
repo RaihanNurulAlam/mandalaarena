@@ -8,10 +8,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mandalaarenaapp/pages/about_page.dart';
 import 'package:mandalaarenaapp/pages/booking_page.dart';
 import 'package:mandalaarenaapp/pages/checkout_page.dart';
+import 'package:mandalaarenaapp/pages/detail_page.dart';
 import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/information_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
+import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:provider/provider.dart';
 
 // BLoC State
 enum NavigationState { home, booking, gallery, information, about, checkout }
@@ -31,7 +34,8 @@ class _HomePageState extends State<HomePage> {
   List<Lapang> lapangs = [];
 
   Future<void> getLapangs() async {
-    String dataLapangJson = await rootBundle.loadString('assets/json/lapang.json');
+    String dataLapangJson =
+        await rootBundle.loadString('assets/json/lapang.json');
     List<dynamic> jsonMap = json.decode(dataLapangJson);
 
     setState(() {
@@ -42,10 +46,13 @@ class _HomePageState extends State<HomePage> {
   }
 
   void goToDetailLapang(int index) {
-    Navigator.pushNamed(
+    Navigator.push(
       context,
-      '/detail', // Menyebutkan nama rute yang sudah didefinisikan
-      arguments: lapangs[index], // Anda bisa mengirim data jika perlu
+      MaterialPageRoute(
+        builder: (context) => DetailPage(
+          lapang: lapangs[index],
+        ),
+      ),
     );
   }
 
@@ -107,41 +114,45 @@ class _HomePageState extends State<HomePage> {
                 size: 30,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 14, left: 10),
-              child: Stack(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      goToCart();
-                    },
-                    icon: Icon(
-                      CupertinoIcons.bag,
-                      size: 30,
-                    ),
-                  ),
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Visibility(
-                      visible: lapangs.isNotEmpty, // Replace with actual cart length if necessary
-                      child: CircleAvatar(
-                        radius: 10,
-                        backgroundColor: Colors.yellow,
-                        child: Center(
-                          child: Text(
-                            lapangs.length.toString(),
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 10,
+            Consumer<Cart>(
+              builder: (context, value, child) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 14, left: 10),
+                  child: Stack(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          goToCart();
+                        },
+                        icon: Icon(
+                          CupertinoIcons.bag,
+                          size: 30,
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Visibility(
+                          visible: value.cart.isNotEmpty ? true : false,
+                          child: CircleAvatar(
+                            radius: 10,
+                            backgroundColor: Colors.yellow,
+                            child: Center(
+                              child: Text(
+                                value.cart.length.toString(),
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  )
-                ],
-              ),
+                      )
+                    ],
+                  ),
+                );
+              },
             )
           ],
         ),
@@ -164,7 +175,9 @@ class _HomePageState extends State<HomePage> {
                 currentPage = AboutPage();
                 break;
               case NavigationState.checkout:
-                currentPage = CheckoutPage();
+                currentPage = CheckoutPage(
+                  totalPayment: '',
+                );
                 break;
               default:
                 currentPage = _buildHomePage(context);
@@ -184,8 +197,87 @@ class _HomePageState extends State<HomePage> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          _buildDiscountBanner(context),
-          bestSellerWidget(context),
+          _buildDiscountBanner(context), // Banner Diskon
+          bestSellerWidget(context), // Best Seller
+          SizedBox(height: 20),
+
+          // Menampilkan lapang-lapang yang bisa dipilih
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Pilih Lapang',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          // Daftar lapang dalam horizontal list
+          SizedBox(
+            height: 200, // Mengatur tinggi kontainer lapang
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount:
+                  lapangs.length, // Menggunakan data lapang yang sudah dimuat
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () {
+                    goToDetailLapang(index); // Arahkan ke detail lapang
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(right: 16),
+                    width: 150,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      image: DecorationImage(
+                        image: AssetImage(lapangs[index].imagePath ??
+                            'assets/default_image.jpg'),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withOpacity(0.2),
+                          BlendMode.darken,
+                        ),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ListTile(
+                          title: Text(
+                            lapangs[index].name ?? 'Lapang Tanpa Nama',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${lapangs[index].price} IDR',
+                            style: TextStyle(
+                              color: Colors.yellowAccent,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -215,7 +307,7 @@ class _HomePageState extends State<HomePage> {
               'Dapatkan Diskon 10%',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 34,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -223,7 +315,7 @@ class _HomePageState extends State<HomePage> {
               'Untuk Booking Lapang di Hari Jumat',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 28,
+                fontSize: 18,
               ),
             ),
             trailing: Icon(
@@ -275,10 +367,10 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   ListTile(
                     title: Text(
-                      lapangs[2].name.toString(),
+                      lapangs[1].name.toString(),
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 34,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -286,7 +378,7 @@ class _HomePageState extends State<HomePage> {
                       '${lapangs[2].price} IDR',
                       style: TextStyle(
                         color: Colors.yellowAccent,
-                        fontSize: 28,
+                        fontSize: 18,
                       ),
                     ),
                   ),
@@ -300,63 +392,64 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildDrawer(BuildContext context) {
-  return Drawer(
-    child: ListView(
-      children: [
-        DrawerHeader(
-          decoration: BoxDecoration(color: Colors.blue),
-          child: Text('Navigation', style: TextStyle(color: Colors.white, fontSize: 24)),
-        ),
-        ListTile(
-          leading: Icon(Icons.home),
-          title: Text('Home'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/');
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.calendar_today),
-          title: Text('Jadwal Booking'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/booking');
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.photo_library),
-          title: Text('Galeri Aktivitas'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/gallery');
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.article),
-          title: Text('Informasi Terkini'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/information');
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.info),
-          title: Text('Tentang Aplikasi'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/about');
-          },
-        ),
-        ListTile(
-          leading: Icon(Icons.payment),
-          title: Text('Checkout'),
-          onTap: () {
-            Navigator.pop(context);
-            Navigator.pushNamed(context, '/checkout');
-          },
-        ),
-      ],
-    ),
-  );
-}
+    return Drawer(
+      child: ListView(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Colors.blue),
+            child: Text('Navigation',
+                style: TextStyle(color: Colors.white, fontSize: 24)),
+          ),
+          ListTile(
+            leading: Icon(Icons.home),
+            title: Text('Home'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/home');
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.calendar_today),
+            title: Text('Jadwal Booking'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/booking');
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.photo_library),
+            title: Text('Galeri Aktivitas'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/gallery');
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.article),
+            title: Text('Informasi Terkini'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/information');
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.info),
+            title: Text('Tentang Aplikasi'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/about');
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.payment),
+            title: Text('Checkout'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/checkout');
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }

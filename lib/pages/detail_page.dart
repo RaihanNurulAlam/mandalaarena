@@ -66,14 +66,14 @@ class _DetailPageState extends State<DetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Lapang sudah ditambahkan ke keranjang',
+                'Booking lapang telah dimasukan ke keranjang',
                 style: TextStyle(
                   fontSize: 20.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
-                '${widget.lapang.name} telah ditambahkan ke keranjang, ingin menambah lapang untuk di booking?',
+                '${widget.lapang.name} sudah ditambahkan ke keranjang, apakah ingin menambah booking lapang?',
                 style: TextStyle(
                   fontSize: 18.0,
                 ),
@@ -367,7 +367,7 @@ class _DetailPageState extends State<DetailPage> {
                       'Price',
                       style: TextStyle(
                         color: Colors.black,
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -379,19 +379,18 @@ class _DetailPageState extends State<DetailPage> {
                       ),
                     ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           CupertinoIcons.star_fill,
-                          size: 20,
+                          size: 14,
                           color: Colors.yellow,
                         ),
                         SizedBox(width: 5),
                         Text(
                           widget.lapang.rating.toString(),
                           style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
+                            color: const Color.fromARGB(255, 49, 26, 26),
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -451,7 +450,7 @@ class _DetailPageState extends State<DetailPage> {
                   widget.lapang.description.toString(),
                   style: TextStyle(
                     color: Colors.black,
-                    fontSize: 20,
+                    fontSize: 16,
                   ),
                 ),
               ],
