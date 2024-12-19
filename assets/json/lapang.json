@@ -2,35 +2,35 @@
   {
       "name": "Lapang 1 Minisoccer",
       "description": "Deskripsi Lapang 1 Minisoccer.",
-      "price": "300",
+      "price": "300000",
       "image_path": "assets/lapangan_a.jpg",
       "rating": "4.9"
   },
   {
       "name": "Lapang 2 Minisoccer",
       "description": "Deskripsi Lapang 2 Minisoccer.",
-      "price": "300",
+      "price": "300000",
       "image_path": "assets/lapangan_b.jpg",
       "rating": "4.8"
   },
   {
       "name": "Lapang 3 Minisoccer",
       "description": "Deskripsi Lapang 3 Minisoccer.",
-      "price": "300",
+      "price": "300000",
       "image_path": "assets/lapangan_c.jpg",
       "rating": "4.9"
   },
   {
       "name": "Lapang 1 Badminton",
       "description": "Deskripsi Lapang 1 Badminton.",
-      "price": "120",
+      "price": "120000",
       "image_path": "assets/lapangan_a.jpg",
       "rating": "4.9"
   },
   {
       "name": "Lapang 1 Basket",
       "description": "Deskripsi Lapang 1 Basket.",
-      "price": "150",
+      "price": "150000",
       "image_path": "assets/lapangan_b.jpg",
       "rating": "5.0"
   }

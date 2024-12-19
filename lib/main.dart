@@ -2,8 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:mandalaarenaapp/Login%20Signup/Screen/home_screen.dart';
+import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
+import 'package:mandalaarenaapp/Login%20Signup/Screen/signup.dart';
 import 'package:mandalaarenaapp/pages/about_page.dart';
-import 'package:mandalaarenaapp/pages/booking_page.dart';
+import 'package:mandalaarenaapp/pages/bookingpage.dart';
 import 'package:mandalaarenaapp/pages/cart_page.dart';
 import 'package:mandalaarenaapp/pages/checkout_page.dart';
 import 'package:mandalaarenaapp/pages/galery_page.dart';
@@ -49,6 +52,9 @@ class MandalaArenaApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => WelcomePage(),
+        '/homescreen': (context) => HomeScreen(),
+        '/login': (context) => LoginScreen(),
+        '/signup': (context) => SignupScreen(),
         '/home': (context) => HomePage(),
         '/booking': (context) => BookingPage(),
         '/gallery': (context) => GalleryPage(),

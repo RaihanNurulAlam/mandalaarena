@@ -28,12 +28,6 @@ class DrawerWidget extends StatelessWidget {
           ),
           _buildDrawerItem(
             context,
-            icon: Icons.calendar_today,
-            title: 'Jadwal Booking',
-            navigationState: NavigationState.booking,
-          ),
-          _buildDrawerItem(
-            context,
             icon: Icons.photo_library,
             title: 'Galeri Aktivitas',
             navigationState: NavigationState.gallery,

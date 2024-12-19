@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mandalaarenaapp/pages/checkout_page.dart';
-import 'package:mandalaarenaapp/pages/detail_page.dart';
+import 'package:mandalaarenaapp/pages/detailpage.dart';
 import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
@@ -17,7 +17,6 @@ import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:provider/provider.dart';
 import '../cubit/navigation_cubit.dart';
 import '../widgets/drawer_widget.dart';
-import '../pages/booking_page.dart';
 import '../pages/information_page.dart';
 import '../pages/about_page.dart';
 
@@ -154,8 +153,6 @@ class _HomePageState extends State<HomePage> {
         body: BlocBuilder<NavigationCubit, NavigationState>(
           builder: (context, state) {
             switch (state) {
-              case NavigationState.booking:
-                return BookingPage();
               case NavigationState.gallery:
                 return GalleryPage();
               case NavigationState.information:

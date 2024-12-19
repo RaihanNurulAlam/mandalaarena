@@ -3,7 +3,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Enum untuk menentukan halaman navigasi
-enum NavigationState { home, booking, gallery, information, about, checkout }
+enum NavigationState { home, gallery, information, about, checkout }
 
 /// Cubit untuk mengelola state navigasi
 class NavigationCubit extends Cubit<NavigationState> {

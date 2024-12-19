@@ -19,7 +19,6 @@ class _CartPageState extends State<CartPage> {
     double totalPrice = 0;
     double taxAndService = 0;
     double totalPayment = 0;
-
     return Consumer<Cart>(
       builder: (context, value, child) {
         for (var cartModel in value.cart) {
@@ -118,7 +117,7 @@ class _CartPageState extends State<CartPage> {
                           ),
                           subtitle: Row(
                             children: [
-                              Text('IDR ${lapang.price} x ${lapang.quantity}'),
+                              Text('IDR ${lapang.price} x ${lapang.quantity}' ' Jam'),
                             ],
                           ),
                           trailing: IconButton(
@@ -281,7 +280,7 @@ class _CartPageState extends State<CartPage> {
                                 ),
                               ),
                               SizedBox(width: 10),
-                              Icon(CupertinoIcons.arrow_right),
+                              Icon(CupertinoIcons.arrow_right, color: Colors.white,),
                             ],
                           ),
                           onPressed: () {
