@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mandalaarenaapp/pages/checkout_page.dart';
+import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:provider/provider.dart';
@@ -15,20 +15,13 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
-    double price = 0;
     double totalPrice = 0;
-    double taxAndService = 0;
-    double totalPayment = 0;
     return Consumer<Cart>(
       builder: (context, value, child) {
         for (var cartModel in value.cart) {
-          price = int.parse(cartModel.quantity.toString()) *
+          double price = int.parse(cartModel.quantity.toString()) *
               int.parse(cartModel.price.toString()).toDouble();
           totalPrice += price;
-
-          taxAndService = double.parse((totalPrice * 0.11).toStringAsFixed(2));
-          totalPayment =
-              double.parse((totalPrice + taxAndService).toStringAsFixed(2));
         }
 
         return Scaffold(
@@ -43,10 +36,7 @@ class _CartPageState extends State<CartPage> {
                     onPressed: () {
                       value.clearCart();
                       setState(() {
-                        price = 0;
                         totalPrice = 0;
-                        taxAndService = 0;
-                        totalPayment = 0;
                       });
                     },
                     icon: Row(
@@ -64,20 +54,22 @@ class _CartPageState extends State<CartPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
+                      const Text(
                         'Cart is empty',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       CupertinoButton(
                         color: Colors.black,
-                        child: Text('Tambah Booking Lapang',
-                        style: TextStyle(
-                          color: Colors.white,
-                        ),),
+                        child: const Text(
+                          'Tambah Booking Lapang',
+                          style: TextStyle(
+                            color: Colors.white,
+                          ),
+                        ),
                         onPressed: () {
                           Navigator.pushAndRemoveUntil(
                             context,
@@ -110,58 +102,35 @@ class _CartPageState extends State<CartPage> {
                           ),
                           title: Text(
                             lapang.name.toString(),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
                           subtitle: Row(
                             children: [
-                              Text('IDR ${lapang.price} x ${lapang.quantity}' ' Jam'),
+                              Text('IDR ${lapang.price} x ${lapang.quantity} Jam'),
                             ],
                           ),
                           trailing: IconButton(
                             onPressed: () {
                               setState(() {
-                                // Hapus item dari keranjang
                                 value.deleteItemCart(lapang);
-
-                                //Hitung ulang total harga
                                 totalPrice = 0;
                                 for (var cartModel in value.cart) {
-                                  double itemPrice =
-                                      int.parse(cartModel.quantity.toString()) *
-                                          int.parse(cartModel.price.toString())
-                                              .toDouble();
-                                  totalPrice += itemPrice;
+                                  totalPrice += int.parse(cartModel.quantity.toString()) *
+                                      int.parse(cartModel.price.toString()).toDouble();
                                 }
-
-                                // Hitung ulang pajak dan total pembayaran
-                                taxAndService = double.parse(
-                                    (totalPrice * 0.11).toStringAsFixed(2));
-                                totalPayment = double.parse(
-                                    (totalPrice + taxAndService)
-                                        .toStringAsFixed(2));
                               });
-
-                              if (value.cart.isEmpty) {
-                                price = 0;
-                                totalPrice = 0;
-                                taxAndService = 0;
-                                totalPayment = 0;
-                                setState(() {});
-                              } else {
-                                context.read<Cart>();
-                              }
                             },
-                            icon: Icon(CupertinoIcons.trash_circle),
+                            icon: const Icon(CupertinoIcons.trash_circle),
                           ),
                         );
                       },
                     ),
-                    SizedBox(height: 80),
+                    const SizedBox(height: 80),
                     CupertinoButton(
-                      child: Text(
+                      child: const Text(
                         'Tambah Booking Lapang',
                         style: TextStyle(
                           color: Colors.black,
@@ -177,7 +146,7 @@ class _CartPageState extends State<CartPage> {
                     ),
                   ],
                 ),
-          bottomNavigationBar: price == 0
+          bottomNavigationBar: totalPrice == 0
               ? null
               : Container(
                   color: Colors.black,
@@ -193,76 +162,31 @@ class _CartPageState extends State<CartPage> {
                             width: 1,
                           ),
                         ),
-                        padding: EdgeInsets.all(16),
-                        margin: EdgeInsets.all(16),
-                        child: Column(
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Price',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                  ),
-                                ),
-                                Text(
-                                  'IDR $totalPrice',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                            const Text(
+                              'Total Price',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 20,
+                              ),
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Tax and Service',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                  ),
-                                ),
-                                Text(
-                                  'IDR $taxAndService',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Divider(),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Total Price',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                  ),
-                                ),
-                                Text(
-                                  'IDR $totalPayment',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              'IDR $totalPrice',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       Container(
-                        margin: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         width: MediaQuery.of(context).size.width,
                         child: CupertinoButton(
                           color: Colors.black,
@@ -280,15 +204,15 @@ class _CartPageState extends State<CartPage> {
                                 ),
                               ),
                               SizedBox(width: 10),
-                              Icon(CupertinoIcons.arrow_right, color: Colors.white,),
+                              Icon(CupertinoIcons.arrow_right, color: Colors.white),
                             ],
                           ),
                           onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CheckoutPage(
-                                  totalPayment: totalPayment.toString(),
+                                builder: (context) => PaymentPage(
+                                  totalPrice: totalPrice,
                                 ),
                               ),
                             );

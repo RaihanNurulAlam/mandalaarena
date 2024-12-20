@@ -1,64 +1,40 @@
-// ignore_for_file: prefer_const_constructors_in_immutables, use_key_in_widget_constructors
-
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class PaymentPage extends StatelessWidget {
-  final DateTime date;
-  final int startHour;
-  final int duration;
-  final int total;
-
-  PaymentPage({
-    required this.date,
-    required this.startHour,
-    required this.duration,
-    required this.total,
-  });
+  final double totalPrice;
+  const PaymentPage({required this.totalPrice, super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Pembayaran'),
-      ),
+      appBar: AppBar(title: const Text('Payment Details')),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Detail Booking',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            Text('Tanggal: ${DateFormat('dd MMM yyyy').format(date)}'),
-            Text('Jam Mulai: ${startHour.toString().padLeft(2, '0')}:00'),
-            Text('Durasi: $duration Jam'),
-            Text('Total: Rp $total'),
-            SizedBox(height: 32),
-            Text(
-              'Pilih Metode Pembayaran',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
+            Text('Total Price: IDR $totalPrice',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Text('Booking Date: ${DateTime.now().toLocal().toString().split(' ')[0]}',
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 10),
+            Text('Booking Time: ${TimeOfDay.now().format(context)}',
+                style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 10),
+            const Text('Duration: 2 Hours', style: TextStyle(fontSize: 16)), // Example duration
+            const SizedBox(height: 20),
+            const Text('Select Payment Method:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
+                // Implement Midtrans payment integration here
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Pembayaran Berhasil!')),
+                  const SnackBar(content: Text('Payment method selected. Proceeding to pay.')),
                 );
-                Navigator.pop(context);
               },
-              child: Text('Bayar dengan Transfer Bank'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Pembayaran Berhasil!')),
-                );
-                Navigator.pop(context);
-              },
-              child: Text('Bayar dengan E-Wallet'),
+              child: const Text('Pay with Midtrans'),
             ),
           ],
         ),

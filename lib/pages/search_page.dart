@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mandalaarenaapp/pages/detail_page.dart';
+import 'package:mandalaarenaapp/pages/detailpage.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 
 class SearchPage extends StatefulWidget {

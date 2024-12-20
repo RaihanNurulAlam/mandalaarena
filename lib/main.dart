@@ -6,7 +6,6 @@ import 'package:mandalaarenaapp/Login%20Signup/Screen/home_screen.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/signup.dart';
 import 'package:mandalaarenaapp/pages/about_page.dart';
-import 'package:mandalaarenaapp/pages/bookingpage.dart';
 import 'package:mandalaarenaapp/pages/cart_page.dart';
 import 'package:mandalaarenaapp/pages/checkout_page.dart';
 import 'package:mandalaarenaapp/pages/galery_page.dart';
@@ -56,7 +55,6 @@ class MandalaArenaApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/signup': (context) => SignupScreen(),
         '/home': (context) => HomePage(),
-        '/booking': (context) => BookingPage(),
         '/gallery': (context) => GalleryPage(),
         '/information': (context) => InformationPage(),
         '/about': (context) => AboutPage(),
