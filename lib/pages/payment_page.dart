@@ -35,26 +35,26 @@ class PaymentPage extends StatelessWidget {
             children: [
               // Informasi tanggal booking
               Container(
-  padding: const EdgeInsets.all(16),
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(10),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.grey.withOpacity(0.3),
-        blurRadius: 8,
-        spreadRadius: 2,
-      ),
-    ],
-  ),
-  child: Text(
-    'Booking Date: $bookingDate',
-    style: const TextStyle(
-      fontSize: 18,
-      fontWeight: FontWeight.bold,
-    ),
-  ),
-),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  'Booking Date: $bookingDate',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Tampilkan daftar item dalam keranjang
@@ -66,23 +66,23 @@ class PaymentPage extends StatelessWidget {
                 ),
               ),
               ListView.builder(
-  shrinkWrap: true,
-  physics: const NeverScrollableScrollPhysics(),
-  itemCount: cart.cart.length,
-  itemBuilder: (context, index) {
-    final item = cart.cart[index];
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        leading: Image.asset(item.imagePath ?? 'assets/images/placeholder.png'),
-        title: Text(item.name ?? 'Unknown Item'),
-        subtitle: Text(
-          'Price: Rp. ${item.price}, Durasi: ${item.quantity} Jam', // Ubah Quantity menjadi Durasi
-        ),
-      ),
-    );
-  },
-),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: cart.cart.length,
+                itemBuilder: (context, index) {
+                  final item = cart.cart[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      leading: Image.asset(item.imagePath ?? 'assets/images/placeholder.png'),
+                      title: Text(item.name ?? 'Unknown Item'),
+                      subtitle: Text(
+                        'Price: Rp. ${item.price}, Durasi: ${item.quantity} Jam', // Ubah Quantity menjadi Durasi
+                      ),
+                    ),
+                  );
+                },
+              ),
               const Divider(),
 
               // Tampilkan total harga
@@ -95,27 +95,28 @@ class PaymentPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Tombol untuk melanjutkan pembayaran
-              Center(
-                child: CupertinoButton.filled(
-                  child: const Text(
-                    'Proceed to Payment',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onPressed: () {
-                    // Lanjutkan ke konfirmasi pembayaran
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PaymentConfirmationPage(
-                          totalPrice: totalPrice,
-                          bookingDate: bookingDate, 
+              // Tombol untuk melanjutkan pembayaran (hanya tampil jika keranjang tidak kosong)
+              if (cart.cart.isNotEmpty)
+                Center(
+                  child: CupertinoButton.filled(
+                    child: const Text(
+                      'Proceed to Payment',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onPressed: () {
+                      // Lanjutkan ke konfirmasi pembayaran
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PaymentConfirmationPage(
+                            totalPrice: totalPrice,
+                            bookingDate: bookingDate,
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
         ),
