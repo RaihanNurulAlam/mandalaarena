@@ -3,12 +3,14 @@ class CartModel {
   String? price;
   String? imagePath;
   String? quantity;
+  String? bookingDate;
 
   CartModel({
     this.name,
     this.price,
     this.imagePath,
     this.quantity,
+    this.bookingDate,
   });
 
   CartModel.fromJson(Map<String, dynamic> json) {

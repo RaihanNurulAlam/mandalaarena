@@ -109,7 +109,7 @@ class _CartPageState extends State<CartPage> {
                           ),
                           subtitle: Row(
                             children: [
-                              Text('IDR ${lapang.price} x ${lapang.quantity} Jam'),
+                              Text('Rp. ${lapang.price} x ${lapang.quantity} Jam'),
                             ],
                           ),
                           trailing: IconButton(
@@ -175,7 +175,7 @@ class _CartPageState extends State<CartPage> {
                               ),
                             ),
                             Text(
-                              'IDR $totalPrice',
+                              'Rp. $totalPrice',
                               style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 20,
@@ -211,9 +211,7 @@ class _CartPageState extends State<CartPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => PaymentPage(
-                                  totalPrice: totalPrice,
-                                ),
+                                builder: (context) => PaymentPage(),
                               ),
                             );
                           },

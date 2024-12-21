@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, unused_local_variable
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -28,7 +28,9 @@ class _DetailPageState extends State<DetailPage> {
   void addToCart() {
     if (selectedHour.isNotEmpty && bookingDuration > 0 && selectedDate != null) {
       final cart = context.read<Cart>();
-      cart.addToCart(widget.lapang, bookingDuration);
+      // Tambahkan bookingDate ke keranjang
+      final formattedDate = DateFormat('dd MMMM yyyy').format(selectedDate!);
+      cart.addToCart(widget.lapang, bookingDuration, formattedDate); 
       popUpDialog();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -36,6 +38,7 @@ class _DetailPageState extends State<DetailPage> {
       );
     }
   }
+
 
   void popUpDialog() {
     final formattedDate = DateFormat('dd MMMM yyyy').format(selectedDate!);

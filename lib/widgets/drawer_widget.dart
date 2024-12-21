@@ -22,6 +22,12 @@ class DrawerWidget extends StatelessWidget {
           ),
           _buildDrawerItem(
             context,
+            icon: Icons.maps_home_work,
+            title: 'Alamat',
+            navigationState: NavigationState.AlamatPage,
+          ),
+          _buildDrawerItem(
+            context,
             icon: Icons.home,
             title: 'Beranda',
             navigationState: NavigationState.home,
@@ -48,7 +54,7 @@ class DrawerWidget extends StatelessWidget {
             context,
             icon: Icons.payment,
             title: 'Checkout',
-            navigationState: NavigationState.checkout,
+            navigationState: NavigationState.payment,
           ),
         ],
       ),

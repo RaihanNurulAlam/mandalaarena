@@ -5,36 +5,31 @@ import 'package:mandalaarenaapp/pages/models/lapang.dart';
 class Cart extends ChangeNotifier {
   // List untuk menyimpan item dalam bentuk CartModel
   final List<CartModel> _cart = [];
-  final List<String> _items = [];
 
-  // Getter untuk CartModel
+  // Getter untuk keranjang (list CartModel)
   List<CartModel> get cart => _cart;
 
-  // Getter untuk item sederhana
-  List<String> get items => _items;
-
   // Tambahkan item ke dalam keranjang dengan objek Lapang
-  void addToCart(Lapang lapangItem, int qty) {
-    _cart.add(
-      CartModel(
-        name: lapangItem.name,
-        price: lapangItem.price,
-        imagePath: lapangItem.imagePath,
-        quantity: qty.toString(),
-      ),
-    );
-    notifyListeners();
-  }
-
-  // Tambahkan item sederhana berupa String
-  void addItem(String item) {
-    _items.add(item);
-    notifyListeners();
-  }
-
-  // Hapus item sederhana dari keranjang
-  void removeItem(String item) {
-    _items.remove(item);
+  void addToCart(Lapang lapangItem, int qty, dynamic bookingDate) {
+    // Cek jika item sudah ada di keranjang
+    final existingItemIndex = _cart.indexWhere((item) => item.name == lapangItem.name);
+    if (existingItemIndex != -1) {
+      // Update quantity jika item sudah ada
+      final existingItem = _cart[existingItemIndex];
+      int currentQty = int.tryParse(existingItem.quantity ?? '0') ?? 0;
+      existingItem.quantity = (currentQty + qty).toString();
+    } else {
+      // Tambahkan item baru
+      _cart.add(
+        CartModel(
+          name: lapangItem.name,
+          price: lapangItem.price,
+          imagePath: lapangItem.imagePath,
+          quantity: qty.toString(),
+          bookingDate: bookingDate,
+        ),
+      );
+    }
     notifyListeners();
   }
 
@@ -47,7 +42,17 @@ class Cart extends ChangeNotifier {
   // Bersihkan semua item dari keranjang
   void clearCart() {
     _cart.clear();
-    _items.clear();
     notifyListeners();
+  }
+
+  // Metode untuk menghitung total harga
+  double calculateTotalPrice() {
+    double total = 0;
+    for (var item in _cart) {
+      final price = double.tryParse(item.price ?? '0') ?? 0;
+      final quantity = int.tryParse(item.quantity ?? '0') ?? 0;
+      total += price * quantity;
+    }
+    return total;
   }
 }

@@ -8,10 +8,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mandalaarenaapp/pages/checkout_page.dart';
+import 'package:mandalaarenaapp/pages/alamat_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
 import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
+import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:provider/provider.dart';
@@ -100,6 +101,16 @@ class _HomePageState extends State<HomePage> {
             IconButton(
               onPressed: () {
                 Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => AlamatPage()));
+              },
+              icon: Icon(
+                Icons.location_on,
+                size: 30,
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                Navigator.push(context,
                   MaterialPageRoute(builder: (context) => SearchPage()));
               },
               icon: Icon(
@@ -151,18 +162,20 @@ class _HomePageState extends State<HomePage> {
         ),
         drawer: DrawerWidget(),
         body: BlocBuilder<NavigationCubit, NavigationState>(
-          builder: (context, state) {
-            switch (state) {
-              case NavigationState.gallery:
-                return GalleryPage();
-              case NavigationState.information:
-                return InformationPage();
-              case NavigationState.about:
-                return AboutPage();
-              case NavigationState.checkout:
-                return CheckoutPage(totalPayment: "");
-              default:
-                return _buildHomeContent(context);
+        builder: (context, state) {
+        switch (state) {
+          case NavigationState.AlamatPage:
+            return AlamatPage();
+          case NavigationState.gallery:
+            return GalleryPage();
+          case NavigationState.information:
+            return InformationPage();
+          case NavigationState.about:
+            return AboutPage();
+          case NavigationState.payment:
+            return PaymentPage();
+          default:
+            return _buildHomeContent(context);
             }
           },
         ),
@@ -241,7 +254,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           subtitle: Text(
-                            '${lapangs[index].price} IDR',
+                            'Rp. ${lapangs[index].price}',
                             style: TextStyle(
                               color: Colors.yellowAccent,
                               fontSize: 14,
@@ -352,7 +365,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     subtitle: Text(
-                      '${lapangs[2].price} IDR',
+                      'Rp. ${lapangs[2].price}',
                       style: TextStyle(
                         color: Colors.yellowAccent,
                         fontSize: 18,
