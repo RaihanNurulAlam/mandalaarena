@@ -1,9 +1,8 @@
-// lib/widgets/drawer_widget.dart
-
 // ignore_for_file: use_key_in_widget_constructors
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
 
 class DrawerWidget extends StatelessWidget {
@@ -50,6 +49,17 @@ class DrawerWidget extends StatelessWidget {
             title: 'Checkout',
             navigationState: NavigationState.payment,
           ),
+          Divider(), // Pemisah antara menu navigasi dan tombol media sosial
+          ListTile(
+            leading: Icon(Icons.facebook, color: Colors.blue),
+            title: Text('Facebook'),
+            onTap: () => _launchURL('https://www.facebook.com/mandala.arena'),
+          ),
+          ListTile(
+            leading: Icon(Icons.camera_alt, color: Colors.purple),
+            title: Text('Instagram'),
+            onTap: () => _launchURL('https://www.instagram.com/mandalaarena'),
+          ),
         ],
       ),
     );
@@ -69,5 +79,14 @@ class DrawerWidget extends StatelessWidget {
         Navigator.pop(context);
       },
     );
+  }
+
+  void _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 }
