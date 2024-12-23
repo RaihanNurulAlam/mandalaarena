@@ -48,7 +48,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: "+9771234567890",
+                  hintText: "+6282117556907",
                   labelText: "Enter the Phone Number",
                 ),
               ),
