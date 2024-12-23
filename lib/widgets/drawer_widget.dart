@@ -22,12 +22,6 @@ class DrawerWidget extends StatelessWidget {
           ),
           _buildDrawerItem(
             context,
-            icon: Icons.maps_home_work,
-            title: 'Alamat',
-            navigationState: NavigationState.AlamatPage,
-          ),
-          _buildDrawerItem(
-            context,
             icon: Icons.home,
             title: 'Beranda',
             navigationState: NavigationState.home,
