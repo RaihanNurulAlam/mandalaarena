@@ -2,7 +2,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mandalaarenaapp/Login%20Signup/Screen/home_screen.dart';
+import 'package:mandalaarenaapp/pages/home_page.dart';
 
 class OTPScreen extends StatefulWidget {
   final String verificationId;
@@ -73,7 +73,7 @@ class _OTPScreenState extends State<OTPScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
+                            builder: (context) => HomePage(),
                           ),
                         );
                       } catch (e) {

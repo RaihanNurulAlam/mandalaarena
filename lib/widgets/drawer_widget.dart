@@ -84,9 +84,13 @@ class DrawerWidget extends StatelessWidget {
   void _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(
+        uri,
+        mode: LaunchMode
+            .externalApplication, // Pastikan menggunakan browser eksternal
+      );
     } else {
-      throw 'Could not launch $url';
+      debugPrint('Could not launch $url');
     }
   }
 }
