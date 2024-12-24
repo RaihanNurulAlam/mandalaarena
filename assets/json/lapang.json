@@ -1,37 +1,43 @@
 [
-  {
+    {
       "name": "Lapang 1 Minisoccer",
       "description": "Deskripsi Lapang 1 Minisoccer.",
       "price": "300000",
       "image_path": "assets/lapangan_a.jpg",
-      "rating": "4.9"
-  },
-  {
+      "rating": "4.9",
+      "bookings": ["2024-12-24T08:00:00.000Z", "2024-12-24T09:00:00.000Z"]
+    },
+    {
       "name": "Lapang 2 Minisoccer",
       "description": "Deskripsi Lapang 2 Minisoccer.",
       "price": "300000",
       "image_path": "assets/lapangan_b.jpg",
-      "rating": "4.8"
-  },
-  {
+      "rating": "4.8",
+      "bookings": []
+    },
+    {
       "name": "Lapang 3 Minisoccer",
       "description": "Deskripsi Lapang 3 Minisoccer.",
       "price": "300000",
       "image_path": "assets/lapangan_c.jpg",
-      "rating": "4.9"
-  },
-  {
+      "rating": "4.9",
+      "bookings": []
+    },
+    {
       "name": "Lapang 1 Badminton",
       "description": "Deskripsi Lapang 1 Badminton.",
       "price": "120000",
       "image_path": "assets/lapangan_a.jpg",
-      "rating": "4.9"
-  },
-  {
+      "rating": "4.9",
+      "bookings": []
+    },
+    {
       "name": "Lapang 1 Basket",
       "description": "Deskripsi Lapang 1 Basket.",
       "price": "150000",
       "image_path": "assets/lapangan_b.jpg",
-      "rating": "5.0"
-  }
-]
+      "rating": "5.0",
+      "bookings": []
+    }
+  ]
+  

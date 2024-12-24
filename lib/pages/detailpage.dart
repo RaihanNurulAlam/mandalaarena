@@ -1,4 +1,5 @@
 // ignore_for_file: deprecated_member_use, unused_local_variable
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -25,13 +26,34 @@ class _DetailPageState extends State<DetailPage> {
   int bookingDuration = 0;
   DateTime? selectedDate;
 
-  void addToCart() {
+  Future<void> addToCart() async {
     if (selectedHour.isNotEmpty && bookingDuration > 0 && selectedDate != null) {
       final cart = context.read<Cart>();
       // Tambahkan bookingDate ke keranjang
       final formattedDate = DateFormat('dd MMMM yyyy').format(selectedDate!);
+      // Convert selected hour to a DateTime object
+      final selectedTime = DateTime(selectedDate!.year, selectedDate!.month, selectedDate!.day, int.parse(selectedHour.split(":")[0]));
+
+      // Check if the selected time is already booked
+      if (widget.lapang.bookings?.contains(selectedTime.toIso8601String()) ?? false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Jam ini sudah terbooking!")),
+        );
+        return;
+      }
+      
       cart.addToCart(widget.lapang, bookingDuration, formattedDate); 
+      // Add this booking time to Firebase
       popUpDialog();
+      widget.lapang.bookings?.add(selectedTime.toIso8601String());
+      await FirebaseFirestore.instance
+          .collection('lapang')
+          .doc(widget.lapang.id)
+          .update({
+        'bookings': widget.lapang.bookings,
+      });
+      
+      
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Harap pilih tanggal, jam, dan durasi booking!")),
@@ -224,6 +246,7 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   Widget lapangDetailWidget(BuildContext context) {
+    final currentTime = DateTime.now();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -305,16 +328,20 @@ class _DetailPageState extends State<DetailPage> {
             14,
             (index) {
               final hour = 8 + index;
+              final bookingTime = DateTime(currentTime.year, currentTime.month, currentTime.day, hour);
+              bool isPast = bookingTime.isBefore(currentTime);
               return Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: ChoiceChip(
                   label: Text("$hour:00"),
                   selected: selectedHour == "$hour:00",
-                  onSelected: (bool selected) {
+                  onSelected: isPast ? null : (bool selected) {
                     setState(() {
                       selectedHour = "$hour:00";
                     });
                   },
+                  selectedColor: isPast ? Colors.grey : null, // Optional: visually indicate past hours
+                  backgroundColor: isPast ? Colors.grey.shade300 : null,
                 ),
               );
             },
