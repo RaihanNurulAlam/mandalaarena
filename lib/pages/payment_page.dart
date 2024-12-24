@@ -98,9 +98,10 @@ class PaymentPage extends StatelessWidget {
               // Tombol untuk melanjutkan pembayaran (hanya tampil jika keranjang tidak kosong)
               if (cart.cart.isNotEmpty)
                 Center(
-                  child: CupertinoButton.filled(
+                  child: CupertinoButton(
+                    color: Colors.black,
                     child: const Text(
-                      'Proceed to Payment',
+                      'Proceed to Payment', 
                       style: TextStyle(color: Colors.white),
                     ),
                     onPressed: () {
@@ -161,8 +162,11 @@ class PaymentConfirmationPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            CupertinoButton.filled(
-              child: const Text('Confirm and Pay'),
+            CupertinoButton(
+              color: Colors.black,
+              child: const Text('Confirm and Pay',
+              style: TextStyle(color: Colors.white),
+              ),
               onPressed: () {
                 // Proses pembayaran
                 showDialog(

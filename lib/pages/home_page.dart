@@ -45,23 +45,23 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchAdminContact() async {
-  final databaseReference = FirebaseDatabase.instance.ref("admin_contact/whatsapp");
-  try {
-    final snapshot = await databaseReference.get();
-    if (snapshot.exists && snapshot.value != null) {
-      setState(() {
-        adminWhatsApp = snapshot.value.toString();
-      });
-    } else {
-      setState(() {
-        adminWhatsApp = ""; // Kosongkan jika tidak ada data
-      });
-      print("Nomor WhatsApp belum tersedia di database.");
+    final databaseReference = FirebaseDatabase.instance.ref("admin_contact/whatsapp");
+    try {
+      final snapshot = await databaseReference.get();
+      if (snapshot.exists && snapshot.value != null) {
+        setState(() {
+          adminWhatsApp = snapshot.value.toString();
+        });
+      } else {
+        setState(() {
+          adminWhatsApp = "";
+        });
+        print("Nomor WhatsApp belum tersedia di database.");
+      }
+    } catch (e) {
+      print("Error fetching WhatsApp number: $e");
     }
-  } catch (e) {
-    print("Error fetching WhatsApp number: $e");
   }
-}
 
   String formatWhatsAppNumber(String number) {
     String formattedNumber = number.replaceAll(RegExp(r'[^0-9]'), '');
@@ -74,21 +74,19 @@ class _HomePageState extends State<HomePage> {
   }
 
   void openWhatsApp() async {
-  final defaultNumber = "082117556907"; // Nomor fallback
-  final numberToUse = adminWhatsApp.isNotEmpty ? adminWhatsApp : defaultNumber;
+    final defaultNumber = "082117556907";
+    final numberToUse = adminWhatsApp.isNotEmpty ? adminWhatsApp : defaultNumber;
 
-  final formattedNumber = formatWhatsAppNumber(numberToUse);
-  final url = Uri.parse("https://wa.me/$formattedNumber");
+    final formattedNumber = formatWhatsAppNumber(numberToUse);
+    final url = Uri.parse("https://wa.me/$formattedNumber");
 
-  if (await canLaunchUrl(url)) {
-    await launchUrl(url, mode: LaunchMode.externalApplication);
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Tidak dapat membuka WhatsApp."))
-    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Tidak dapat membuka WhatsApp.")));
+    }
   }
-}
-
 
   void goToDetailLapang(int index) {
     Navigator.push(
@@ -111,7 +109,7 @@ class _HomePageState extends State<HomePage> {
     getLapangs();
     super.initState();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -124,9 +122,7 @@ class _HomePageState extends State<HomePage> {
             children: const [
               Text(
                 'Mandala Arena',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 28),
+                style: TextStyle(color: Colors.black, fontSize: 28),
               ),
               Row(
                 children: [
@@ -151,7 +147,7 @@ class _HomePageState extends State<HomePage> {
             IconButton(
               onPressed: () {
                 Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => AlamatPage()));
+                    MaterialPageRoute(builder: (context) => AlamatPage()));
               },
               icon: Icon(
                 Icons.location_on,
@@ -161,7 +157,7 @@ class _HomePageState extends State<HomePage> {
             IconButton(
               onPressed: () {
                 Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => SearchPage()));
+                    MaterialPageRoute(builder: (context) => SearchPage()));
               },
               icon: Icon(
                 CupertinoIcons.search,
@@ -212,122 +208,121 @@ class _HomePageState extends State<HomePage> {
         ),
         drawer: DrawerWidget(),
         body: Stack(
-        children: [
-          BlocBuilder<NavigationCubit, NavigationState>(
-            builder: (context, state) {
-              switch (state) {
-                case NavigationState.gallery:
-                  return GalleryPage();
-                case NavigationState.information:
-                  return InformationPage();
-                case NavigationState.about:
-                  return AboutPage();
-                case NavigationState.payment:
-                  return PaymentPage();
-                default:
-                  return _buildHomeContent(context);
-              }
-            },
-          ),
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              onPressed: openWhatsApp,
-              backgroundColor: Colors.black,
-              child: Icon(Icons.message, color: Colors.white),
+          children: [
+            BlocBuilder<NavigationCubit, NavigationState>(
+              builder: (context, state) {
+                switch (state) {
+                  case NavigationState.gallery:
+                    return GalleryPage();
+                  case NavigationState.information:
+                    return InformationPage();
+                  case NavigationState.about:
+                    return AboutPage();
+                  case NavigationState.payment:
+                    return PaymentPage();
+                  default:
+                    return _buildHomeContent(context);
+                }
+              },
             ),
-          ),
-        ],
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: FloatingActionButton(
+                onPressed: openWhatsApp,
+                backgroundColor: Colors.black,
+                child: Icon(Icons.message, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildHomeContent(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
         children: [
-          _buildDiscountBanner(context), // Banner Diskon
-          bestSellerWidget(context), // Best Seller
+          _buildDiscountBanner(context),
+          bestSellerWidget(context),
           SizedBox(height: 20),
 
-          // Menampilkan lapang-lapang yang bisa dipilih
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Pilih Lapang',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Pilih Lapang',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
+            ),
           ),
           SizedBox(height: 20),
-          // Daftar lapang dalam horizontal list
-          SizedBox(
-            height: 200, // Mengatur tinggi kontainer lapang
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount:
-                  lapangs.length, // Menggunakan data lapang yang sudah dimuat
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    goToDetailLapang(index); // Arahkan ke detail lapang
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(right: 16),
-                    width: 150,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      image: DecorationImage(
-                        image: AssetImage(lapangs[index].imagePath ??
-                            'assets/default_image.jpg'),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(
-                          Colors.black.withOpacity(0.2),
-                          BlendMode.darken,
-                        ),
+
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 3,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 4 / 5,
+            ),
+            itemCount: lapangs.length,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  goToDetailLapang(index);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    image: DecorationImage(
+                      image: AssetImage(lapangs[index].imagePath ??
+                          'assets/default_image.jpg'),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.2),
+                        BlendMode.darken,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ListTile(
-                          title: Text(
-                            lapangs[index].name ?? 'Lapang Tanpa Nama',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Rp. ${lapangs[index].price}',
-                            style: TextStyle(
-                              color: Colors.yellowAccent,
-                              fontSize: 14,
-                            ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          lapangs[index].name ?? 'Lapang Tanpa Nama',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          'Rp. ${lapangs[index].price}',
+                          style: TextStyle(
+                            color: Colors.yellowAccent,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -426,7 +421,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     subtitle: Text(
-                      'Rp. ${lapangs[2].price}',
+                      'Rp. ${lapangs[1].price}',
                       style: TextStyle(
                         color: Colors.yellowAccent,
                         fontSize: 18,
