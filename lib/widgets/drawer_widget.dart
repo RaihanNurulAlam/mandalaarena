@@ -1,9 +1,12 @@
-// ignore_for_file: use_key_in_widget_constructors 
+// ignore_for_file: use_key_in_widget_constructors , use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
+import '../pages/edit_profile_page.dart'; // Tambahkan halaman edit profil
+import '../pages/welcome_page.dart'; // Tambahkan halaman welcome
 
 class DrawerWidget extends StatelessWidget {
   final String userName;
@@ -27,28 +30,34 @@ class DrawerWidget extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Menu Navigasi',
                   style: TextStyle(color: Colors.white, fontSize: 24),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     CircleAvatar(
                       backgroundImage: NetworkImage(profileImageUrl),
                       radius: 25,
                     ),
-                    SizedBox(width: 10),
+                    const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           userName,
-                          style: TextStyle(color: Colors.white, fontSize: 16),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
                         ),
                         Text(
                           userEmail,
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -87,15 +96,45 @@ class DrawerWidget extends StatelessWidget {
             title: 'Checkout',
             navigationState: NavigationState.payment,
           ),
-          Divider(), // Pemisah antara menu navigasi dan tombol media sosial
+          const Divider(),
           ListTile(
-            leading: Icon(Icons.facebook, color: Colors.blue),
-            title: Text('Facebook'),
+            leading: const Icon(Icons.edit, color: Colors.orange),
+            title: const Text('Ubah Profil'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfilePage(
+                    userName: userName,
+                    userEmail: userEmail,
+                    profileImageUrl: profileImageUrl, phoneNumber: '',
+                  ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Sign Out'),
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const WelcomePage(),
+                ),
+              );
+            },
+          ),
+          const Divider(), // Pemisah antara menu navigasi dan tombol media sosial
+          ListTile(
+            leading: const Icon(Icons.facebook, color: Colors.blue),
+            title: const Text('Facebook'),
             onTap: () => _launchURL('https://www.facebook.com/mandala.arena'),
           ),
           ListTile(
-            leading: Icon(Icons.camera_alt, color: Colors.purple),
-            title: Text('Instagram'),
+            leading: const Icon(Icons.camera_alt, color: Colors.purple),
+            title: const Text('Instagram'),
             onTap: () => _launchURL('https://www.instagram.com/mandalaarena'),
           ),
         ],
@@ -124,8 +163,7 @@ class DrawerWidget extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(
         uri,
-        mode: LaunchMode
-            .externalApplication, // Pastikan menggunakan browser eksternal
+        mode: LaunchMode.externalApplication, // Pastikan menggunakan browser eksternal
       );
     } else {
       debugPrint('Could not launch $url');

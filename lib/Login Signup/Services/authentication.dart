@@ -8,7 +8,6 @@ class AuthMethod {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // SignUp User
-
   Future<String> signupUser({
     required String email,
     required String password,
@@ -16,15 +15,13 @@ class AuthMethod {
   }) async {
     String res = "Some error Occurred";
     try {
-      if (email.isNotEmpty ||
-          password.isNotEmpty ||
-          name.isNotEmpty) {
-        // register user in auth with email and password
+      if (email.isNotEmpty || password.isNotEmpty || name.isNotEmpty) {
+        // Register user in auth with email and password
         UserCredential cred = await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
-        // add user to your  firestore database
+        // Add user to your firestore database
         print(cred.user!.uid);
         await _firestore.collection("users").doc(cred.user!.uid).set({
           'name': name,
@@ -40,7 +37,7 @@ class AuthMethod {
     return res;
   }
 
-  // logIn user
+  // LogIn user
   Future<String> loginUser({
     required String email,
     required String password,
@@ -48,7 +45,7 @@ class AuthMethod {
     String res = "Some error Occurred";
     try {
       if (email.isNotEmpty || password.isNotEmpty) {
-        // logging in user with email and password
+        // Logging in user with email and password
         await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
@@ -63,14 +60,24 @@ class AuthMethod {
     return res;
   }
 
+  // Method to get the current logged-in user's UID
+  String getUserId() {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      return user.uid;  // Return the UID of the currently authenticated user
+    } else {
+      return '';  // Return empty string if no user is authenticated
+    }
+  }
+
   // Method to get the current logged-in user's details
   Future<User?> getUserDetails() async {
     User? user = _auth.currentUser;
     return user; // This will return the current user's details (null if not logged in)
   }
 
-  // for sighout
+  // For sign-out
   signOut() async {
-    // await _auth.signOut();
+    await _auth.signOut();
   }
 }
