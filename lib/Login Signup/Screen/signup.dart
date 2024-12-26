@@ -45,10 +45,18 @@ class _SignupScreenState extends State<SignupScreen> {
       setState(() {
         isLoading = false;
       });
+      // Data pengguna setelah signup
+      final String userName = nameController.text;
+      final String userEmail = emailController.text;
+      final String profileImageUrl = "https://via.placeholder.com/150";
       //navigate to the next screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => HomePage(),
+          builder: (context) => HomePage(
+            userName: userName,
+            userEmail: userEmail,
+            profileImageUrl: profileImageUrl,
+          ),
         ),
       );
     } else {

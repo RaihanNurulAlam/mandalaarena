@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, unused_local_variable
 
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Widget/button.dart';
@@ -16,10 +16,10 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _SignupScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _SignupScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
@@ -31,30 +31,40 @@ class _SignupScreenState extends State<LoginScreen> {
     passwordController.dispose();
   }
 
-// email and passowrd auth part
+  // Email and password auth method
   void loginUser() async {
     setState(() {
       isLoading = true;
     });
-    // signup user using our authmethod
+
     String res = await AuthMethod().loginUser(
-        email: emailController.text, password: passwordController.text);
+      email: emailController.text,
+      password: passwordController.text,
+    );
+
+    setState(() {
+      isLoading = false;
+    });
 
     if (res == "success") {
-      setState(() {
-        isLoading = false;
-      });
-      //navigate to the home page
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => HomePage(),
-        ),
-      );
+      // Fetch user details from Firebase (after successful login)
+      final user = await AuthMethod().getUserDetails();
+      final String userName = user?.displayName ?? "User Name"; // Using Firebase's displayName
+      final String userEmail = emailController.text;
+      final String profileImageUrl = user?.photoURL ?? "https://via.placeholder.com/150";
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => HomePage(
+              userName: userName,
+              userEmail: userEmail,
+              profileImageUrl: profileImageUrl,
+            ),
+          ),
+        );
+      }
     } else {
-      setState(() {
-        isLoading = false;
-      });
-      // show error
       showSnackBar(context, res);
     }
   }
@@ -62,13 +72,12 @@ class _SignupScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      // resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       body: SafeArea(
-          child: SingleChildScrollView(
-            child: SizedBox(
-            child: Column(
+        child: SingleChildScrollView(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
@@ -76,18 +85,18 @@ class _SignupScreenState extends State<LoginScreen> {
                 child: Image.asset('images/login.jpg'),
               ),
               TextFieldInput(
-                  icon: Icons.person,
-                  textEditingController: emailController,
-                  hintText: 'Enter your email',
-                  textInputType: TextInputType.text),
+                icon: Icons.person,
+                textEditingController: emailController,
+                hintText: 'Enter your email',
+                textInputType: TextInputType.emailAddress,
+              ),
               TextFieldInput(
                 icon: Icons.lock,
                 textEditingController: passwordController,
                 hintText: 'Enter your password',
-                textInputType: TextInputType.text,
+                textInputType: TextInputType.visiblePassword,
                 isPass: true,
               ),
-              //  we call our forgot password below the login in button
               const ForgotPassword(),
               MyButtons(onTap: loginUser, text: "Log In"),
               Row(
@@ -98,23 +107,36 @@ class _SignupScreenState extends State<LoginScreen> {
                   const Text("  or  "),
                   Expanded(
                     child: Container(height: 1, color: Colors.black26),
-                  )
+                  ),
                 ],
               ),
-              // for google login
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
                 child: ElevatedButton(
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey),
                   onPressed: () async {
-                    await FirebaseServices().signInWithGoogle();
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomePage(),
-                      ),
-                    );
+                    final user = await FirebaseServices().signInWithGoogle();
+                    if (user != null) {
+                      final String userName = user.displayName ?? "User Name";
+                      final String userEmail = user.email ?? "Email Not Found";
+                      final String profileImageUrl =
+                          user.photoURL ?? "https://via.placeholder.com/150";
+
+                      if (mounted) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HomePage(
+                              userName: userName,
+                              userEmail: userEmail,
+                              profileImageUrl: profileImageUrl,
+                            ),
+                          ),
+                        );
+                      }
+                    }
                   },
                   child: Row(
                     children: [
@@ -133,14 +155,12 @@ class _SignupScreenState extends State<LoginScreen> {
                           fontSize: 20,
                           color: Colors.white,
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
               ),
-             // for phone authentication 
-             const PhoneAuthentication(),
-              // Don't have an account? got to signup screen
+              const PhoneAuthentication(),
               Padding(
                 padding: const EdgeInsets.only(top: 10, left: 100),
                 child: Row(
@@ -159,35 +179,35 @@ class _SignupScreenState extends State<LoginScreen> {
                         "SignUp",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
             ],
-                    ),
-                  ),
-          )),
-    );
-  }
-
-  Container socialIcon(image) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 32,
-        vertical: 15,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFedf0f8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.black45,
-          width: 2,
+          ),
         ),
       ),
-      child: Image.network(
-        image,
-        height: 40,
-      ),
     );
   }
+}
+
+Container socialIcon(image) {
+  return Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: 32,
+      vertical: 15,
+    ),
+    decoration: BoxDecoration(
+      color: const Color(0xFFedf0f8),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: Colors.black45,
+        width: 2,
+      ),
+    ),
+    child: Image.network(
+      image,
+      height: 40,
+    ),
+  );
 }

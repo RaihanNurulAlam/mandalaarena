@@ -73,7 +73,7 @@ class _CartPageState extends State<CartPage> {
                         onPressed: () {
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(builder: (context) => HomePage()),
+                            MaterialPageRoute(builder: (context) => HomePage(userName: 'Guest', userEmail: 'guest@example.com', profileImageUrl: 'https://example.com/default-profile.png',)),
                             (route) => false,
                           );
                         },
@@ -139,7 +139,7 @@ class _CartPageState extends State<CartPage> {
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => HomePage()),
+                          MaterialPageRoute(builder: (context) => HomePage(userName: 'Guest', userEmail: 'guest@example.com', profileImageUrl: 'https://example.com/default-profile.png',)),
                           (route) => false,
                         );
                       },

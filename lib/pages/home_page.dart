@@ -1,6 +1,6 @@
 // lib/pages/home_page.dart
 
-// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously
+// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously, use_super_parameters
 
 import 'dart:convert';
 
@@ -24,6 +24,17 @@ import '../pages/information_page.dart';
 import '../pages/about_page.dart';
 
 class HomePage extends StatefulWidget {
+  final String userName;
+  final String userEmail;
+  final String profileImageUrl;
+
+  const HomePage({
+    Key? key,
+    required this.userName,
+    required this.userEmail,
+    required this.profileImageUrl,
+  }) : super(key: key);
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -107,7 +118,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     getLapangs();
-    super.initState();
+    fetchAdminContact();
   }
 
   @override
@@ -206,7 +217,7 @@ class _HomePageState extends State<HomePage> {
             )
           ],
         ),
-        drawer: DrawerWidget(),
+        drawer: DrawerWidget(userName: widget.userName, userEmail: widget.userEmail, profileImageUrl: widget.profileImageUrl,),
         body: Stack(
           children: [
             BlocBuilder<NavigationCubit, NavigationState>(
@@ -263,69 +274,124 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           SizedBox(height: 20),
-
-          GridView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 3,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 4 / 5,
-            ),
-            itemCount: lapangs.length,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () {
-                  goToDetailLapang(index);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    image: DecorationImage(
-                      image: AssetImage(lapangs[index].imagePath ??
-                          'assets/default_image.jpg'),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.2),
-                        BlendMode.darken,
-                      ),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          lapangs[index].name ?? 'Lapang Tanpa Nama',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'Rp. ${lapangs[index].price}',
-                          style: TextStyle(
-                            color: Colors.yellowAccent,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+          _buildGridLapangs(context),
+          SizedBox(height: 20),
+          _buildFAQSection(),
         ],
       ),
+    );
+  }
+
+  Widget _buildFAQSection() {
+    List<Map<String, String>> faqs = [
+      {
+        'question': 'Apa kelebihan sewa lapangan yang tersedia di Mandala Arena?',
+        'answer': 'Lapangan kami memiliki fasilitas lengkap dan lokasi strategis.'
+      },
+      {
+        'question': 'Bagaimana cara memesan lapangan di Mandala Arena?',
+        'answer': 'Anda dapat memesan melalui aplikasi atau menghubungi kami langsung.'
+      },
+      {
+        'question': 'Berapa biaya sewa lapangan yang tersedia di Mandala Arena?',
+        'answer': 'Biaya sewa bervariasi tergantung jenis lapangan dan waktu pemakaian.'
+      },
+      {
+        'question': 'Apakah ada diskon atau promo khusus?',
+        'answer': 'Kami menawarkan diskon setiap hari Jumat dan event-event tertentu.'
+      },
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'FAQ',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 16),
+          ...faqs.map((faq) => ExpansionTile(
+                title: Text(
+                  faq['question']!,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(faq['answer']!),
+                  ),
+                ],
+              )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGridLapangs(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 3,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 4 / 5,
+      ),
+      itemCount: lapangs.length,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () {
+            goToDetailLapang(index);
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              image: DecorationImage(
+                image: AssetImage(lapangs[index].imagePath ??
+                    'assets/default_image.jpg'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.2),
+                  BlendMode.darken,
+                ),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    lapangs[index].name ?? 'Lapang Tanpa Nama',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    'Rp. ${lapangs[index].price}',
+                    style: TextStyle(
+                      color: Colors.yellowAccent,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -433,6 +499,63 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ProfilePage extends StatelessWidget {
+  final String userName;
+  final String userEmail;
+  final String profileImageUrl;
+
+  const ProfilePage({
+    Key? key,
+    required this.userName,
+    required this.userEmail,
+    required this.profileImageUrl,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Profile Page"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundImage: NetworkImage(profileImageUrl),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              userName,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              userEmail,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+            const Spacer(),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Back to Home"),
+            ),
+          ],
+        ),
       ),
     );
   }

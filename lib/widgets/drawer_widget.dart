@@ -1,4 +1,4 @@
-// ignore_for_file: use_key_in_widget_constructors
+// ignore_for_file: use_key_in_widget_constructors 
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +6,16 @@ import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
 
 class DrawerWidget extends StatelessWidget {
+  final String userName;
+  final String userEmail;
+  final String profileImageUrl;
+
+  const DrawerWidget({
+    required this.userName,
+    required this.userEmail,
+    required this.profileImageUrl,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -14,9 +24,37 @@ class DrawerWidget extends StatelessWidget {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(color: Colors.blue),
-            child: Text(
-              'Menu Navigasi',
-              style: TextStyle(color: Colors.white, fontSize: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Menu Navigasi',
+                  style: TextStyle(color: Colors.white, fontSize: 24),
+                ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: NetworkImage(profileImageUrl),
+                      radius: 25,
+                    ),
+                    SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userName,
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                        Text(
+                          userEmail,
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           _buildDrawerItem(

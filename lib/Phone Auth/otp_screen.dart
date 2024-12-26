@@ -7,7 +7,7 @@ import 'package:mandalaarenaapp/pages/home_page.dart';
 class OTPScreen extends StatefulWidget {
   final String verificationId;
   const OTPScreen({super.key, required this.verificationId});
-
+  
   @override
   State<OTPScreen> createState() => _OTPScreenState();
 }
@@ -70,12 +70,25 @@ class _OTPScreenState extends State<OTPScreen> {
                         );
                         await FirebaseAuth.instance
                             .signInWithCredential(credential);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HomePage(),
-                          ),
-                        );
+                        // Fetch user details after successful login
+                        User? user = FirebaseAuth.instance.currentUser;
+                        if (user != null) {
+                          final String userName = user.displayName ?? "User Name";
+                          final String userEmail = user.email ?? "Email Not Found";
+                          final String profileImageUrl = user.photoURL ?? "https://via.placeholder.com/150";
+
+                          // Navigate to HomePage with the user's details
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(
+                                userName: userName,
+                                userEmail: userEmail,
+                                profileImageUrl: profileImageUrl,
+                              ),
+                            ),
+                          );
+                        }
                       } catch (e) {
                         print(e);
                       }
@@ -84,7 +97,7 @@ class _OTPScreenState extends State<OTPScreen> {
                       });
                     },
                     child: const Text(
-                      "Send Code",
+                      "Verify OTP",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,

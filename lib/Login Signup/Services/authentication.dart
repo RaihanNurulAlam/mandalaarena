@@ -63,6 +63,12 @@ class AuthMethod {
     return res;
   }
 
+  // Method to get the current logged-in user's details
+  Future<User?> getUserDetails() async {
+    User? user = _auth.currentUser;
+    return user; // This will return the current user's details (null if not logged in)
+  }
+
   // for sighout
   signOut() async {
     // await _auth.signOut();
