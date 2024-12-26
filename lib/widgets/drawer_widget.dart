@@ -1,8 +1,9 @@
-// ignore_for_file: use_key_in_widget_constructors , use_build_context_synchronously
+// ignore_for_file: use_key_in_widget_constructors, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
 import '../pages/edit_profile_page.dart'; // Tambahkan halaman edit profil
@@ -18,6 +19,27 @@ class DrawerWidget extends StatelessWidget {
     required this.userEmail,
     required this.profileImageUrl,
   });
+
+  Future<Map<String, String>> _fetchUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        final userData = userDoc.data();
+        return {
+          'phoneNumber': userData?['phone'] ?? '',
+          'userName': userData?['name'] ?? userName,
+          'profileImageUrl': userData?['profileImageUrl'] ?? profileImageUrl
+        };
+      }
+    } catch (e) {
+      debugPrint('Error fetching user data: $e');
+    }
+    return {'phoneNumber': '', 'userName': userName, 'profileImageUrl': profileImageUrl};
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,14 +122,16 @@ class DrawerWidget extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.edit, color: Colors.orange),
             title: const Text('Ubah Profil'),
-            onTap: () {
+            onTap: () async {
+              final userData = await _fetchUserData();
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => EditProfilePage(
-                    userName: userName,
+                    userName: userData['userName']!,
                     userEmail: userEmail,
-                    profileImageUrl: profileImageUrl, phoneNumber: '',
+                    profileImageUrl: userData['profileImageUrl']!,
+                    phoneNumber: userData['phoneNumber']!,
                   ),
                 ),
               );
@@ -126,7 +150,7 @@ class DrawerWidget extends StatelessWidget {
               );
             },
           ),
-          const Divider(), // Pemisah antara menu navigasi dan tombol media sosial
+          const Divider(),
           ListTile(
             leading: const Icon(Icons.facebook, color: Colors.blue),
             title: const Text('Facebook'),
@@ -163,7 +187,7 @@ class DrawerWidget extends StatelessWidget {
     if (await canLaunchUrl(uri)) {
       await launchUrl(
         uri,
-        mode: LaunchMode.externalApplication, // Pastikan menggunakan browser eksternal
+        mode: LaunchMode.externalApplication,
       );
     } else {
       debugPrint('Could not launch $url');
