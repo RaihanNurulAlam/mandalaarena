@@ -1,13 +1,14 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 
 class CartPage extends StatefulWidget {
-  const CartPage({super.key});
-
   @override
   State<CartPage> createState() => _CartPageState();
 }
@@ -15,6 +16,7 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
     double totalPrice = 0;
     return Consumer<Cart>(
       builder: (context, value, child) {
@@ -73,7 +75,7 @@ class _CartPageState extends State<CartPage> {
                         onPressed: () {
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(builder: (context) => HomePage(userName: 'Guest', userEmail: 'guest@example.com', profileImageUrl: 'https://example.com/default-profile.png',)),
+                            MaterialPageRoute(builder: (context) => HomePage()),
                             (route) => false,
                           );
                         },
@@ -109,7 +111,8 @@ class _CartPageState extends State<CartPage> {
                           ),
                           subtitle: Row(
                             children: [
-                              Text('Rp. ${lapang.price} x ${lapang.quantity} Jam'),
+                              Text(
+                                  'Rp. ${lapang.price} x ${lapang.quantity} Jam'),
                             ],
                           ),
                           trailing: IconButton(
@@ -118,8 +121,10 @@ class _CartPageState extends State<CartPage> {
                                 value.deleteItemCart(lapang);
                                 totalPrice = 0;
                                 for (var cartModel in value.cart) {
-                                  totalPrice += int.parse(cartModel.quantity.toString()) *
-                                      int.parse(cartModel.price.toString()).toDouble();
+                                  totalPrice +=
+                                      int.parse(cartModel.quantity.toString()) *
+                                          int.parse(cartModel.price.toString())
+                                              .toDouble();
                                 }
                               });
                             },
@@ -139,7 +144,7 @@ class _CartPageState extends State<CartPage> {
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => HomePage(userName: 'Guest', userEmail: 'guest@example.com', profileImageUrl: 'https://example.com/default-profile.png',)),
+                          MaterialPageRoute(builder: (context) => HomePage()),
                           (route) => false,
                         );
                       },
@@ -204,7 +209,8 @@ class _CartPageState extends State<CartPage> {
                                 ),
                               ),
                               SizedBox(width: 10),
-                              Icon(CupertinoIcons.arrow_right, color: Colors.white),
+                              Icon(CupertinoIcons.arrow_right,
+                                  color: Colors.white),
                             ],
                           ),
                           onPressed: () {

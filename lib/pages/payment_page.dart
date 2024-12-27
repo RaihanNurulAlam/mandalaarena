@@ -1,9 +1,10 @@
-// ignore_for_file: deprecated_member_use, unused_element
+// ignore_for_file: deprecated_member_use, unused_element, unused_local_variable
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/models/cart_model.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 
 class PaymentPage extends StatelessWidget {
@@ -11,17 +12,21 @@ class PaymentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
     final cart = Provider.of<Cart>(context);
 
     // Hitung total harga dari keranjang
     double totalPrice = cart.cart.fold(
       0,
       (previousValue, cartModel) =>
-          previousValue + int.parse(cartModel.price!) * int.parse(cartModel.quantity!),
+          previousValue +
+          int.parse(cartModel.price!) * int.parse(cartModel.quantity!),
     );
 
     // Ambil booking date dan durasi dari item pertama di keranjang
-    String bookingDate = cart.cart.isNotEmpty ? cart.cart.first.bookingDate ?? 'Unknown' : 'No Data';
+    String bookingDate = cart.cart.isNotEmpty
+        ? cart.cart.first.bookingDate ?? 'Unknown'
+        : 'No Data';
 
     return Scaffold(
       appBar: AppBar(
@@ -74,7 +79,8 @@ class PaymentPage extends StatelessWidget {
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     child: ListTile(
-                      leading: Image.asset(item.imagePath ?? 'assets/images/placeholder.png'),
+                      leading: Image.asset(
+                          item.imagePath ?? 'assets/images/placeholder.png'),
                       title: Text(item.name ?? 'Unknown Item'),
                       subtitle: Text(
                         'Price: Rp. ${item.price}, Durasi: ${item.quantity} Jam', // Ubah Quantity menjadi Durasi
@@ -101,7 +107,7 @@ class PaymentPage extends StatelessWidget {
                   child: CupertinoButton(
                     color: Colors.black,
                     child: const Text(
-                      'Proceed to Payment', 
+                      'Proceed to Payment',
                       style: TextStyle(color: Colors.white),
                     ),
                     onPressed: () {
@@ -164,8 +170,9 @@ class PaymentConfirmationPage extends StatelessWidget {
             const SizedBox(height: 16),
             CupertinoButton(
               color: Colors.black,
-              child: const Text('Confirm and Pay',
-              style: TextStyle(color: Colors.white),
+              child: const Text(
+                'Confirm and Pay',
+                style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
                 // Proses pembayaran
@@ -176,7 +183,8 @@ class PaymentConfirmationPage extends StatelessWidget {
                     content: const Text('Your booking has been confirmed.'),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+                        onPressed: () => Navigator.popUntil(
+                            context, (route) => route.isFirst),
                         child: const Text('OK'),
                       ),
                     ],

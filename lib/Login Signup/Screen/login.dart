@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, unused_local_variable
+// ignore_for_file: use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Widget/button.dart';
@@ -6,6 +6,8 @@ import 'package:mandalaarenaapp/Login%20With%20Google/google_auth.dart';
 import 'package:mandalaarenaapp/Password%20Forgot/forgot_password.dart';
 import 'package:mandalaarenaapp/Phone%20Auth/phone_login.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../Services/authentication.dart';
 import '../Widget/snackbar.dart';
@@ -49,18 +51,24 @@ class _LoginScreenState extends State<LoginScreen> {
     if (res == "success") {
       // Fetch user details from Firebase (after successful login)
       final user = await AuthMethod().getUserDetails();
-      final String userName = user?.displayName ?? "User Name"; // Using Firebase's displayName
+      final String userName =
+          user?.displayName ?? "User Name"; // Using Firebase's displayName
       final String userEmail = emailController.text;
-      final String profileImageUrl = user?.photoURL ?? "https://via.placeholder.com/150";
+      final String profileImageUrl =
+          user?.photoURL ?? "https://via.placeholder.com/150";
 
+      // Set user data in UserProvider
       if (mounted) {
-        Navigator.of(context).pushReplacement(
+        Provider.of<UserProvider>(context, listen: false).setUserData(
+          userName: userName,
+          userEmail: userEmail,
+          profileImageUrl: profileImageUrl,
+        );
+
+        Navigator.pushReplacement(
+          context,
           MaterialPageRoute(
-            builder: (context) => HomePage(
-              userName: userName,
-              userEmail: userEmail,
-              profileImageUrl: profileImageUrl,
-            ),
+            builder: (context) => HomePage(),
           ),
         );
       }
@@ -124,15 +132,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       final String profileImageUrl =
                           user.photoURL ?? "https://via.placeholder.com/150";
 
+                      // Set user data in UserProvider
                       if (mounted) {
+                        Provider.of<UserProvider>(context, listen: false)
+                            .setUserData(
+                          userName: userName,
+                          userEmail: userEmail,
+                          profileImageUrl: profileImageUrl,
+                        );
+
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => HomePage(
-                              userName: userName,
-                              userEmail: userEmail,
-                              profileImageUrl: profileImageUrl,
-                            ),
+                            builder: (context) => HomePage(),
                           ),
                         );
                       }

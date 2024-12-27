@@ -4,31 +4,35 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseServices {
-  final auth = FirebaseAuth.instance;
-  final googleSignIn = GoogleSignIn();
-  // dont't gorget to add firebasea auth and google sign in package
-  signInWithGoogle() async {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  Future<User?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleSignInAccount =
-          await googleSignIn.signIn();
-      if (googleSignInAccount != null) {
-        final GoogleSignInAuthentication googleSignInAuthentication =
-            await googleSignInAccount.authentication;
-        final AuthCredential authCredential = GoogleAuthProvider.credential(
-          accessToken: googleSignInAuthentication.accessToken,
-          idToken: googleSignInAuthentication.idToken,
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser != null) {
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
         );
-        await auth.signInWithCredential(authCredential);
+
+        UserCredential userCredential =
+            await _auth.signInWithCredential(credential);
+        return userCredential.user;
       }
-    } on FirebaseAuthException catch (e) {
-      print(e.toString());
+    } catch (e) {
+      print("Google Sign-In Error: $e");
     }
+    return null;
   }
 
-// for sign out
-  googleSignOut() async {
-    await googleSignIn.signOut();
-    auth.signOut();
+  Future<void> signOut() async {
+    await _googleSignIn.signOut();
+    await _auth.signOut();
   }
+
+  googleSignOut() {}
 }
-// now we call this firebase services in our coninue with google button

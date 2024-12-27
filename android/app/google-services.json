@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "824515157247",
+    "firebase_url": "https://mandalaarenaapp-95d0d-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "mandalaarenaapp-95d0d",
     "storage_bucket": "mandalaarenaapp-95d0d.firebasestorage.app"
   },
@@ -22,7 +23,7 @@
           }
         },
         {
-          "client_id": "824515157247-if0rhm5ivlr26s1jamo6onac5leo89t3.apps.googleusercontent.com",
+          "client_id": "824515157247-3ppndf6sh2r7f0j07d5r2f4l164h4m3p.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -35,7 +36,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "824515157247-if0rhm5ivlr26s1jamo6onac5leo89t3.apps.googleusercontent.com",
+              "client_id": "824515157247-3ppndf6sh2r7f0j07d5r2f4l164h4m3p.apps.googleusercontent.com",
               "client_type": 3
             },
             {
@@ -66,7 +67,7 @@
           }
         },
         {
-          "client_id": "824515157247-if0rhm5ivlr26s1jamo6onac5leo89t3.apps.googleusercontent.com",
+          "client_id": "824515157247-3ppndf6sh2r7f0j07d5r2f4l164h4m3p.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -79,7 +80,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "824515157247-if0rhm5ivlr26s1jamo6onac5leo89t3.apps.googleusercontent.com",
+              "client_id": "824515157247-3ppndf6sh2r7f0j07d5r2f4l164h4m3p.apps.googleusercontent.com",
               "client_type": 3
             },
             {

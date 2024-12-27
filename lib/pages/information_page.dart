@@ -1,12 +1,15 @@
-// ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors_in_immutables
+// ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors_in_immutables, unused_local_variable
 
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/models/articlecard.dart';
 import 'package:mandalaarenaapp/pages/models/articlecard_page.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
+import 'package:provider/provider.dart';
 
 class InformationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Informasi Terkini'),

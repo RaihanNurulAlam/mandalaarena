@@ -21,7 +21,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();  // Controller untuk nomor telepon
+  final TextEditingController phoneController =
+      TextEditingController(); // Controller untuk nomor telepon
   bool isLoading = false;
 
   @override
@@ -54,11 +55,12 @@ class _SignupScreenState extends State<SignupScreen> {
       // Ambil data pengguna setelah signup
       final String userName = nameController.text;
       final String userEmail = emailController.text;
-      final String phoneNumber = phoneController.text;  // Ambil nomor telepon
+      final String phoneNumber = phoneController.text; // Ambil nomor telepon
       final String profileImageUrl = "https://via.placeholder.com/150";
 
       // Ambil userId setelah signup
-      final String userId = AuthMethod().getUserId();  // Ambil userId dari Firebase Auth (gunakan cred.user!.uid)
+      final String userId = AuthMethod()
+          .getUserId(); // Ambil userId dari Firebase Auth (gunakan cred.user!.uid)
       if (userId.isEmpty) {
         setState(() {
           isLoading = false;
@@ -80,11 +82,7 @@ class _SignupScreenState extends State<SignupScreen> {
         // Navigate to the next screen
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => HomePage(
-              userName: userName,
-              userEmail: userEmail,
-              profileImageUrl: profileImageUrl,
-            ),
+            builder: (context) => HomePage(),
           ),
         );
       } catch (e) {
@@ -108,7 +106,8 @@ class _SignupScreenState extends State<SignupScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: SingleChildScrollView( // Membungkus konten dengan SingleChildScrollView
+        child: SingleChildScrollView(
+          // Membungkus konten dengan SingleChildScrollView
           child: SizedBox(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -138,7 +137,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 TextFieldInput(
                   icon: Icons.phone,
-                  textEditingController: phoneController,  // Nomor telepon
+                  textEditingController: phoneController, // Nomor telepon
                   hintText: 'Enter your phone number',
                   textInputType: TextInputType.phone,
                 ),

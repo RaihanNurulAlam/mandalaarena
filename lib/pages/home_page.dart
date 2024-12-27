@@ -1,6 +1,6 @@
 // lib/pages/home_page.dart
 
-// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously, use_super_parameters
+// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously, use_super_parameters, unused_local_variable
 
 import 'dart:convert';
 
@@ -16,6 +16,7 @@ import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
@@ -24,17 +25,6 @@ import '../pages/information_page.dart';
 import '../pages/about_page.dart';
 
 class HomePage extends StatefulWidget {
-  final String userName;
-  final String userEmail;
-  final String profileImageUrl;
-
-  const HomePage({
-    Key? key,
-    required this.userName,
-    required this.userEmail,
-    required this.profileImageUrl,
-  }) : super(key: key);
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -56,7 +46,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> fetchAdminContact() async {
-    final databaseReference = FirebaseDatabase.instance.ref("admin_contact/whatsapp");
+    final databaseReference =
+        FirebaseDatabase.instance.ref("admin_contact/whatsapp");
     try {
       final snapshot = await databaseReference.get();
       if (snapshot.exists && snapshot.value != null) {
@@ -86,7 +77,8 @@ class _HomePageState extends State<HomePage> {
 
   void openWhatsApp() async {
     final defaultNumber = "082117556907";
-    final numberToUse = adminWhatsApp.isNotEmpty ? adminWhatsApp : defaultNumber;
+    final numberToUse =
+        adminWhatsApp.isNotEmpty ? adminWhatsApp : defaultNumber;
 
     final formattedNumber = formatWhatsAppNumber(numberToUse);
     final url = Uri.parse("https://wa.me/$formattedNumber");
@@ -123,6 +115,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
     return BlocProvider(
       create: (context) => NavigationCubit(),
       child: Scaffold(
@@ -217,7 +210,7 @@ class _HomePageState extends State<HomePage> {
             )
           ],
         ),
-        drawer: DrawerWidget(userName: widget.userName, userEmail: widget.userEmail, profileImageUrl: widget.profileImageUrl,),
+        drawer: DrawerWidget(),
         body: Stack(
           children: [
             BlocBuilder<NavigationCubit, NavigationState>(
@@ -258,7 +251,6 @@ class _HomePageState extends State<HomePage> {
           _buildDiscountBanner(context),
           bestSellerWidget(context),
           SizedBox(height: 20),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Align(
@@ -285,20 +277,26 @@ class _HomePageState extends State<HomePage> {
   Widget _buildFAQSection() {
     List<Map<String, String>> faqs = [
       {
-        'question': 'Apa kelebihan sewa lapangan yang tersedia di Mandala Arena?',
-        'answer': 'Lapangan kami memiliki fasilitas lengkap dan lokasi strategis.'
+        'question':
+            'Apa kelebihan sewa lapangan yang tersedia di Mandala Arena?',
+        'answer':
+            'Lapangan kami memiliki fasilitas lengkap dan lokasi strategis.'
       },
       {
         'question': 'Bagaimana cara memesan lapangan di Mandala Arena?',
-        'answer': 'Anda dapat memesan melalui aplikasi atau menghubungi kami langsung.'
+        'answer':
+            'Anda dapat memesan melalui aplikasi atau menghubungi kami langsung.'
       },
       {
-        'question': 'Berapa biaya sewa lapangan yang tersedia di Mandala Arena?',
-        'answer': 'Biaya sewa bervariasi tergantung jenis lapangan dan waktu pemakaian.'
+        'question':
+            'Berapa biaya sewa lapangan yang tersedia di Mandala Arena?',
+        'answer':
+            'Biaya sewa bervariasi tergantung jenis lapangan dan waktu pemakaian.'
       },
       {
         'question': 'Apakah ada diskon atau promo khusus?',
-        'answer': 'Kami menawarkan diskon setiap hari Jumat dan event-event tertentu.'
+        'answer':
+            'Kami menawarkan diskon setiap hari Jumat dan event-event tertentu.'
       },
     ];
 
@@ -337,7 +335,7 @@ class _HomePageState extends State<HomePage> {
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 3,
+        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
         childAspectRatio: 4 / 5,
@@ -353,8 +351,8 @@ class _HomePageState extends State<HomePage> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               image: DecorationImage(
-                image: AssetImage(lapangs[index].imagePath ??
-                    'assets/default_image.jpg'),
+                image: AssetImage(
+                    lapangs[index].imagePath ?? 'assets/default_image.jpg'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withOpacity(0.2),

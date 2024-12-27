@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/cart_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 
 class DetailPage extends StatefulWidget {
@@ -27,22 +28,26 @@ class _DetailPageState extends State<DetailPage> {
   DateTime? selectedDate;
 
   Future<void> addToCart() async {
-    if (selectedHour.isNotEmpty && bookingDuration > 0 && selectedDate != null) {
+    if (selectedHour.isNotEmpty &&
+        bookingDuration > 0 &&
+        selectedDate != null) {
       final cart = context.read<Cart>();
       // Tambahkan bookingDate ke keranjang
       final formattedDate = DateFormat('dd MMMM yyyy').format(selectedDate!);
       // Convert selected hour to a DateTime object
-      final selectedTime = DateTime(selectedDate!.year, selectedDate!.month, selectedDate!.day, int.parse(selectedHour.split(":")[0]));
+      final selectedTime = DateTime(selectedDate!.year, selectedDate!.month,
+          selectedDate!.day, int.parse(selectedHour.split(":")[0]));
 
       // Check if the selected time is already booked
-      if (widget.lapang.bookings?.contains(selectedTime.toIso8601String()) ?? false) {
+      if (widget.lapang.bookings?.contains(selectedTime.toIso8601String()) ??
+          false) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Jam ini sudah terbooking!")),
         );
         return;
       }
-      
-      cart.addToCart(widget.lapang, bookingDuration, formattedDate); 
+
+      cart.addToCart(widget.lapang, bookingDuration, formattedDate);
       // Add this booking time to Firebase
       popUpDialog();
       widget.lapang.bookings?.add(selectedTime.toIso8601String());
@@ -52,15 +57,13 @@ class _DetailPageState extends State<DetailPage> {
           .update({
         'bookings': widget.lapang.bookings,
       });
-      
-      
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap pilih tanggal, jam, dan durasi booking!")),
+        const SnackBar(
+            content: Text("Harap pilih tanggal, jam, dan durasi booking!")),
       );
     }
   }
-
 
   void popUpDialog() {
     final formattedDate = DateFormat('dd MMMM yyyy').format(selectedDate!);
@@ -144,12 +147,13 @@ class _DetailPageState extends State<DetailPage> {
   void goToCart() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const CartPage()),
+      MaterialPageRoute(builder: (context) => CartPage()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
@@ -206,7 +210,9 @@ class _DetailPageState extends State<DetailPage> {
           child: lapangDetailWidget(context),
         ),
       ),
-      bottomNavigationBar: (selectedHour.isNotEmpty && bookingDuration > 0 && selectedDate != null)
+      bottomNavigationBar: (selectedHour.isNotEmpty &&
+              bookingDuration > 0 &&
+              selectedDate != null)
           ? GestureDetector(
               onTap: () {
                 addToCart();
@@ -328,19 +334,24 @@ class _DetailPageState extends State<DetailPage> {
             14,
             (index) {
               final hour = 8 + index;
-              final bookingTime = DateTime(currentTime.year, currentTime.month, currentTime.day, hour);
+              final bookingTime = DateTime(
+                  currentTime.year, currentTime.month, currentTime.day, hour);
               bool isPast = bookingTime.isBefore(currentTime);
               return Padding(
                 padding: const EdgeInsets.all(4.0),
                 child: ChoiceChip(
                   label: Text("$hour:00"),
                   selected: selectedHour == "$hour:00",
-                  onSelected: isPast ? null : (bool selected) {
-                    setState(() {
-                      selectedHour = "$hour:00";
-                    });
-                  },
-                  selectedColor: isPast ? Colors.grey : null, // Optional: visually indicate past hours
+                  onSelected: isPast
+                      ? null
+                      : (bool selected) {
+                          setState(() {
+                            selectedHour = "$hour:00";
+                          });
+                        },
+                  selectedColor: isPast
+                      ? Colors.grey
+                      : null, // Optional: visually indicate past hours
                   backgroundColor: isPast ? Colors.grey.shade300 : null,
                 ),
               );

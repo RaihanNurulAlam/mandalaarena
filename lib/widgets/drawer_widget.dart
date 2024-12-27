@@ -1,24 +1,18 @@
-// ignore_for_file: use_key_in_widget_constructors, use_build_context_synchronously
+// ignore_for_file: unnecessary_import, use_super_parameters, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
+import 'package:provider/provider.dart'; // Import provider
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
 import '../pages/edit_profile_page.dart'; // Tambahkan halaman edit profil
 import '../pages/welcome_page.dart'; // Tambahkan halaman welcome
 
 class DrawerWidget extends StatelessWidget {
-  final String userName;
-  final String userEmail;
-  final String profileImageUrl;
-
-  const DrawerWidget({
-    required this.userName,
-    required this.userEmail,
-    required this.profileImageUrl,
-  });
+  const DrawerWidget({Key? key}) : super(key: key);
 
   Future<Map<String, String>> _fetchUserData() async {
     try {
@@ -31,24 +25,30 @@ class DrawerWidget extends StatelessWidget {
         final userData = userDoc.data();
         return {
           'phoneNumber': userData?['phone'] ?? '',
-          'userName': userData?['name'] ?? userName,
-          'profileImageUrl': userData?['profileImageUrl'] ?? profileImageUrl
+          'userName': userData?['name'] ?? '',
+          'profileImageUrl': userData?['profileImageUrl'] ?? ''
         };
       }
     } catch (e) {
       debugPrint('Error fetching user data: $e');
     }
-    return {'phoneNumber': '', 'userName': userName, 'profileImageUrl': profileImageUrl};
+    return {'phoneNumber': '', 'userName': '', 'profileImageUrl': ''};
   }
 
   @override
   Widget build(BuildContext context) {
+    // Ambil data pengguna dari UserProvider
+    final userProvider = Provider.of<UserProvider>(context);
+    final userName = userProvider.userName;
+    final userEmail = userProvider.userEmail;
+    final profileImageUrl = userProvider.profileImageUrl;
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Colors.blue),
+            decoration: const BoxDecoration(color: Colors.blue),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -60,7 +60,9 @@ class DrawerWidget extends StatelessWidget {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundImage: NetworkImage(profileImageUrl),
+                      backgroundImage: NetworkImage(profileImageUrl.isNotEmpty
+                          ? profileImageUrl
+                          : "https://via.placeholder.com/150"),
                       radius: 25,
                     ),
                     const SizedBox(width: 10),
@@ -68,14 +70,14 @@ class DrawerWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          userName,
+                          userName.isNotEmpty ? userName : "Guest",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                           ),
                         ),
                         Text(
-                          userEmail,
+                          userEmail.isNotEmpty ? userEmail : "Email Not Found",
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
@@ -128,9 +130,13 @@ class DrawerWidget extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => EditProfilePage(
-                    userName: userData['userName']!,
+                    userName: userData['userName']!.isNotEmpty
+                        ? userData['userName']!
+                        : userName,
                     userEmail: userEmail,
-                    profileImageUrl: userData['profileImageUrl']!,
+                    profileImageUrl: userData['profileImageUrl']!.isNotEmpty
+                        ? userData['profileImageUrl']!
+                        : profileImageUrl,
                     phoneNumber: userData['phoneNumber']!,
                   ),
                 ),

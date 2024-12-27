@@ -14,6 +14,7 @@ import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/information_page.dart';
 import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -30,7 +31,9 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => Cart()), // Provider untuk Cart
+        ChangeNotifierProvider(
+            create: (context) => Cart()), // Provider untuk Cart
+        ChangeNotifierProvider(create: (context) => UserProvider()),
       ],
       child: MandalaArenaApp(), // Mengganti MandalaArenaApp menjadi MyApp
     ),
