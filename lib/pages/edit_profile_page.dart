@@ -31,7 +31,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   File? _imageFile;
   bool isLoading = false;
 
@@ -44,7 +45,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
@@ -66,25 +68,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
           throw Exception('User tidak ditemukan');
         }
 
-        // Update name
-        if (_nameController.text.isNotEmpty && _nameController.text != widget.userName) {
-          await user.updateDisplayName(_nameController.text);
+        // Cek atau buat dokumen Firestore
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+
+        if (!userDoc.exists) {
+          await FirebaseFirestore.instance.collection('users').doc(userId).set({
+            'name': _nameController.text,
+            'email': _emailController.text,
+            'phone': _phoneController.text,
+            'profileImageUrl': widget.profileImageUrl,
+          });
         }
 
-        // Update email
-        if (_emailController.text.isNotEmpty && _emailController.text != widget.userEmail) {
-          await user.updateEmail(_emailController.text);
-        }
+        // Update data Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .update({
+          'name': _nameController.text,
+          'email': _emailController.text,
+          'phone': _phoneController.text,
+        });
 
-        // Update phone number
-        if (_phoneController.text.isNotEmpty && _phoneController.text != widget.phoneNumber) {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(userId)
-              .update({'phone': _phoneController.text});
-        }
-
-        // Update password with verification
+        // Update password
         if (_oldPasswordController.text.isNotEmpty &&
             _newPasswordController.text.isNotEmpty &&
             _confirmPasswordController.text.isNotEmpty) {
@@ -102,7 +111,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           }
         }
 
-        // Update profile photo
+        // Update foto profil
         String? newProfileUrl = widget.profileImageUrl;
         if (_imageFile != null) {
           final ref = FirebaseStorage.instance
@@ -114,7 +123,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           await user.updatePhotoURL(newProfileUrl);
         }
 
-        // Reload user to fetch updated details
+        // Reload pengguna untuk memperbarui data
         await user.reload();
         final updatedUser = FirebaseAuth.instance.currentUser;
 
@@ -122,7 +131,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           SnackBar(content: Text('Profil berhasil diperbarui!')),
         );
 
-        // Return to previous page with updated info
+        // Kembali ke halaman sebelumnya
         Navigator.pop(context, {
           'userName': updatedUser!.displayName ?? _nameController.text,
           'userEmail': updatedUser.email ?? _emailController.text,
@@ -205,7 +214,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     SizedBox(height: 20),
                     Divider(),
-                    Text('Ganti Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('Ganti Password',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
                     TextFormField(
                       controller: _oldPasswordController,
                       decoration: InputDecoration(

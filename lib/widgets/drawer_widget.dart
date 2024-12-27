@@ -56,7 +56,7 @@ class DrawerWidget extends StatelessWidget {
                   'Menu Navigasi',
                   style: TextStyle(color: Colors.white, fontSize: 24),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     CircleAvatar(

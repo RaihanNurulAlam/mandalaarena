@@ -17,7 +17,7 @@ class WelcomePage extends StatelessWidget {
           'KPM Corp',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 40,
+            fontSize: 25,
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -47,14 +47,14 @@ class WelcomePage extends StatelessWidget {
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 30,
+                  fontSize: 28,
                 ),
               ),
               Text(
                 'Dirancang untuk memudahkan booking lapang Mandala Arena',
                 style: TextStyle(
                   color: Colors.white54,
-                  fontSize: 20,
+                  fontSize: 18,
                 ),
               ),
               SizedBox(height: 20),
@@ -76,7 +76,10 @@ class WelcomePage extends StatelessWidget {
                           ),
                         ),
                         SizedBox(width: 10),
-                        Icon(CupertinoIcons.arrow_right, color: Colors.white,),
+                        Icon(
+                          CupertinoIcons.arrow_right,
+                          color: Colors.white,
+                        ),
                       ],
                     ),
                   ),

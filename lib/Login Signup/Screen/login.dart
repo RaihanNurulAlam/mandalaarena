@@ -174,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const PhoneAuthentication(),
               Padding(
-                padding: const EdgeInsets.only(top: 10, left: 100),
+                padding: const EdgeInsets.only(top: 10, left: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
