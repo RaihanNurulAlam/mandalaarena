@@ -38,7 +38,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication> {
             ),
             const SizedBox(width: 10),
             const Text(
-              "Sign in with Phone",
+              "Masuk dengan No Telepon",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -73,7 +73,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication> {
                     children: [
                       const SizedBox(),
                       const Text(
-                        "Phone Authentication",
+                        "Autentikasi Telepon",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
@@ -94,7 +94,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication> {
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: "+6282117556907",
-                      labelText: "Enter the Phone Number",
+                      labelText: "Masukan No Telepon",
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -131,7 +131,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication> {
                             );
                           },
                           child: const Text(
-                            "Send Code",
+                            "Kirim Code",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,

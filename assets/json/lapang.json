@@ -1,41 +1,41 @@
 [
     {
-      "name": "Lapang 1 Minisoccer",
-      "description": "Deskripsi Lapang 1 Minisoccer.",
+      "name": "Aula Basket Lapangan Vinyl",
+      "description": "Deskripsi Vynil Basket.",
       "price": "300000",
-      "image_path": "assets/lapangan_a.jpg",
+      "image_path": "assets/vynil.jpg",
       "rating": "4.9",
       "bookings": ["2024-12-24T08:00:00.000Z", "2024-12-24T09:00:00.000Z"]
     },
     {
-      "name": "Lapang 2 Minisoccer",
-      "description": "Deskripsi Lapang 2 Minisoccer.",
+      "name": "Aula Basket Lapangan Karet",
+      "description": "Deskripsi Rubber Basket.",
       "price": "300000",
-      "image_path": "assets/lapangan_b.jpg",
+      "image_path": "assets/rubber.jpg",
       "rating": "4.8",
       "bookings": []
     },
     {
-      "name": "Lapang 3 Minisoccer",
-      "description": "Deskripsi Lapang 3 Minisoccer.",
+      "name": "Aula Basket Lapangan 3x3",
+      "description": "Deskripsi 3x3 Basket.",
       "price": "300000",
-      "image_path": "assets/lapangan_c.jpg",
+      "image_path": "assets/3x3.jpg",
       "rating": "4.9",
       "bookings": []
     },
     {
-      "name": "Lapang 1 Badminton",
-      "description": "Deskripsi Lapang 1 Badminton.",
+      "name": "Lapang Minisoccer",
+      "description": "Deskripsi Minisoccer.",
       "price": "120000",
-      "image_path": "assets/lapangan_a.jpg",
+      "image_path": "assets/mini.jpg",
       "rating": "4.9",
       "bookings": []
     },
     {
-      "name": "Lapang 1 Basket",
-      "description": "Deskripsi Lapang 1 Basket.",
+      "name": "Gokart",
+      "description": "Deskripsi Gokart.",
       "price": "150000",
-      "image_path": "assets/lapangan_b.jpg",
+      "image_path": "assets/gokart.jpg",
       "rating": "5.0",
       "bookings": []
     }

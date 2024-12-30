@@ -27,7 +27,7 @@ class _OTPScreenState extends State<OTPScreen> {
               Image.asset("images/otpimage.jpg"),
               const SizedBox(height: 20),
               const Text(
-                "OTP Verification",
+                "Verifikasi OTP",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 25,
@@ -37,7 +37,7 @@ class _OTPScreenState extends State<OTPScreen> {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
-                  "We need to register your phone number by using a one-time OTP code verification.",
+                  "Kami perlu mendaftarkan nomor telepon Anda dengan menggunakan verifikasi kode OTP satu kali.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
@@ -53,7 +53,7 @@ class _OTPScreenState extends State<OTPScreen> {
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: "+6282117556907",
-                    labelText: "Enter the Phone Number",
+                    labelText: "Masukan No Telepon",
                   ),
                 ),
               ),
@@ -79,9 +79,9 @@ class _OTPScreenState extends State<OTPScreen> {
                           User? user = FirebaseAuth.instance.currentUser;
                           if (user != null) {
                             final String userName =
-                                user.displayName ?? "User Name";
+                                user.displayName ?? "Nama User";
                             final String userEmail =
-                                user.email ?? "Email Not Found";
+                                user.email ?? "Email tidak ditemukan";
                             final String profileImageUrl = user.photoURL ??
                                 "https://via.placeholder.com/150";
 
@@ -101,7 +101,7 @@ class _OTPScreenState extends State<OTPScreen> {
                         });
                       },
                       child: const Text(
-                        "Verify OTP",
+                        "Verifikasi kode OTP",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,

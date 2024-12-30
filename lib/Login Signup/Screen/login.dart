@@ -48,11 +48,11 @@ class _LoginScreenState extends State<LoginScreen> {
       isLoading = false;
     });
 
-    if (res == "success") {
+    if (res == "Berhasil") {
       // Fetch user details from Firebase (after successful login)
       final user = await AuthMethod().getUserDetails();
       final String userName =
-          user?.displayName ?? "User Name"; // Using Firebase's displayName
+          user?.displayName ?? "Nama User"; // Using Firebase's displayName
       final String userEmail = emailController.text;
       final String profileImageUrl =
           user?.photoURL ?? "https://via.placeholder.com/150";
@@ -95,24 +95,24 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFieldInput(
                 icon: Icons.person,
                 textEditingController: emailController,
-                hintText: 'Enter your email',
+                hintText: 'Masukan email anda',
                 textInputType: TextInputType.emailAddress,
               ),
               TextFieldInput(
                 icon: Icons.lock,
                 textEditingController: passwordController,
-                hintText: 'Enter your password',
+                hintText: 'Masukan password anda',
                 textInputType: TextInputType.visiblePassword,
                 isPass: true,
               ),
               const ForgotPassword(),
-              MyButtons(onTap: loginUser, text: "Log In"),
+              MyButtons(onTap: loginUser, text: "Masuk"),
               Row(
                 children: [
                   Expanded(
                     child: Container(height: 1, color: Colors.black26),
                   ),
-                  const Text("  or  "),
+                  const Text("  atau  "),
                   Expanded(
                     child: Container(height: 1, color: Colors.black26),
                   ),
@@ -127,8 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () async {
                     final user = await FirebaseServices().signInWithGoogle();
                     if (user != null) {
-                      final String userName = user.displayName ?? "User Name";
-                      final String userEmail = user.email ?? "Email Not Found";
+                      final String userName = user.displayName ?? "Nama User";
+                      final String userEmail = user.email ?? "Email tidak ditemukan";
                       final String profileImageUrl =
                           user.photoURL ?? "https://via.placeholder.com/150";
 
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(width: 10),
                       const Text(
-                        "Continue with Google",
+                        "Masuk dengan Google",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
@@ -178,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Don't have an account? "),
+                    const Text("Tidak punya akun? "),
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).push(
@@ -188,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                       child: const Text(
-                        "SignUp",
+                        "Daftar",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),

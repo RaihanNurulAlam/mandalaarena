@@ -47,7 +47,7 @@ class _SignupScreenState extends State<SignupScreen> {
         name: nameController.text);
 
     // if string return is success, user has been created and navigate to next screen, otherwise show error.
-    if (res == "success") {
+    if (res == "Berhasil") {
       setState(() {
         isLoading = false;
       });
@@ -65,7 +65,7 @@ class _SignupScreenState extends State<SignupScreen> {
         setState(() {
           isLoading = false;
         });
-        showSnackBar(context, 'User ID is empty');
+        showSnackBar(context, 'ID User kosong');
         return;
       }
 
@@ -89,7 +89,7 @@ class _SignupScreenState extends State<SignupScreen> {
         setState(() {
           isLoading = false;
         });
-        showSnackBar(context, 'Error saving data to Firebase: ${e.toString()}');
+        showSnackBar(context, 'Gagal menyimpan ke firebase: ${e.toString()}');
       }
     } else {
       setState(() {
@@ -119,34 +119,34 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextFieldInput(
                   icon: Icons.person,
                   textEditingController: nameController,
-                  hintText: 'Enter your name',
+                  hintText: 'Masukan nama anda',
                   textInputType: TextInputType.text,
                 ),
                 TextFieldInput(
                   icon: Icons.email,
                   textEditingController: emailController,
-                  hintText: 'Enter your email',
+                  hintText: 'Masukan email anda',
                   textInputType: TextInputType.text,
                 ),
                 TextFieldInput(
                   icon: Icons.lock,
                   textEditingController: passwordController,
-                  hintText: 'Enter your password',
+                  hintText: 'Masukan password anda',
                   textInputType: TextInputType.text,
                   isPass: true,
                 ),
                 TextFieldInput(
                   icon: Icons.phone,
                   textEditingController: phoneController, // Nomor telepon
-                  hintText: 'Enter your phone number',
+                  hintText: 'Masukan no telepon anda',
                   textInputType: TextInputType.phone,
                 ),
-                MyButtons(onTap: signupUser, text: "Sign Up"),
+                MyButtons(onTap: signupUser, text: "Daftar"),
                 const SizedBox(height: 50),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Already have an account?"),
+                    const Text("Sudah mempunyai akun?"),
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).push(
@@ -156,7 +156,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         );
                       },
                       child: const Text(
-                        " Login",
+                        " Masuk",
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     )

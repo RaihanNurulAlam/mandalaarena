@@ -18,7 +18,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profile"),
+        title: const Text("Profil"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -45,7 +45,7 @@ class ProfilePage extends StatelessWidget {
                 // Tambahkan navigasi atau fitur logout
                 Navigator.pop(context);
               },
-              child: const Text("Logout"),
+              child: const Text("Keluar"),
             ),
           ],
         ),

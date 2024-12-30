@@ -401,10 +401,10 @@ class _HomePageState extends State<HomePage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         image: DecorationImage(
-          image: AssetImage('assets/lapangan_a.jpg'),
+          image: AssetImage('assets/mini.jpg'),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.5),
+            Colors.black.withOpacity(0.2),
             BlendMode.darken,
           ),
         ),
@@ -518,7 +518,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profile Page"),
+        title: const Text("Halaman Profil"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -550,7 +550,7 @@ class ProfilePage extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text("Back to Home"),
+              child: const Text("Kembali ke beranda"),
             ),
           ],
         ),

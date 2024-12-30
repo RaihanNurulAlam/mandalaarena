@@ -25,7 +25,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
             myDialogBox(context);
           },
           child: const Text(
-            "Forgot Password?",
+            "Lupa Password?",
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -59,7 +59,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     children: [
                       Container(),
                       const Text(
-                        "Forgot Your Password",
+                        "Lupa password anda",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -78,7 +78,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     controller: emailController,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      labelText: "Enter the Email",
+                      labelText: "Masukan email",
                       hintText: "eg abc@gmail.com",
                     ),
                   ),
@@ -92,7 +92,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                           .then((value) {
                         // if success then show this message
                         showSnackBar(context,
-                            "We have send you the reset password link to your email id, Please check it");
+                            "Kami telah mengirimkan link reset password ke email Anda, silakan periksa");
                       }).onError((error, stackTrace) {
                         // if unsuccess then show error message
                         showSnackBar(context, error.toString());
@@ -106,7 +106,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     // if we remember the password then we can easily login
                     // if we forget the password then we apply this method
                     child: const Text(
-                      "Send",
+                      "Kirim",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,

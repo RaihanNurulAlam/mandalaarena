@@ -15,7 +15,7 @@ class AuthMethod {
     required String password,
     required String name,
   }) async {
-    String res = "Some error Occurred";
+    String res = "Terjadi beberapa kesalahan";
     try {
       if (email.isNotEmpty && password.isNotEmpty && name.isNotEmpty) {
         UserCredential cred = await _auth.createUserWithEmailAndPassword(
@@ -29,9 +29,9 @@ class AuthMethod {
           'uid': cred.user!.uid,
         });
 
-        res = "success";
+        res = "Berhasil";
       } else {
-        res = "Please enter all the fields";
+        res = "Silakan isi semua kolom yang tersedia";
       }
     } catch (err) {
       res = err.toString();
@@ -44,14 +44,14 @@ class AuthMethod {
     required String email,
     required String password,
   }) async {
-    String res = "Some error occurred";
+    String res = "Terjadi beberapa kesalahan";
     try {
       if (email.isNotEmpty && password.isNotEmpty) {
         await _auth.signInWithEmailAndPassword(
             email: email, password: password);
-        res = "success";
+        res = "Berhasil";
       } else {
-        res = "Please fill in all fields";
+        res = "Harap isi semua kolom";
       }
     } catch (err) {
       res = err.toString();
@@ -95,7 +95,7 @@ class AuthMethod {
         return user;
       }
     } catch (err) {
-      print("Error signing in with Google: $err");
+      print("Kesalahan masuk dengan Google: $err");
       return null;
     }
     return null;

@@ -24,7 +24,7 @@ class FirebaseServices {
         return userCredential.user;
       }
     } catch (e) {
-      print("Google Sign-In Error: $e");
+      print("Kesalahan Masuk Google: $e");
     }
     return null;
   }

@@ -25,12 +25,12 @@ class PaymentPage extends StatelessWidget {
 
     // Ambil booking date dan durasi dari item pertama di keranjang
     String bookingDate = cart.cart.isNotEmpty
-        ? cart.cart.first.bookingDate ?? 'Unknown'
-        : 'No Data';
+        ? cart.cart.first.bookingDate ?? 'Tidak diketahui'
+        : 'Tidak ada data';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payment'),
+        title: const Text('Pembayaran'),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -53,7 +53,7 @@ class PaymentPage extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  'Booking Date: $bookingDate',
+                  'Tanggal booking: $bookingDate',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -64,7 +64,7 @@ class PaymentPage extends StatelessWidget {
 
               // Tampilkan daftar item dalam keranjang
               const Text(
-                'Items in Cart:',
+                'Item di keranjang:',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -81,9 +81,9 @@ class PaymentPage extends StatelessWidget {
                     child: ListTile(
                       leading: Image.asset(
                           item.imagePath ?? 'assets/images/placeholder.png'),
-                      title: Text(item.name ?? 'Unknown Item'),
+                      title: Text(item.name ?? 'Item tidak diketahui'),
                       subtitle: Text(
-                        'Price: Rp. ${item.price}, Durasi: ${item.quantity} Jam', // Ubah Quantity menjadi Durasi
+                        'Harga: Rp. ${item.price}, Durasi: ${item.quantity} Jam', // Ubah Quantity menjadi Durasi
                       ),
                     ),
                   );
@@ -93,7 +93,7 @@ class PaymentPage extends StatelessWidget {
 
               // Tampilkan total harga
               Text(
-                'Total Price: Rp. $totalPrice',
+                'Total Harga: Rp. $totalPrice',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -107,7 +107,7 @@ class PaymentPage extends StatelessWidget {
                   child: CupertinoButton(
                     color: Colors.black,
                     child: const Text(
-                      'Proceed to Payment',
+                      'Lakukan Pembayaran',
                       style: TextStyle(color: Colors.white),
                     ),
                     onPressed: () {
@@ -150,18 +150,18 @@ class PaymentConfirmationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Confirm Payment'),
+        title: const Text('Konfirmasi Pembayaran'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Booking Date: $bookingDate',
+              'Tanggal booking: $bookingDate',
               style: const TextStyle(fontSize: 18),
             ),
             Text(
-              'Total Price: Rp. $totalPrice',
+              'Total Harga: Rp. $totalPrice',
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -171,7 +171,7 @@ class PaymentConfirmationPage extends StatelessWidget {
             CupertinoButton(
               color: Colors.black,
               child: const Text(
-                'Confirm and Pay',
+                'Konfirmasi dan bayar',
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
@@ -179,8 +179,8 @@ class PaymentConfirmationPage extends StatelessWidget {
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Payment Successful'),
-                    content: const Text('Your booking has been confirmed.'),
+                    title: const Text('Proses Pembayaran Berhasil'),
+                    content: const Text('Pemesanan Anda telah dikonfirmasi.'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.popUntil(

@@ -30,7 +30,7 @@ class DrawerWidget extends StatelessWidget {
         };
       }
     } catch (e) {
-      debugPrint('Error fetching user data: $e');
+      debugPrint('Kesalahan mengambil data pengguna: $e');
     }
     return {'phoneNumber': '', 'userName': '', 'profileImageUrl': ''};
   }
@@ -70,14 +70,14 @@ class DrawerWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          userName.isNotEmpty ? userName : "Guest",
+                          userName.isNotEmpty ? userName : "Tamu",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                           ),
                         ),
                         Text(
-                          userEmail.isNotEmpty ? userEmail : "Email Not Found",
+                          userEmail.isNotEmpty ? userEmail : "Email tidak ditemukan",
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
@@ -145,7 +145,7 @@ class DrawerWidget extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out'),
+            title: const Text('Keluar'),
             onTap: () async {
               await FirebaseAuth.instance.signOut();
               Navigator.pushReplacement(
@@ -196,7 +196,7 @@ class DrawerWidget extends StatelessWidget {
         mode: LaunchMode.externalApplication,
       );
     } else {
-      debugPrint('Could not launch $url');
+      debugPrint('Tidak dapat memulai $url');
     }
   }
 }

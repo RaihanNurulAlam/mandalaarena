@@ -28,7 +28,7 @@ class _CartPageState extends State<CartPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Cart'),
+            title: const Text('Keranjang'),
             actions: [
               Visibility(
                 visible: value.cart.isNotEmpty ? true : false,
@@ -43,7 +43,7 @@ class _CartPageState extends State<CartPage> {
                     },
                     icon: Row(
                       children: const [
-                        Text('Clear cart'),
+                        Text('Hapus Semua'),
                       ],
                     ),
                   ),
@@ -57,7 +57,7 @@ class _CartPageState extends State<CartPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
-                        'Cart is empty',
+                        'Keranjang Kosong',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -67,7 +67,7 @@ class _CartPageState extends State<CartPage> {
                       CupertinoButton(
                         color: Colors.black,
                         child: const Text(
-                          'Tambah Booking Lapang',
+                          'Lakukan Booking',
                           style: TextStyle(
                             color: Colors.white,
                           ),
@@ -173,7 +173,7 @@ class _CartPageState extends State<CartPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              'Total Price',
+                              'Total Harga',
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: 20,
@@ -200,7 +200,7 @@ class _CartPageState extends State<CartPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: const [
                               Text(
-                                'Pay Now',
+                                'Bayar Sekarang',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,

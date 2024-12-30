@@ -43,18 +43,18 @@ class WelcomePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'WELCOME TO MANDALA ARENA APP',
+                'Selamat Datang di Aplikasi Mandala Arena',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 28,
+                  fontSize: 25,
                 ),
               ),
               Text(
-                'Dirancang untuk memudahkan booking lapang Mandala Arena',
+                'Dirancang untuk memudahkan sewa lapang Mandala Arena',
                 style: TextStyle(
                   color: Colors.white54,
-                  fontSize: 18,
+                  fontSize: 15,
                 ),
               ),
               SizedBox(height: 20),
@@ -69,7 +69,7 @@ class WelcomePage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
                         Text(
-                          'Get Started',
+                          'Mulai',
                           style: TextStyle(
                             fontSize: 24,
                             color: Colors.white,
