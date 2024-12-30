@@ -26,19 +26,17 @@ class _DetailPageState extends State<DetailPage> {
   String selectedHour = "";
   int bookingDuration = 0;
   DateTime? selectedDate;
+  bool isLoved = false; // State for love button
 
   Future<void> addToCart() async {
     if (selectedHour.isNotEmpty &&
         bookingDuration > 0 &&
         selectedDate != null) {
       final cart = context.read<Cart>();
-      // Tambahkan bookingDate ke keranjang
       final formattedDate = DateFormat('dd MMMM yyyy').format(selectedDate!);
-      // Convert selected hour to a DateTime object
       final selectedTime = DateTime(selectedDate!.year, selectedDate!.month,
           selectedDate!.day, int.parse(selectedHour.split(":")[0]));
 
-      // Check if the selected time is already booked
       if (widget.lapang.bookings?.contains(selectedTime.toIso8601String()) ??
           false) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -48,7 +46,6 @@ class _DetailPageState extends State<DetailPage> {
       }
 
       cart.addToCart(widget.lapang, bookingDuration, formattedDate);
-      // Add this booking time to Firebase
       popUpDialog();
       widget.lapang.bookings?.add(selectedTime.toIso8601String());
       await FirebaseFirestore.instance
@@ -162,6 +159,17 @@ class _DetailPageState extends State<DetailPage> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: Icon(
+              isLoved ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+              color: isLoved ? Colors.red : Colors.white,
+            ),
+            onPressed: () {
+              setState(() {
+                isLoved = !isLoved;
+              });
+            },
+          ),
           Consumer<Cart>(
             builder: (context, value, child) {
               return Padding(
@@ -252,143 +260,190 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   Widget lapangDetailWidget(BuildContext context) {
-    final currentTime = DateTime.now();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Hero(
-          tag: widget.lapang.imagePath.toString(),
-          child: Container(
-            height: 300,
-            width: MediaQuery.of(context).size.width,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(widget.lapang.imagePath.toString()),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.2),
-                  BlendMode.darken,
-                ),
+  final currentTime = DateTime.now();
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Hero(
+        tag: widget.lapang.imagePath.toString(),
+        child: Container(
+          height: 300,
+          width: MediaQuery.of(context).size.width,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(widget.lapang.imagePath.toString()),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.black.withOpacity(0.2),
+                BlendMode.darken,
               ),
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            widget.lapang.name.toString(),
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              widget.lapang.name.toString(),
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text(
-            widget.lapang.description.toString(),
-            style: const TextStyle(fontSize: 16),
-          ),
-        ),
-        const SizedBox(height: 20),
-        const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text(
-            "Pilih Tanggal Booking:",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ElevatedButton(
-            onPressed: () async {
-              DateTime? date = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 30)),
-              );
-              if (date != null) {
-                setState(() {
-                  selectedDate = date;
-                });
-              }
-            },
-            child: Text(
-              selectedDate != null
-                  ? "${selectedDate?.toLocal().toString().split(' ')[0]}"
-                  : "Pilih Tanggal",
+            Row(
+              children: [
+                const Icon(Icons.star, color: Colors.yellow),
+                Text(
+                  widget.lapang.rating.toString(),
+                  style: const TextStyle(fontSize: 18),
+                ),
+              ],
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 20),
-        const Padding(
-          padding: EdgeInsets.all(8.0),
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Menampilkan harga
+            Text(
+              "Harga: Rp ${widget.lapang.price}",
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Menampilkan deskripsi
+            const Text(
+              "Deskripsi:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              widget.lapang.description.toString(),
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Fasilitas:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            ...?widget.lapang.facilities?.map((facility) => Text("- $facility")),
+          ],
+        ),
+      ),
+      const SizedBox(height: 20),
+      const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text(
+          "Pilih Tanggal Booking:",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ElevatedButton(
+          onPressed: () async {
+            DateTime? date = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 30)),
+            );
+            if (date != null) {
+              setState(() {
+                selectedDate = date;
+              });
+            }
+          },
           child: Text(
-            "Pilih Jam Booking:",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            selectedDate != null
+                ? "${selectedDate?.toLocal().toString().split(' ')[0]}"
+                : "Pilih Tanggal",
           ),
         ),
-        Wrap(
-          children: List.generate(
-            14,
-            (index) {
-              final hour = 8 + index;
-              final bookingTime = DateTime(
-                  currentTime.year, currentTime.month, currentTime.day, hour);
-              bool isPast = bookingTime.isBefore(currentTime);
-              return Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: ChoiceChip(
-                  label: Text("$hour:00"),
-                  selected: selectedHour == "$hour:00",
-                  onSelected: isPast
-                      ? null
-                      : (bool selected) {
-                          setState(() {
-                            selectedHour = "$hour:00";
-                          });
-                        },
-                  selectedColor: isPast
-                      ? Colors.grey
-                      : null, // Optional: visually indicate past hours
-                  backgroundColor: isPast ? Colors.grey.shade300 : null,
-                ),
-              );
-            },
-          ),
+      ),
+      const SizedBox(height: 20),
+      const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text(
+          "Pilih Jam Booking:",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 20),
-        const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text(
-            "Pilih Durasi Booking (jam):",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+      ),
+      Wrap(
+        children: List.generate(
+          14,
+          (index) {
+            final hour = 8 + index;
+            final bookingTime = DateTime(
+                currentTime.year, currentTime.month, currentTime.day, hour);
+            bool isPast = bookingTime.isBefore(currentTime);
+            return Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: ChoiceChip(
+                label: Text("$hour:00"),
+                selected: selectedHour == "$hour:00",
+                onSelected: isPast
+                    ? null
+                    : (bool selected) {
+                        setState(() {
+                          selectedHour = "$hour:00";
+                        });
+                      },
+                selectedColor: isPast
+                    ? Colors.grey
+                    : null, // Optional: visually indicate past hours
+                backgroundColor: isPast ? Colors.grey.shade300 : null,
+              ),
+            );
+          },
         ),
-        Wrap(
-          children: List.generate(
-            5,
-            (index) {
-              final duration = index + 1;
-              return Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: ChoiceChip(
-                  label: Text("$duration Jam"),
-                  selected: bookingDuration == duration,
-                  onSelected: (bool selected) {
-                    setState(() {
-                      bookingDuration = duration;
-                      totalPrice = bookingDuration *
-                          int.parse(widget.lapang.price.toString());
-                    });
-                  },
-                ),
-              );
-            },
-          ),
+      ),
+      const SizedBox(height: 20),
+      const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: Text(
+          "Pilih Durasi Booking (jam):",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-      ],
-    );
-  }
+      ),
+      Wrap(
+        children: List.generate(
+          5,
+          (index) {
+            final duration = index + 1;
+            return Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: ChoiceChip(
+                label: Text("$duration Jam"),
+                selected: bookingDuration == duration,
+                onSelected: (bool selected) {
+                  setState(() {
+                    bookingDuration = duration;
+                    totalPrice = bookingDuration *
+                        int.parse(widget.lapang.price.toString());
+                  });
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    ],
+  );
+}
 }

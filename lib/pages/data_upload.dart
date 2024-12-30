@@ -1,13 +1,18 @@
-[
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+void uploadLapanganData() async {
+  final jsonData = '''
+  [
     {
       "name": "Aula Basket Lapangan Vinyl",
       "description": "Deskripsi Vynil Basket.",
-      "price": "300000",
+      "price": 300000,
       "image_path": "assets/vynil.jpg",
-      "rating": "4.9",
-      "bookings": ["2024-12-24T08:00:00.000Z", "2024-12-24T09:00:00.000Z"],
+      "rating": 4.9,
+      "bookings": [],
       "facilities": ["Shower", "Parking Area", "Locker Room"]
-    },
+    }
     {
       "name": "Aula Basket Lapangan Karet",
       "description": "Deskripsi Rubber Basket.",
@@ -45,4 +50,11 @@
       "facilities": ["Shower", "Parking Area", "Locker Room"]
     }
   ]
+  ''';
   
+  final List<dynamic> lapanganList = jsonDecode(jsonData);
+
+  for (var lapang in lapanganList) {
+    await FirebaseFirestore.instance.collection('lapang').add(lapang);
+  }
+}

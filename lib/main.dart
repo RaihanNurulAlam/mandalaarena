@@ -14,6 +14,7 @@ import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/information_page.dart';
 import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:mandalaarenaapp/provider/love_provider.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -33,7 +34,10 @@ void main() async {
       providers: [
         ChangeNotifierProvider(
             create: (context) => Cart()), // Provider untuk Cart
-        ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(
+            create: (context) => UserProvider()),
+        ChangeNotifierProvider(
+            create: (_) => LoveProvider()),
       ],
       child: MandalaArenaApp(), // Mengganti MandalaArenaApp menjadi MyApp
     ),
