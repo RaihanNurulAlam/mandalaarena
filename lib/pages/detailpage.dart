@@ -69,6 +69,7 @@ class _DetailPageState extends State<DetailPage> {
     if (selectedDate != null) {
       final bookings = await FirebaseFirestore.instance
           .collection('bookings')
+          .where('lapangId', isEqualTo: widget.lapang.id)
           .where('date', isEqualTo: selectedDate!.toIso8601String().split('T')[0])
           .get();
       List<String> times = [];
