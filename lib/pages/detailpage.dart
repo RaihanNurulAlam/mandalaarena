@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable
+// ignore_for_file: unused_local_variable, avoid_print, deprecated_member_use
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -73,7 +73,11 @@ class _DetailPageState extends State<DetailPage> {
           .get();
       List<String> times = [];
       for (var doc in bookings.docs) {
-        times.add(doc['time']);
+        final startTime = int.parse(doc['time'].split(":")[0]);
+        final duration = doc['duration'];
+        for (int i = 0; i < duration; i++) {
+          times.add("${startTime + i}:00");
+        }
       }
       setState(() {
         unavailableTimes = times;
@@ -90,7 +94,16 @@ class _DetailPageState extends State<DetailPage> {
       final selectedTime = DateTime(selectedDate!.year, selectedDate!.month,
           selectedDate!.day, int.parse(selectedHour.split(":")[0]));
 
-      if (unavailableTimes.contains(selectedHour)) {
+      bool isAvailable = true;
+      for (int i = 0; i < bookingDuration; i++) {
+        final timeToCheck = selectedTime.add(Duration(hours: i));
+        if (unavailableTimes.contains(DateFormat('HH:mm').format(timeToCheck))) {
+          isAvailable = false;
+          break;
+        }
+      }
+
+      if (!isAvailable) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Jam ini sudah terbooking!")),
         );
@@ -344,7 +357,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(16.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -368,7 +381,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -393,7 +406,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -407,14 +420,14 @@ class _DetailPageState extends State<DetailPage> {
         ),
         const SizedBox(height: 20),
         const Padding(
-          padding: EdgeInsets.all(8.0),
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
             "Pilih Tanggal Booking:",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: ElevatedButton(
             onPressed: () async {
               DateTime? date = await showDatePicker(
@@ -439,34 +452,36 @@ class _DetailPageState extends State<DetailPage> {
         ),
         const SizedBox(height: 20),
         const Padding(
-          padding: EdgeInsets.all(8.0),
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
             "Pilih Jam Booking:",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        Wrap(
-          children: List.generate(
-            14,
-            (index) {
-              final hour = 8 + index;
-              final bookingTime = DateTime(
-                  selectedDate?.year ?? currentTime.year,
-                  selectedDate?.month ?? currentTime.month,
-                  selectedDate?.day ?? currentTime.day,
-                  hour);
-              bool isPast = bookingTime.isBefore(currentTime);
-              final selectedStartHour = selectedHour.isNotEmpty
-                  ? int.parse(selectedHour.split(":")[0])
-                  : null;
-              final isDisabled = selectedStartHour != null &&
-                  hour >= selectedStartHour &&
-                  hour < selectedStartHour + bookingDuration;
-              final isUnavailable = unavailableTimes.contains("$hour:00");
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            children: List.generate(
+              14,
+              (index) {
+                final hour = 8 + index;
+                final bookingTime = DateTime(
+                    selectedDate?.year ?? currentTime.year,
+                    selectedDate?.month ?? currentTime.month,
+                    selectedDate?.day ?? currentTime.day,
+                    hour);
+                bool isPast = bookingTime.isBefore(currentTime);
+                final selectedStartHour = selectedHour.isNotEmpty
+                    ? int.parse(selectedHour.split(":")[0])
+                    : null;
+                final isDisabled = selectedStartHour != null &&
+                    hour >= selectedStartHour &&
+                    hour < selectedStartHour + bookingDuration;
+                final isUnavailable = unavailableTimes.contains("$hour:00");
 
-              return Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: ChoiceChip(
+                return ChoiceChip(
                   label: Text("$hour:00"),
                   selected: selectedHour == "$hour:00",
                   onSelected: isPast || isDisabled || isUnavailable
@@ -480,27 +495,29 @@ class _DetailPageState extends State<DetailPage> {
                   backgroundColor: isPast || isDisabled || isUnavailable
                       ? Colors.grey.shade300
                       : null,
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
         const SizedBox(height: 20),
         const Padding(
-          padding: EdgeInsets.all(8.0),
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
             "Pilih Durasi Booking (jam):",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        Wrap(
-          children: List.generate(
-            5,
-            (index) {
-              final duration = index + 1;
-              return Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: ChoiceChip(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            children: List.generate(
+              5,
+              (index) {
+                final duration = index + 1;
+                return ChoiceChip(
                   label: Text("$duration Jam"),
                   selected: bookingDuration == duration,
                   onSelected: (bool selected) {
@@ -510,9 +527,9 @@ class _DetailPageState extends State<DetailPage> {
                           int.parse(widget.lapang.price.toString());
                     });
                   },
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],
