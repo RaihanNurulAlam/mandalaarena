@@ -1,5 +1,6 @@
 [
     {
+      "id": "1",
       "name": "Aula Basket Lapangan Vinyl",
       "description": "Deskripsi Vynil Basket.",
       "price": "300000",
@@ -9,6 +10,7 @@
       "facilities": ["Shower", "Parking Area", "Locker Room"]
     },
     {
+      "id": "2",
       "name": "Aula Basket Lapangan Karet",
       "description": "Deskripsi Rubber Basket.",
       "price": "300000",
@@ -18,6 +20,7 @@
       "facilities": ["Shower", "Parking Area", "Locker Room"]
     },
     {
+      "id": "3",
       "name": "Aula Basket Lapangan 3x3",
       "description": "Deskripsi 3x3 Basket.",
       "price": "300000",
@@ -27,6 +30,7 @@
       "facilities": ["Shower", "Parking Area", "Locker Room"]
     },
     {
+      "id": "4",
       "name": "Lapang Minisoccer",
       "description": "Deskripsi Minisoccer.",
       "price": "120000",
@@ -36,6 +40,7 @@
       "facilities": ["Shower", "Parking Area", "Locker Room"]
     },
     {
+      "id": "5",
       "name": "Gokart",
       "description": "Deskripsi Gokart.",
       "price": "150000",

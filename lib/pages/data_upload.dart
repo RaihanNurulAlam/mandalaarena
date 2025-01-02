@@ -1,60 +1,29 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 
-void uploadLapanganData() async {
-  final jsonData = '''
-  [
-    {
-      "name": "Aula Basket Lapangan Vinyl",
-      "description": "Deskripsi Vynil Basket.",
-      "price": 300000,
-      "image_path": "assets/vynil.jpg",
-      "rating": 4.9,
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    }
-    {
-      "name": "Aula Basket Lapangan Karet",
-      "description": "Deskripsi Rubber Basket.",
-      "price": "300000",
-      "image_path": "assets/rubber.jpg",
-      "rating": "4.8",
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    },
-    {
-      "name": "Aula Basket Lapangan 3x3",
-      "description": "Deskripsi 3x3 Basket.",
-      "price": "300000",
-      "image_path": "assets/3x3.jpg",
-      "rating": "4.9",
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    },
-    {
-      "name": "Lapang Minisoccer",
-      "description": "Deskripsi Minisoccer.",
-      "price": "120000",
-      "image_path": "assets/mini.jpg",
-      "rating": "4.9",
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    },
-    {
-      "name": "Gokart",
-      "description": "Deskripsi Gokart.",
-      "price": "150000",
-      "image_path": "assets/gokart.jpg",
-      "rating": "5.0",
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    }
-  ]
-  ''';
-  
-  final List<dynamic> lapanganList = jsonDecode(jsonData);
+Future<void> uploadLapangData() async {
+  // Load JSON file
+  String data = await rootBundle.loadString('assets/lapang.json');
+  List<dynamic> lapangList = json.decode(data);
 
-  for (var lapang in lapanganList) {
-    await FirebaseFirestore.instance.collection('lapang').add(lapang);
+  // Firestore reference
+  CollectionReference lapangCollection =
+      FirebaseFirestore.instance.collection('lapang');
+
+  // Upload each item to Firestore
+  for (var lapang in lapangList) {
+    await lapangCollection.add({
+      'name': lapang['name'],
+      'description': lapang['description'],
+      'price': int.parse(lapang['price']),
+      'image_path': lapang['image_path'],
+      'rating': double.parse(lapang['rating']),
+      'bookings': lapang['bookings'],
+      'facilities': lapang['facilities'],
+    });
   }
+  print('Data uploaded successfully!');
 }

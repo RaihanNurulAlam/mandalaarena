@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, unused_local_variable
+// ignore_for_file: deprecated_member_use, unused_local_variable, unused_element, avoid_print
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +8,7 @@ import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailPage extends StatefulWidget {
   final Lapang lapang;
@@ -26,7 +27,41 @@ class _DetailPageState extends State<DetailPage> {
   String selectedHour = "";
   int bookingDuration = 0;
   DateTime? selectedDate;
-  bool isLoved = false; // State for love button
+  bool isLoved = false;
+
+  @override
+  void initState() {
+  super.initState();
+  SharedPreferences.getInstance().then((prefs) {
+    print("SharedPreferences initialized"); // Debug log
+    _loadLovedState();
+  }).catchError((error) {
+    print("Error initializing SharedPreferences: $error");
+  });
+}
+
+  Future<void> _loadLovedState() async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'isLoved_${widget.lapang.id}';
+  print("Loading love state for key: $key"); // Debug log
+  setState(() {
+    isLoved = prefs.getBool(key) ?? false;
+  });
+}
+
+Future<void> clearSharedPreferences() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
+  print("SharedPreferences cleared"); // Debug log
+}
+
+
+Future<void> _saveLovedState() async {
+  final prefs = await SharedPreferences.getInstance();
+  final key = 'isLoved_${widget.lapang.id}';
+  print("Saving love state for key: $key, value: $isLoved"); // Debug log
+  await prefs.setBool(key, isLoved);
+}
 
   Future<void> addToCart() async {
     if (selectedHour.isNotEmpty &&
@@ -48,6 +83,10 @@ class _DetailPageState extends State<DetailPage> {
       cart.addToCart(widget.lapang, bookingDuration, formattedDate);
       popUpDialog();
       widget.lapang.bookings?.add(selectedTime.toIso8601String());
+      for (int i = 0; i < bookingDuration; i++) {
+        final blockedTime = selectedTime.add(Duration(hours: i));
+        widget.lapang.bookings?.add(blockedTime.toIso8601String());
+      }
       await FirebaseFirestore.instance
           .collection('lapang')
           .doc(widget.lapang.id)
@@ -167,7 +206,9 @@ class _DetailPageState extends State<DetailPage> {
             onPressed: () {
               setState(() {
                 isLoved = !isLoved;
+                 print("isLoved toggled to: $isLoved"); // Debug log
               });
+              _saveLovedState();
             },
           ),
           Consumer<Cart>(
@@ -261,6 +302,7 @@ class _DetailPageState extends State<DetailPage> {
 
   Widget lapangDetailWidget(BuildContext context) {
   final currentTime = DateTime.now();
+
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -310,7 +352,6 @@ class _DetailPageState extends State<DetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Menampilkan harga
             Text(
               "Harga: Rp ${widget.lapang.price}",
               style: const TextStyle(
@@ -320,7 +361,6 @@ class _DetailPageState extends State<DetailPage> {
               ),
             ),
             const SizedBox(height: 10),
-            // Menampilkan deskripsi
             const Text(
               "Deskripsi:",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -390,24 +430,34 @@ class _DetailPageState extends State<DetailPage> {
           (index) {
             final hour = 8 + index;
             final bookingTime = DateTime(
-                currentTime.year, currentTime.month, currentTime.day, hour);
+                selectedDate?.year ?? currentTime.year,
+                selectedDate?.month ?? currentTime.month,
+                selectedDate?.day ?? currentTime.day,
+                hour);
             bool isPast = bookingTime.isBefore(currentTime);
+            final selectedStartHour = selectedHour.isNotEmpty
+                ? int.parse(selectedHour.split(":")[0])
+                : null;
+            final isDisabled = selectedStartHour != null &&
+                hour >= selectedStartHour &&
+                hour < selectedStartHour + bookingDuration;
+
             return Padding(
               padding: const EdgeInsets.all(4.0),
               child: ChoiceChip(
                 label: Text("$hour:00"),
                 selected: selectedHour == "$hour:00",
-                onSelected: isPast
+                onSelected: isPast || isDisabled
                     ? null
                     : (bool selected) {
                         setState(() {
                           selectedHour = "$hour:00";
                         });
                       },
-                selectedColor: isPast
-                    ? Colors.grey
-                    : null, // Optional: visually indicate past hours
-                backgroundColor: isPast ? Colors.grey.shade300 : null,
+                selectedColor: Colors.blue,
+                backgroundColor: isPast || isDisabled
+                    ? Colors.grey.shade300
+                    : null,
               ),
             );
           },
