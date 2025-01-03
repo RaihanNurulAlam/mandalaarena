@@ -44,8 +44,7 @@ class DrawerWidget extends StatelessWidget {
     final profileImageUrl = userProvider.profileImageUrl;
 
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
           DrawerHeader(
             decoration: const BoxDecoration(color: Colors.blue),
@@ -90,6 +89,7 @@ class DrawerWidget extends StatelessWidget {
               ],
             ),
           ),
+          
           _buildDrawerItem(
             context,
             icon: Icons.home,

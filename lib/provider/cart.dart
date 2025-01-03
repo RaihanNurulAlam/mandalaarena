@@ -1,58 +1,103 @@
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/models/cart_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 
 class Cart extends ChangeNotifier {
-  // List untuk menyimpan item dalam bentuk CartModel
   final List<CartModel> _cart = [];
 
-  // Getter untuk keranjang (list CartModel)
   List<CartModel> get cart => _cart;
 
-  // Tambahkan item ke dalam keranjang dengan objek Lapang
-  void addToCart(Lapang lapangItem, int qty, dynamic bookingDate) {
-    // Cek jika item sudah ada di keranjang
-    final existingItemIndex = _cart.indexWhere((item) => item.name == lapangItem.name);
-    if (existingItemIndex != -1) {
-      // Update quantity jika item sudah ada
-      final existingItem = _cart[existingItemIndex];
-      int currentQty = int.tryParse(existingItem.quantity ?? '0') ?? 0;
-      existingItem.quantity = (currentQty + qty).toString();
-    } else {
-      // Tambahkan item baru
+  Future<void> addToCart(
+      Lapang lapangItem,
+      int qty,
+      dynamic bookingDate,
+      String selectedHour,
+      int bookingDuration) async {
+    try {
+      final bookingRef = FirebaseFirestore.instance.collection('bookings');
+      final newBooking = {
+        'lapangId': lapangItem.id, // Use lapangId from JSON
+        'price': lapangItem.price,
+        'image_path': lapangItem.imagePath,
+        'quantity': qty.toString(),
+        'date': bookingDate,
+        'time': selectedHour,
+        'duration': bookingDuration,
+      };
+      final docRef = await bookingRef.add(newBooking);
+
       _cart.add(
         CartModel(
-          name: lapangItem.name,
+          id: docRef.id,
+          name: lapangItem.id, // Use lapangId from JSON
           price: lapangItem.price,
           imagePath: lapangItem.imagePath,
           quantity: qty.toString(),
           bookingDate: bookingDate,
+          time: selectedHour,
+          duration: bookingDuration,
         ),
       );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error adding item to cart: $e');
     }
-    notifyListeners();
   }
 
-  // Hapus satu item dalam bentuk CartModel
-  void deleteItemCart(CartModel item) {
-    _cart.remove(item);
-    notifyListeners();
+  Future<void> deleteItemCart(CartModel item) async {
+    try {
+      final bookingRef = FirebaseFirestore.instance
+          .collection('bookings')
+          .where('lapangId', isEqualTo: item.name) // Use lapangId instead of name
+          .where('date', isEqualTo: item.bookingDate)
+          .where('time', isEqualTo: item.time)
+          .where('duration', isEqualTo: item.duration);
+
+      final snapshot = await bookingRef.get();
+      for (var doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      _cart.remove(item);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error deleting item from Firebase: $e');
+    }
   }
 
-  // Bersihkan semua item dari keranjang
-  void clearCart() {
-    _cart.clear();
-    notifyListeners();
+  Future<void> clearCart() async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+
+      for (var item in _cart) {
+        final bookingRef = FirebaseFirestore.instance
+            .collection('bookings')
+            .where('lapangId', isEqualTo: item.name) // Use lapangId instead of name
+            .where('date', isEqualTo: item.bookingDate)
+            .where('time', isEqualTo: item.time)
+            .where('duration', isEqualTo: item.duration);
+
+        final snapshot = await bookingRef.get();
+        for (var doc in snapshot.docs) {
+          batch.delete(doc.reference);
+        }
+      }
+
+      await batch.commit();
+
+      _cart.clear();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error clearing cart in Firebase: $e');
+    }
   }
 
-  // Metode untuk menghitung total harga
   double calculateTotalPrice() {
-    double total = 0;
-    for (var item in _cart) {
+    return _cart.fold(0, (total, item) {
       final price = double.tryParse(item.price ?? '0') ?? 0;
       final quantity = int.tryParse(item.quantity ?? '0') ?? 0;
-      total += price * quantity;
-    }
-    return total;
+      return total + price * quantity;
+    });
   }
 }

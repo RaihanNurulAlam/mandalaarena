@@ -240,6 +240,40 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+        bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
+  builder: (context, state) {
+    return BottomNavigationBar(
+      currentIndex: state.index,
+      selectedItemColor: Colors.black,
+      unselectedItemColor: Colors.black,
+      onTap: (index) {
+        context.read<NavigationCubit>().navigateToIndex(index);
+      },
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Beranda',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.photo_library),
+          label: 'Galeri Aktivitas',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.article),
+          label: 'Informasi Terkini',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.info),
+          label: 'Tentang Aplikasi',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.payment),
+          label: 'Checkout',
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

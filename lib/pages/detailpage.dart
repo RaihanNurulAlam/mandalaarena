@@ -91,7 +91,7 @@ class _DetailPageState extends State<DetailPage> {
         bookingDuration > 0 &&
         selectedDate != null) {
       final cart = context.read<Cart>();
-      final formattedDate = DateFormat('dd MMMM yyyy').format(selectedDate!);
+      final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
       final selectedTime = DateTime(selectedDate!.year, selectedDate!.month,
           selectedDate!.day, int.parse(selectedHour.split(":")[0]));
 
@@ -111,14 +111,9 @@ class _DetailPageState extends State<DetailPage> {
         return;
       }
 
-      cart.addToCart(widget.lapang, bookingDuration, formattedDate);
-      popUpDialog();
-      for (int i = 0; i < bookingDuration; i++) {
-        final blockedTime = selectedTime.add(Duration(hours: i));
-        unavailableTimes.add(DateFormat('HH:mm').format(blockedTime));
-      }
+      // Add booking to Firebase
       await FirebaseFirestore.instance.collection('bookings').add({
-        'date': selectedDate!.toIso8601String().split('T')[0],
+        'date': formattedDate,
         'time': selectedHour,
         'duration': bookingDuration,
         'lapangId': widget.lapang.id,
@@ -127,6 +122,14 @@ class _DetailPageState extends State<DetailPage> {
       }).catchError((error) {
         print("Failed to add booking: $error");
       });
+
+      // Add to cart
+      cart.addToCart(widget.lapang, bookingDuration, formattedDate, selectedHour, bookingDuration);
+      popUpDialog();
+      for (int i = 0; i < bookingDuration; i++) {
+        final blockedTime = selectedTime.add(Duration(hours: i));
+        unavailableTimes.add(DateFormat('HH:mm').format(blockedTime));
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

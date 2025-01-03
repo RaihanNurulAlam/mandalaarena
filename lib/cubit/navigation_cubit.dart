@@ -13,4 +13,28 @@ class NavigationCubit extends Cubit<NavigationState> {
 
   /// Fungsi untuk mengganti state navigasi
   void navigateTo(NavigationState state) => emit(state);
+
+  /// Fungsi untuk mengganti state navigasi berdasarkan index
+  void navigateToIndex(int index) {
+    switch (index) {
+      case 0:
+        emit(NavigationState.home);
+        break;
+      case 1:
+        emit(NavigationState.gallery);
+        break;
+      case 2:
+        emit(NavigationState.information);
+        break;
+      case 3:
+        emit(NavigationState.about);
+        break;
+      case 4:
+        emit(NavigationState.payment);
+        break;
+      default:
+        emit(NavigationState.home);
+        break;
+    }
+  }
 }

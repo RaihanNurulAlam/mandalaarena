@@ -18,8 +18,10 @@ class _CartPageState extends State<CartPage> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     double totalPrice = 0;
+
     return Consumer<Cart>(
       builder: (context, value, child) {
+        // Calculate total price based on cart items
         for (var cartModel in value.cart) {
           double price = int.parse(cartModel.quantity.toString()) *
               int.parse(cartModel.price.toString()).toDouble();
@@ -30,13 +32,15 @@ class _CartPageState extends State<CartPage> {
           appBar: AppBar(
             title: const Text('Keranjang'),
             actions: [
+              // Show "Hapus Semua" button only if the cart is not empty
               Visibility(
                 visible: value.cart.isNotEmpty ? true : false,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: IconButton(
-                    onPressed: () {
-                      value.clearCart();
+                    onPressed: () async {
+                      // Clear the entire cart and remove from Firebase
+                      await value.clearCart();
                       setState(() {
                         totalPrice = 0;
                       });
@@ -85,53 +89,53 @@ class _CartPageState extends State<CartPage> {
                 )
               : Column(
                   children: [
-                    ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: value.cart.length,
-                      itemBuilder: (context, index) {
-                        final lapang = value.cart[index];
-                        return ListTile(
-                          leading: ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: SizedBox(
-                              height: 50,
-                              width: 50,
-                              child: Image.asset(
-                                lapang.imagePath.toString(),
-                                fit: BoxFit.cover,
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: value.cart.length,
+                        itemBuilder: (context, index) {
+                          final lapang = value.cart[index];
+                          return ListTile(
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: SizedBox(
+                                height: 50,
+                                width: 50,
+                                child: Image.asset(
+                                  lapang.imagePath.toString(),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
-                          ),
-                          title: Text(
-                            lapang.name.toString(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                            title: Text(
+                              lapang.name.toString(),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
-                          subtitle: Row(
-                            children: [
-                              Text(
-                                  'Rp. ${lapang.price} x ${lapang.quantity} Jam'),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            onPressed: () {
-                              setState(() {
-                                value.deleteItemCart(lapang);
-                                totalPrice = 0;
-                                for (var cartModel in value.cart) {
-                                  totalPrice +=
-                                      int.parse(cartModel.quantity.toString()) *
-                                          int.parse(cartModel.price.toString())
-                                              .toDouble();
-                                }
-                              });
-                            },
-                            icon: const Icon(CupertinoIcons.trash_circle),
-                          ),
-                        );
-                      },
+                            subtitle: Row(
+                              children: [
+                                Text(
+                                    'Rp. ${lapang.price} x ${lapang.quantity} Jam'),
+                              ],
+                            ),
+                            trailing: IconButton(
+                              onPressed: () async {
+                                // Remove the selected item from Firebase and the cart
+                                await value.deleteItemCart(lapang);
+                                setState(() {
+                                  totalPrice = 0;
+                                  for (var cartModel in value.cart) {
+                                    totalPrice += int.parse(cartModel.quantity.toString()) *
+                                        int.parse(cartModel.price.toString()).toDouble();
+                                  }
+                                });
+                              },
+                              icon: const Icon(CupertinoIcons.trash_circle),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                     const SizedBox(height: 80),
                     CupertinoButton(
