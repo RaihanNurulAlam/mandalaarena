@@ -31,6 +31,10 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         android:enableOnBackInvokedCallback="true"
+         <!-- Add this inside the <application> tag -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBpv07s4XGkIb3UY78FmJg8MsOdCZCWDEY"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
