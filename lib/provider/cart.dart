@@ -29,8 +29,9 @@ class Cart extends ChangeNotifier {
 
       _cart.add(
         CartModel(
-          id: docRef.id,
-          name: lapangItem.id, // Use lapangId from JSON
+          // id: docRef.id,
+          id: lapangItem.id, // Use lapangId from JSON
+          name: lapangItem.name,
           price: lapangItem.price,
           imagePath: lapangItem.imagePath,
           quantity: qty.toString(),
@@ -49,7 +50,7 @@ class Cart extends ChangeNotifier {
     try {
       final bookingRef = FirebaseFirestore.instance
           .collection('bookings')
-          .where('lapangId', isEqualTo: item.name) // Use lapangId instead of name
+          .where('lapangId', isEqualTo: item.id) // Use lapangId instead of name
           .where('date', isEqualTo: item.bookingDate)
           .where('time', isEqualTo: item.time)
           .where('duration', isEqualTo: item.duration);
@@ -73,7 +74,7 @@ class Cart extends ChangeNotifier {
       for (var item in _cart) {
         final bookingRef = FirebaseFirestore.instance
             .collection('bookings')
-            .where('lapangId', isEqualTo: item.name) // Use lapangId instead of name
+            .where('lapangId', isEqualTo: item.id) // Use lapangId instead of name
             .where('date', isEqualTo: item.bookingDate)
             .where('time', isEqualTo: item.time)
             .where('duration', isEqualTo: item.duration);
