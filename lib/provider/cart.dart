@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/models/cart_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

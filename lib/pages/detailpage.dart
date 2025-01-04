@@ -418,7 +418,35 @@ class _DetailPageState extends State<DetailPage> {
                 "Fasilitas:",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              ...?widget.lapang.facilities?.map((facility) => Text("- $facility")),
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: widget.lapang.facilities?.map((facility) {
+                  IconData iconData;
+                  switch (facility) {
+                    case 'WiFi':
+                      iconData = Icons.wifi;
+                      break;
+                    case 'Parkir':
+                      iconData = Icons.local_parking;
+                      break;
+                    case 'Kantin':
+                      iconData = Icons.restaurant;
+                      break;
+                    case 'Toilet':
+                      iconData = Icons.wc;
+                      break;
+                    default:
+                      iconData = Icons.check;
+                  }
+                  return Chip(
+                    avatar: Icon(iconData, color: Colors.white),
+                    label: Text(facility),
+                    backgroundColor: Colors.blue,
+                    labelStyle: const TextStyle(color: Colors.white),
+                  );
+                }).toList() ?? [],
+              ),
             ],
           ),
         ),
@@ -447,10 +475,14 @@ class _DetailPageState extends State<DetailPage> {
                 _fetchUnavailableTimes();
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black, // Set the background color to black
+            ),
             child: Text(
               selectedDate != null
                   ? "${selectedDate?.toLocal().toString().split(' ')[0]}"
                   : "Pilih Tanggal",
+              style: const TextStyle(color: Colors.white), // Set the text color to white
             ),
           ),
         ),

@@ -244,9 +244,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       obscureText: true,
                     ),
                     SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _updateProfile,
-                      child: Text('Simpan Perubahan'),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _updateProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black, // Set the background color to black
+                        ),
+                        child: Text(
+                          'Simpan Perubahan',
+                          style: TextStyle(color: Colors.white), // Set the text color to white
+                        ),
+                      ),
                     ),
                   ],
                 ),
