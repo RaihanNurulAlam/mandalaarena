@@ -61,6 +61,8 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   shared_preferences: ^2.3.4
   flutter_rating_bar: ^4.0.1
+  midtrans_sdk: ^0.4.0
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -89,6 +91,7 @@ flutter:
     - assets/
     - assets/json/lapang.json
     - images/
+    - assets/midtrans.env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

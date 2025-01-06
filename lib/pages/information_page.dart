@@ -140,12 +140,12 @@ class InformationPage extends StatelessWidget {
                         '- LeBron James dan Rencana Masa Depan: Setelah putranya, Bryce James, diterima di Universitas Arizona Wildcats, spekulasi muncul mengenai langkah selanjutnya bagi LeBron James. Beberapa pihak menduga ia mungkin mempertimbangkan untuk bermain bersama Bryce di level profesional.',
                         style: TextStyle(fontSize: 16),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 5),
                       const Text(
                         '- Perjalanan Karier D’Angelo Russell: D’Angelo Russell berbagi pengalamannya yang unik, berpindah antara Los Angeles Lakers dan Brooklyn Nets. Ia mengaku bahwa pengalaman tersebut memudahkannya dalam beradaptasi di tim baru.',
                         style: TextStyle(fontSize: 16),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 5),
                       const Text(
                         '- Prediksi MVP NBA 2025: Anthony Edwards dari Minnesota Timberwolves menyebut Shai Gilgeous-Alexander layak memenangkan MVP NBA musim ini, setelah Timberwolves kalah dari Oklahoma City Thunder yang dipimpin oleh SGA.',
                         style: TextStyle(fontSize: 16),
@@ -160,12 +160,12 @@ class InformationPage extends StatelessWidget {
                         '- Perubahan Format Kompetisi: IBL berencana menerapkan format kandang-tandang penuh mulai musim 2024, menggantikan format seri sebelumnya. Langkah ini diharapkan dapat meningkatkan pendapatan klub melalui pertandingan kandang.',
                         style: TextStyle(fontSize: 16),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 5),
                       const Text(
                         '- Aturan Pemain Asing dan Naturalisasi: Mulai musim 2024, IBL mengizinkan setiap klub merekrut hingga tiga pemain asing dengan batasan tinggi tertentu. Selain itu, pemain naturalisasi kini dianggap sebagai pemain lokal, namun klub tidak diperbolehkan melakukan naturalisasi secara mandiri.',
                         style: TextStyle(fontSize: 16),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 5),
                       const Text(
                         '- Penerapan Salary Cap: Untuk menjaga keseimbangan kompetisi, IBL menerapkan batas gaji (salary cap) sebesar 10 miliar rupiah per klub mulai musim 2024.',
                         style: TextStyle(fontSize: 16),
@@ -180,7 +180,7 @@ class InformationPage extends StatelessWidget {
                         '- Persiapan SEA Games 2025: Sebanyak 20 pemain basket putri menjalani pemusatan latihan (TC) di Surabaya sebagai persiapan menghadapi SEA Games 2025.',
                         style: TextStyle(fontSize: 16),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 5),
                       const Text(
                         '- Prestasi Perbasi Jakarta: Setelah sukses meraih medali emas di PON 2024, Perbasi Jakarta bertekad meningkatkan prestasi di tahun 2025 dengan fokus pada pembinaan dan kompetisi yang lebih baik.',
                         style: TextStyle(fontSize: 16),

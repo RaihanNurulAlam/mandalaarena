@@ -1,11 +1,19 @@
-// ignore_for_file: deprecated_member_use, unused_element, unused_local_variable
+// ignore_for_file: deprecated_member_use, unused_element, unused_local_variable, no_leading_underscores_for_local_identifiers, use_build_context_synchronously, sort_child_properties_last
 
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/models/cart_model.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+final serverKey = dotenv.env['SERVER_KEY'];
 
 class PaymentPage extends StatelessWidget {
   const PaymentPage({super.key});
@@ -27,6 +35,70 @@ class PaymentPage extends StatelessWidget {
     String bookingDate = cart.cart.isNotEmpty
         ? cart.cart.first.bookingDate ?? 'Tidak diketahui'
         : 'Tidak ada data';
+
+    Future<void> _processPayment() async {
+      final String url = "https://app.sandbox.midtrans.com/snap/v1/transactions";
+
+      final headers = {
+        'Authorization': 'Basic ${base64Encode(utf8.encode('$serverKey:'))}',
+        'Content-Type': 'application/json',
+      };
+
+      final body = {
+        "transaction_details": {
+          "order_id": "order-${DateTime.now().millisecondsSinceEpoch}",
+          "gross_amount": totalPrice
+        },
+        "customer_details": {
+          "first_name": userProvider.userName,
+          "last_name": "", // Assuming last name is not available
+          "email": userProvider.userEmail,
+          "phone": "" // Assuming phone is not available
+        }
+      };
+
+      try {
+        final response = await http.post(
+          Uri.parse(url),
+          headers: headers,
+          body: jsonEncode(body),
+        );
+
+        if (response.statusCode == 201) {
+          final transactionData = jsonDecode(response.body);
+          final snapUrl = transactionData['redirect_url'];
+
+          // Buka Snap URL di browser atau WebView
+          if (await canLaunch(snapUrl)) {
+            if (kIsWeb) {
+              await launch(snapUrl);
+            } else if (Platform.isAndroid || Platform.isIOS) {
+              await launch(snapUrl, forceSafariVC: false, forceWebView: true);
+            } else {
+              await launch(snapUrl);
+            }
+          } else {
+            throw "Tidak dapat membuka Snap URL";
+          }
+        } else {
+          throw "Gagal memproses pembayaran: ${response.body}";
+        }
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Proses Pembayaran Gagal'),
+            content: Text('Terjadi kesalahan: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -110,18 +182,7 @@ class PaymentPage extends StatelessWidget {
                       'Lakukan Pembayaran',
                       style: TextStyle(color: Colors.white),
                     ),
-                    onPressed: () {
-                      // Lanjutkan ke konfirmasi pembayaran
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PaymentConfirmationPage(
-                            totalPrice: totalPrice,
-                            bookingDate: bookingDate,
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: _processPayment,
                   ),
                 ),
             ],
