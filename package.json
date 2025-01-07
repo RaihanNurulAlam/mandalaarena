@@ -1,0 +1,32 @@
+{
+  "name": "mandalaarena-1",
+  "version": "1.0.0",
+  "description": "A new Flutter project.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "your-dev-command"
+  },
+  "author": "RaihanNA",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RaihanNurulAlam/mandalaarena.git"
+  },
+  "keywords": [
+    "mandala"
+  ],
+  "bugs": {
+    "url": "https://github.com/RaihanNurulAlam/mandalaarena/issues"
+  },
+  "homepage": "https://github.com/RaihanNurulAlam/mandalaarena#readme",
+  "dependencies": {
+    "express": "^4.21.2",
+    "request": "^2.88.2"
+  }
+}

@@ -1,8 +1,8 @@
-// ignore_for_file: deprecated_member_use, unused_element, unused_local_variable, no_leading_underscores_for_local_identifiers, use_build_context_synchronously, sort_child_properties_last
+// filepath: /d:/mandalaarena-1/lib/pages/payment_page.dart
+// ignore_for_file: unused_element, no_leading_underscores_for_local_identifiers, deprecated_member_use, use_build_context_synchronously, sort_child_properties_last
 
 import 'dart:convert';
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
@@ -70,9 +70,7 @@ class PaymentPage extends StatelessWidget {
 
           // Buka Snap URL di browser atau WebView
           if (await canLaunch(snapUrl)) {
-            if (kIsWeb) {
-              await launch(snapUrl);
-            } else if (Platform.isAndroid || Platform.isIOS) {
+            if (Platform.isAndroid || Platform.isIOS) {
               await launch(snapUrl, forceSafariVC: false, forceWebView: true);
             } else {
               await launch(snapUrl);
