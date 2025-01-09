@@ -1,0 +1,58 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script type="text/javascript"
+            src="https://app.sandbox.midtrans.com/snap/snap.js"
+            data-client-key="SB-Mid-client-HsSGwXWH6zCQ2Hmb"></script>
+        <!-- Note: replace with src="https://app.midtrans.com/snap/snap.js" for Production environment -->          
+    </head>
+
+    <body>
+        <form>
+            <input type="hidden" id="grossAmount" name="grossAmount" value="<%= totalPrice %>" />
+            <input type="hidden" id="firstName" name="firstName" value="<%= userName.split(' ')[0] %>" />
+            <input type="hidden" id="lastName" name="lastName" value="<%= userName.split(' ')[1] %>" />
+            <input type="hidden" id="email" name="email" value="<%= userEmail %>" />
+            <input type="hidden" id="phone" name="phone" value="<%= userPhone %>" />
+        </form>
+        <button id="pay-button" type="submit">Pay!</button>
+        <script type="text/javascript">
+            var payButton = document.getElementById('pay-button');
+            payButton.addEventListener('click', function (event) {
+                event.preventDefault(); // Prevent form submission
+
+                const grossAmount = document.getElementById('grossAmount').value;
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const email = document.getElementById('email').value;
+                const phone = document.getElementById('phone').value;
+                const orderId = 'order-' + Date.now(); // Generate a unique order ID
+                
+                fetch('http://localhost:3000/pay', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        orderId,
+                        grossAmount,
+                        firstName,
+                        lastName,
+                        email,
+                        phone,
+                    }),
+                }).then((response) => response.json())
+                .then((data) => {
+                    const transactionToken = data.transactionToken;
+                    if (transactionToken) {
+                        window.snap.pay(transactionToken);
+                    } else {
+                        console.error('Transaction token is not provided');
+                    }
+                }).catch((error) => {
+                    console.error('Error:', error);
+                });
+            });
+        </script>
+    </body>
+</html>

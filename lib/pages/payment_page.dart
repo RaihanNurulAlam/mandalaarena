@@ -6,6 +6,7 @@ import 'package:mandalaarenaapp/pages/models/cart_model.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class PaymentPage extends StatelessWidget {
   const PaymentPage({super.key});
@@ -118,6 +119,9 @@ class PaymentPage extends StatelessWidget {
                           builder: (context) => PaymentConfirmationPage(
                             totalPrice: totalPrice,
                             bookingDate: bookingDate,
+                            userName: userProvider.userName,
+                            userEmail: userProvider.userEmail,
+                            userPhone: userProvider.userPhone,
                           ),
                         ),
                       );
@@ -139,11 +143,17 @@ extension on CartModel {
 class PaymentConfirmationPage extends StatelessWidget {
   final double totalPrice;
   final String bookingDate;
+  final String userName;
+  final String userEmail;
+  final String userPhone;
 
   const PaymentConfirmationPage({
     super.key,
     required this.totalPrice,
     required this.bookingDate,
+    required this.userName,
+    required this.userEmail,
+    required this.userPhone,
   });
 
   @override
@@ -176,23 +186,109 @@ class PaymentConfirmationPage extends StatelessWidget {
               ),
               onPressed: () {
                 // Proses pembayaran
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Proses Pembayaran Berhasil'),
-                    content: const Text('Pemesanan Anda telah dikonfirmasi.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.popUntil(
-                            context, (route) => route.isFirst),
-                        child: const Text('OK'),
-                      ),
-                    ],
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FormPage(
+                      totalPrice: totalPrice,
+                      userName: userName,
+                      userEmail: userEmail,
+                      userPhone: userPhone,
+                    ),
                   ),
                 );
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class FormPage extends StatelessWidget {
+  final double totalPrice;
+  final String userName;
+  final String userEmail;
+  final String userPhone;
+
+  const FormPage({
+    super.key,
+    required this.totalPrice,
+    required this.userName,
+    required this.userEmail,
+    required this.userPhone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Form Pembayaran'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Total Harga: Rp. $totalPrice',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            CupertinoButton(
+              color: Colors.black,
+              child: const Text(
+                'Lanjutkan ke Pembayaran',
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => InAppWebViewPage(
+                      totalPrice: totalPrice,
+                      userName: userName,
+                      userEmail: userEmail,
+                      userPhone: userPhone,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class InAppWebViewPage extends StatelessWidget {
+  final double totalPrice;
+  final String userName;
+  final String userEmail;
+  final String userPhone;
+
+  const InAppWebViewPage({
+    super.key,
+    required this.totalPrice,
+    required this.userName,
+    required this.userEmail,
+    required this.userPhone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Web Pembayaran'),
+      ),
+      body: InAppWebView(
+        initialUrlRequest: URLRequest(
+          url: WebUri(
+              'http://localhost:3000/form?totalPrice=$totalPrice&userName=$userName&userEmail=$userEmail&userPhone=$userPhone'),
         ),
       ),
     );

@@ -56,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final String userEmail = emailController.text;
       final String profileImageUrl =
           user?.photoURL ?? "https://via.placeholder.com/150";
+      final String userPhone = user?.phoneNumber ?? "Nomor telepon tidak ditemukan";
 
       // Set user data in UserProvider
       if (mounted) {
@@ -63,6 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
           userName: userName,
           userEmail: userEmail,
           profileImageUrl: profileImageUrl,
+          userPhone: userPhone,
         );
 
         Navigator.pushReplacement(
@@ -131,6 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       final String userEmail = user.email ?? "Email tidak ditemukan";
                       final String profileImageUrl =
                           user.photoURL ?? "https://via.placeholder.com/150";
+                      final String userPhone = user.phoneNumber ?? "Nomor telepon tidak ditemukan";
 
                       // Set user data in UserProvider
                       if (mounted) {
@@ -139,6 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           userName: userName,
                           userEmail: userEmail,
                           profileImageUrl: profileImageUrl,
+                          userPhone: userPhone,
                         );
 
                         Navigator.pushReplacement(
