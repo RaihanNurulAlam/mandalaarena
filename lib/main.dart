@@ -17,6 +17,7 @@ import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/love_provider.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart' as dot_env;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Handling a background message: ${message.messageId}');
@@ -24,6 +25,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dot_env.dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -34,10 +36,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider(
             create: (context) => Cart()), // Provider untuk Cart
-        ChangeNotifierProvider(
-            create: (context) => UserProvider()),
-        ChangeNotifierProvider(
-            create: (_) => LoveProvider()),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => LoveProvider()),
       ],
       child: MandalaArenaApp(), // Mengganti MandalaArenaApp menjadi MyApp
     ),
