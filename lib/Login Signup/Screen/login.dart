@@ -25,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool isLoading = false;
+  bool isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -105,9 +106,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 textEditingController: passwordController,
                 hintText: 'Masukan password anda',
                 textInputType: TextInputType.visiblePassword,
-                isPass: true,
+                isPass: !isPasswordVisible,
               ),
-              const ForgotPassword(),
+              Row(
+  mainAxisAlignment: MainAxisAlignment.start,
+  children: [
+    const ForgotPassword(),
+    const SizedBox(width: 120), // Sesuaikan nilai jaraknya
+    TextButton(
+      onPressed: () {
+        setState(() {
+          isPasswordVisible = !isPasswordVisible;
+        });
+      },
+      child: Text(
+        isPasswordVisible ? "Sembunyikan Password" : "Tampilkan Password",
+        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+      ),
+    ),
+  ],
+),
               MyButtons(onTap: loginUser, text: "Masuk"),
               Row(
                 children: [

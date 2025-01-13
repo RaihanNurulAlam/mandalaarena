@@ -21,9 +21,9 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController phoneController =
-      TextEditingController(); // Controller untuk nomor telepon
+  final TextEditingController phoneController = TextEditingController(); // Controller untuk nomor telepon
   bool isLoading = false;
+  bool isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -59,8 +59,7 @@ class _SignupScreenState extends State<SignupScreen> {
       final String profileImageUrl = "https://via.placeholder.com/150";
 
       // Ambil userId setelah signup
-      final String userId = AuthMethod()
-          .getUserId(); // Ambil userId dari Firebase Auth (gunakan cred.user!.uid)
+      final String userId = AuthMethod().getUserId(); // Ambil userId dari Firebase Auth (gunakan cred.user!.uid)
       if (userId.isEmpty) {
         setState(() {
           isLoading = false;
@@ -133,7 +132,28 @@ class _SignupScreenState extends State<SignupScreen> {
                   textEditingController: passwordController,
                   hintText: 'Masukan password anda',
                   textInputType: TextInputType.text,
-                  isPass: true,
+                  isPass: !isPasswordVisible,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(), // Placeholder to align with ForgotPassword in login screen
+                    Padding(
+                      padding: const EdgeInsets.only(right: 30.0), // Adjust the padding value as needed
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            isPasswordVisible = !isPasswordVisible;
+                          });
+                        },
+                        child: Text(
+                          isPasswordVisible ? "Sembunyikan Password" : "Tampilkan Password",
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 TextFieldInput(
                   icon: Icons.phone,
@@ -142,7 +162,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   textInputType: TextInputType.phone,
                 ),
                 MyButtons(onTap: signupUser, text: "Daftar"),
-                const SizedBox(height: 50),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
