@@ -1,12 +1,13 @@
-// ignore_for_file: deprecated_member_use, unused_element, unused_local_variable
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mandalaarenaapp/pages/models/cart_model.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:http/http.dart' as http;
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 class PaymentPage extends StatelessWidget {
   const PaymentPage({super.key});
@@ -84,7 +85,7 @@ class PaymentPage extends StatelessWidget {
                           item.imagePath ?? 'assets/images/placeholder.png'),
                       title: Text(item.name ?? 'Item tidak diketahui'),
                       subtitle: Text(
-                        'Harga: Rp. ${item.price}, Durasi: ${item.quantity} Jam', // Ubah Quantity menjadi Durasi
+                        'Harga: Rp. ${item.price}, Durasi: ${item.quantity} Jam',
                       ),
                     ),
                   );
@@ -111,20 +112,47 @@ class PaymentPage extends StatelessWidget {
                       'Lakukan Pembayaran',
                       style: TextStyle(color: Colors.white),
                     ),
-                    onPressed: () {
-                      // Lanjutkan ke konfirmasi pembayaran
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PaymentConfirmationPage(
-                            totalPrice: totalPrice,
-                            bookingDate: bookingDate,
-                            userName: userProvider.userName,
-                            userEmail: userProvider.userEmail,
-                            userPhone: userProvider.userPhone,
-                          ),
-                        ),
-                      );
+                    onPressed: () async {
+                      try {
+                        // Kirim data transaksi ke backend
+                        final response = await http.post(
+                          Uri.parse('http://localhost:3000/pay'), // Endpoint backend
+                          headers: {'Content-Type': 'application/json'},
+                          body: json.encode({
+                            'orderId':
+                                'order-${DateTime.now().millisecondsSinceEpoch}', // Unique order ID
+                            'grossAmount': totalPrice.toString(), // Total harga
+                            'firstName': userProvider.userName.split(' ')[0], // Nama depan
+                            'lastName': userProvider.userName.split(' ').length > 1
+                                ? userProvider.userName.split(' ')[1]
+                                : '', // Nama belakang
+                            'email': userProvider.userEmail, // Email
+                            'phone': userProvider.userPhone, // Nomor telepon
+                          }),
+                        );
+
+                        if (response.statusCode == 200) {
+                          final data = json.decode(response.body);
+                          final transactionToken = data['transactionToken'];
+                          if (transactionToken != null) {
+                            // Buka popup Midtrans dengan token transaksi
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PaymentWebView(
+                                  transactionToken: transactionToken,
+                                ),
+                              ),
+                            );
+                          } else {
+                            throw Exception('Transaction token not found');
+                          }
+                        } else {
+                          throw Exception('Failed to create payment');
+                        }
+                      } catch (e) {
+                        print('Error: $e');
+                      }
                     },
                   ),
                 ),
@@ -136,159 +164,25 @@ class PaymentPage extends StatelessWidget {
   }
 }
 
-extension on CartModel {
-  get bookingDate => null;
-}
+class PaymentWebView extends StatelessWidget {
+  final String transactionToken;
 
-class PaymentConfirmationPage extends StatelessWidget {
-  final double totalPrice;
-  final String bookingDate;
-  final String userName;
-  final String userEmail;
-  final String userPhone;
-
-  const PaymentConfirmationPage({
+  const PaymentWebView({
     super.key,
-    required this.totalPrice,
-    required this.bookingDate,
-    required this.userName,
-    required this.userEmail,
-    required this.userPhone,
+    required this.transactionToken,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Konfirmasi Pembayaran'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Tanggal booking: $bookingDate',
-              style: const TextStyle(fontSize: 18),
-            ),
-            Text(
-              'Total Harga: Rp. $totalPrice',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            CupertinoButton(
-              color: Colors.black,
-              child: const Text(
-                'Konfirmasi dan bayar',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                // Proses pembayaran
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FormPage(
-                      totalPrice: totalPrice,
-                      userName: userName,
-                      userEmail: userEmail,
-                      userPhone: userPhone,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class FormPage extends StatelessWidget {
-  final double totalPrice;
-  final String userName;
-  final String userEmail;
-  final String userPhone;
-
-  const FormPage({
-    super.key,
-    required this.totalPrice,
-    required this.userName,
-    required this.userEmail,
-    required this.userPhone,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Form Pembayaran'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Total Harga: Rp. $totalPrice',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            CupertinoButton(
-              color: Colors.black,
-              child: const Text(
-                'Lanjutkan ke Pembayaran',
-                style: TextStyle(color: Colors.white),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => InAppWebViewPage(
-                      totalPrice: totalPrice,
-                      userName: userName,
-                      userEmail: userEmail,
-                      userPhone: userPhone,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class InAppWebViewPage extends StatelessWidget {
-  final double totalPrice;
-  final String userName;
-  final String userEmail;
-  final String userPhone;
-
-  const InAppWebViewPage({
-    super.key,
-    required this.totalPrice,
-    required this.userName,
-    required this.userEmail,
-    required this.userPhone,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Web Pembayaran'),
+        title: const Text('Pembayaran'),
       ),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
           url: WebUri(
-              'http://localhost:3000/form?totalPrice=$totalPrice&userName=$userName&userEmail=$userEmail&userPhone=$userPhone'),
+            'https://app.sandbox.midtrans.com/snap/v2/vtweb/$transactionToken',
+          ),
         ),
       ),
     );
