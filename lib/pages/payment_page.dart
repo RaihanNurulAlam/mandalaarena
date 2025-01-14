@@ -114,6 +114,12 @@ class PaymentPage extends StatelessWidget {
                     ),
                     onPressed: () async {
                       try {
+                        // Ambil nama depan dan belakang
+                        final fullName = userProvider.userName.split(' ');
+                        final firstName = fullName.isNotEmpty ? fullName[0] : '';
+                        final lastName =
+                            fullName.length > 1 ? fullName.sublist(1).join(' ') : '';
+
                         // Kirim data transaksi ke backend
                         final response = await http.post(
                           Uri.parse('http://localhost:3000/pay'), // Endpoint backend
@@ -122,10 +128,8 @@ class PaymentPage extends StatelessWidget {
                             'orderId':
                                 'order-${DateTime.now().millisecondsSinceEpoch}', // Unique order ID
                             'grossAmount': totalPrice.toString(), // Total harga
-                            'firstName': userProvider.userName.split(' ')[0], // Nama depan
-                            'lastName': userProvider.userName.split(' ').length > 1
-                                ? userProvider.userName.split(' ')[1]
-                                : '', // Nama belakang
+                            'firstName': firstName, // Nama depan
+                            'lastName': lastName, // Nama belakang
                             'email': userProvider.userEmail, // Email
                             'phone': userProvider.userPhone, // Nomor telepon
                           }),

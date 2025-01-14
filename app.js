@@ -19,7 +19,10 @@ app.post('/pay', async (req, res) => {
   try {
     const { orderId, grossAmount, firstName, lastName, email, phone } = req.body;
 
-    // Buat payload transaksi
+    if (!orderId || !grossAmount || !firstName || !email || !phone) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     const parameter = {
       transaction_details: {
         order_id: orderId,
@@ -27,16 +30,14 @@ app.post('/pay', async (req, res) => {
       },
       customer_details: {
         first_name: firstName,
-        last_name: lastName,
+        last_name: lastName || '',
         email: email,
         phone: phone,
       },
     };
 
-    // Buat token transaksi
     const transaction = await snap.createTransaction(parameter);
 
-    // Kirim token transaksi ke Flutter
     res.status(200).json({ transactionToken: transaction.token });
   } catch (error) {
     console.error(error);
