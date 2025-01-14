@@ -112,20 +112,24 @@ class _LoginScreenState extends State<LoginScreen> {
   mainAxisAlignment: MainAxisAlignment.start,
   children: [
     const ForgotPassword(),
-    const SizedBox(width: 120), // Sesuaikan nilai jaraknya
-    TextButton(
-      onPressed: () {
-        setState(() {
-          isPasswordVisible = !isPasswordVisible;
-        });
-      },
-      child: Text(
-        isPasswordVisible ? "Sembunyikan Password" : "Tampilkan Password",
-        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
-      ),
+    Spacer(), // Ini akan mendorong tombol ke kanan
+    Padding(
+  padding: EdgeInsets.only(right: MediaQuery.of(context).size.width * 0.025), // 10% dari lebar layar
+  child: TextButton(
+    onPressed: () {
+      setState(() {
+        isPasswordVisible = !isPasswordVisible;
+      });
+    },
+    child: Text(
+      isPasswordVisible ? "Sembunyikan Password" : "Tampilkan Password",
+      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
     ),
+  ),
+),
   ],
 ),
+
               MyButtons(onTap: loginUser, text: "Masuk"),
               Row(
                 children: [

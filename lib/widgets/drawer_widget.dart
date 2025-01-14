@@ -4,17 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart'; // Import provider
 import 'package:url_launcher/url_launcher.dart';
+
 import '../cubit/navigation_cubit.dart';
-import '../pages/edit_profile_page.dart'; // Tambahkan halaman edit profil
-import '../pages/welcome_page.dart'; // Tambahkan halaman welcome
+import '../pages/edit_profile_page.dart';
+import '../pages/welcome_page.dart';
+import '../provider/user_provider.dart';
 
 class DrawerWidget extends StatelessWidget {
   const DrawerWidget({Key? key}) : super(key: key);
 
-  Future<Map<String, String>> _fetchUserData() async {
+  Future<void> _syncUserData(BuildContext context) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -23,21 +24,23 @@ class DrawerWidget extends StatelessWidget {
             .doc(user.uid)
             .get();
         final userData = userDoc.data();
-        return {
-          'phoneNumber': userData?['phone'] ?? '',
-          'userName': userData?['name'] ?? '',
-          'profileImageUrl': userData?['profileImageUrl'] ?? ''
-        };
+        if (userData != null) {
+          // Update data di UserProvider
+          Provider.of<UserProvider>(context, listen: false).setUserData(
+            userName: userData['name'] ?? '',
+            userEmail: user.email ?? '',
+            profileImageUrl: userData['profileImageUrl'] ?? '',
+            userPhone: userData['phone'] ?? '',
+          );
+        }
       }
     } catch (e) {
-      debugPrint('Kesalahan mengambil data pengguna: $e');
+      debugPrint('Kesalahan sinkronisasi data pengguna: $e');
     }
-    return {'phoneNumber': '', 'userName': '', 'profileImageUrl': ''};
   }
 
   @override
   Widget build(BuildContext context) {
-    // Ambil data pengguna dari UserProvider
     final userProvider = Provider.of<UserProvider>(context);
     final userName = userProvider.userName;
     final userEmail = userProvider.userEmail;
@@ -89,7 +92,6 @@ class DrawerWidget extends StatelessWidget {
               ],
             ),
           ),
-          
           _buildDrawerItem(
             context,
             icon: Icons.home,
@@ -125,19 +127,15 @@ class DrawerWidget extends StatelessWidget {
             leading: const Icon(Icons.edit, color: Colors.orange),
             title: const Text('Ubah Profil'),
             onTap: () async {
-              final userData = await _fetchUserData();
+              await _syncUserData(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => EditProfilePage(
-                    userName: userData['userName']!.isNotEmpty
-                        ? userData['userName']!
-                        : userName,
-                    userEmail: userEmail,
-                    profileImageUrl: userData['profileImageUrl']!.isNotEmpty
-                        ? userData['profileImageUrl']!
-                        : profileImageUrl,
-                    phoneNumber: userData['phoneNumber']!,
+                    userName: userProvider.userName,
+                    userEmail: userProvider.userEmail,
+                    profileImageUrl: userProvider.profileImageUrl,
+                    phoneNumber: userProvider.userPhone,
                   ),
                 ),
               );
@@ -191,12 +189,9 @@ class DrawerWidget extends StatelessWidget {
   void _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
-      debugPrint('Tidak dapat memulai $url');
+      debugPrint('Tidak dapat membuka URL $url');
     }
   }
 }
