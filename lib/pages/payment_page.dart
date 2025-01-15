@@ -116,25 +116,27 @@ class PaymentPage extends StatelessWidget {
                       try {
                         // Ambil nama depan dan belakang
                         final fullName = userProvider.userName.split(' ');
-                        final firstName = fullName.isNotEmpty ? fullName[0] : '';
-                        final lastName =
-                            fullName.length > 1 ? fullName.sublist(1).join(' ') : '';
+                        final firstName =
+                            fullName.isNotEmpty ? fullName[0] : '';
+                        final lastName = fullName.length > 1
+                            ? fullName.sublist(1).join(' ')
+                            : '';
 
                         // Kirim data transaksi ke backend
                         final response = await http.post(
-                          Uri.parse('http://localhost:3000/pay'), // Endpoint backend
+                          Uri.parse(
+                              'http://10.0.2.2:3000/pay'), // Ganti localhost dengan 10.0.2.2
                           headers: {'Content-Type': 'application/json'},
                           body: json.encode({
                             'orderId':
-                                'order-${DateTime.now().millisecondsSinceEpoch}', // Unique order ID
-                            'grossAmount': totalPrice.toString(), // Total harga
-                            'firstName': firstName, // Nama depan
-                            'lastName': lastName, // Nama belakang
-                            'email': userProvider.userEmail, // Email
-                            'phone': userProvider.userPhone, // Nomor telepon
+                                'order-${DateTime.now().millisecondsSinceEpoch}',
+                            'grossAmount': totalPrice.toString(),
+                            'firstName': firstName,
+                            'lastName': lastName,
+                            'email': userProvider.userEmail,
+                            'phone': userProvider.userPhone,
                           }),
                         );
-
                         if (response.statusCode == 200) {
                           final data = json.decode(response.body);
                           final transactionToken = data['transactionToken'];

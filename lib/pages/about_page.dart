@@ -23,14 +23,15 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   Future<void> _fetchReviews() async {
-    final reviewsSnapshot = await FirebaseFirestore.instance.collection('reviews').get();
+    final reviewsSnapshot =
+        await FirebaseFirestore.instance.collection('reviews').get();
     setState(() {
       _reviews.clear();
       for (var doc in reviewsSnapshot.docs) {
         _reviews.add({
           'id': doc.id,
           'name': doc['name'],
-          'rating': doc['rating'],
+          'rating': (doc['rating'] as num).toDouble(), // Konversi ke double
           'description': doc['description'],
           'replies': List<String>.from(doc['replies']),
         });
@@ -39,15 +40,17 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   Future<void> _addReview() async {
-    if (_nameController.text.isNotEmpty && _descriptionController.text.isNotEmpty) {
+    if (_nameController.text.isNotEmpty &&
+        _descriptionController.text.isNotEmpty) {
       final newReview = {
         'name': _nameController.text,
-        'rating': _currentRating,
+        'rating': _currentRating, // Sudah bertipe double dari RatingBar
         'description': _descriptionController.text,
         'replies': [],
       };
 
-      final docRef = await FirebaseFirestore.instance.collection('reviews').add(newReview);
+      final docRef =
+          await FirebaseFirestore.instance.collection('reviews').add(newReview);
       setState(() {
         _reviews.add({
           'id': docRef.id,
@@ -63,7 +66,10 @@ class _AboutPageState extends State<AboutPage> {
   Future<void> _addReply(int index, String reply) async {
     if (reply.isNotEmpty) {
       final reviewId = _reviews[index]['id'];
-      await FirebaseFirestore.instance.collection('reviews').doc(reviewId).update({
+      await FirebaseFirestore.instance
+          .collection('reviews')
+          .doc(reviewId)
+          .update({
         'replies': FieldValue.arrayUnion([reply]),
       });
 
@@ -76,7 +82,10 @@ class _AboutPageState extends State<AboutPage> {
 
   Future<void> _deleteReview(int index) async {
     final reviewId = _reviews[index]['id'];
-    await FirebaseFirestore.instance.collection('reviews').doc(reviewId).delete();
+    await FirebaseFirestore.instance
+        .collection('reviews')
+        .doc(reviewId)
+        .delete();
 
     setState(() {
       _reviews.removeAt(index);
@@ -123,7 +132,8 @@ class _AboutPageState extends State<AboutPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       review['name'],
@@ -156,29 +166,36 @@ class _AboutPageState extends State<AboutPage> {
                                     fontSize: 13,
                                   ),
                                 ),
-                                ...review['replies'].map<Widget>((reply) => Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                                      child: Text('- $reply', style: TextStyle(fontSize: 13)),
-                                    )),
+                                ...review['replies']
+                                    .map<Widget>((reply) => Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 2.0),
+                                          child: Text('- $reply',
+                                              style: TextStyle(fontSize: 13)),
+                                        )),
                                 SizedBox(height: 8),
                                 TextField(
                                   controller: _replyControllers[index],
                                   decoration: InputDecoration(
                                     labelText: 'Balas ulasan',
                                     border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 8),
                                   ),
                                 ),
                                 SizedBox(height: 8),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     ElevatedButton(
-                                      onPressed: () => _addReply(index, _replyControllers[index]?.text ?? ''),
+                                      onPressed: () => _addReply(index,
+                                          _replyControllers[index]?.text ?? ''),
                                       child: Text('Kirim Balasan'),
                                     ),
                                     IconButton(
-                                      icon: Icon(Icons.delete, color: Colors.red),
+                                      icon:
+                                          Icon(Icons.delete, color: Colors.red),
                                       onPressed: () => _deleteReview(index),
                                     ),
                                   ],
@@ -200,7 +217,8 @@ class _AboutPageState extends State<AboutPage> {
                 decoration: InputDecoration(
                   labelText: 'Nama',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 ),
                 style: TextStyle(fontSize: 14),
               ),
@@ -233,7 +251,8 @@ class _AboutPageState extends State<AboutPage> {
                 decoration: InputDecoration(
                   labelText: 'Deskripsi Ulasan',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 ),
                 style: TextStyle(fontSize: 14),
                 maxLines: 2,
@@ -244,9 +263,11 @@ class _AboutPageState extends State<AboutPage> {
                 child: ElevatedButton(
                   onPressed: _addReview,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black, // Set the background color to black
+                    backgroundColor:
+                        Colors.black, // Set the background color to black
                   ),
-                  child: Text('Tambah Ulasan', style: TextStyle(fontSize: 14, color: Colors.white)),
+                  child: Text('Tambah Ulasan',
+                      style: TextStyle(fontSize: 14, color: Colors.white)),
                 ),
               ),
             ],

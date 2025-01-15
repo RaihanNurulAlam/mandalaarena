@@ -27,9 +27,10 @@
     </queries>
 
     <application
+        android:usesCleartextTraffic="true"
         android:label="mandalaarenaapp"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"
          <!-- Add this inside the <application> tag -->
         <meta-data
