@@ -9,8 +9,15 @@ import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 
-class PaymentPage extends StatelessWidget {
+class PaymentPage extends StatefulWidget {
   const PaymentPage({super.key});
+
+  @override
+  State<PaymentPage> createState() => _PaymentPageState();
+}
+
+class _PaymentPageState extends State<PaymentPage> {
+  bool isPaymentSuccesful = false;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +47,30 @@ class PaymentPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (isPaymentSuccesful)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    'Pembayaran berhasil! Terima kasih telah melakukan transaksi.',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
               // Informasi tanggal booking
               Container(
                 padding: const EdgeInsets.all(16),
@@ -104,7 +135,7 @@ class PaymentPage extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Tombol untuk melanjutkan pembayaran (hanya tampil jika keranjang tidak kosong)
-              if (cart.cart.isNotEmpty)
+              if (cart.cart.isNotEmpty && !isPaymentSuccesful)
                 Center(
                   child: CupertinoButton(
                     color: Colors.black,
@@ -125,7 +156,7 @@ class PaymentPage extends StatelessWidget {
                         // Kirim data transaksi ke backend
                         final response = await http.post(
                           Uri.parse(
-                              'http://10.0.2.2:3000/pay'), // Ganti localhost dengan 10.0.2.2
+                              'http://localhost:3000/pay'), // Ganti localhost dengan 10.0.2.2
                           headers: {'Content-Type': 'application/json'},
                           body: json.encode({
                             'orderId':
@@ -142,7 +173,7 @@ class PaymentPage extends StatelessWidget {
                           final transactionToken = data['transactionToken'];
                           if (transactionToken != null) {
                             // Buka popup Midtrans dengan token transaksi
-                            Navigator.push(
+                            final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => PaymentWebView(
@@ -150,6 +181,30 @@ class PaymentPage extends StatelessWidget {
                                 ),
                               ),
                             );
+
+                            if (result == true) {
+                              setState(() {
+                                isPaymentSuccesful = true;
+                              });
+
+                              // Tampilkan popup notifikasi sukses
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Pembayaran Berhasil'),
+                                  content: const Text(
+                                      'Pembayaran Anda berhasil dilakukan.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           } else {
                             throw Exception('Transaction token not found');
                           }
@@ -190,6 +245,13 @@ class PaymentWebView extends StatelessWidget {
             'https://app.sandbox.midtrans.com/snap/v2/vtweb/$transactionToken',
           ),
         ),
+        onLoadStop: (controller, url) {
+          if (url.toString().contains('success')) {
+            Navigator.pop(context, true);
+          } else if (url.toString().contains('failure')) {
+            Navigator.pop(context, false);
+          }
+        },
       ),
     );
   }

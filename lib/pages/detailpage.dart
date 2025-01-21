@@ -70,7 +70,8 @@ class _DetailPageState extends State<DetailPage> {
       final bookings = await FirebaseFirestore.instance
           .collection('bookings')
           .where('lapangId', isEqualTo: widget.lapang.id)
-          .where('date', isEqualTo: selectedDate!.toIso8601String().split('T')[0])
+          .where('date',
+              isEqualTo: selectedDate!.toIso8601String().split('T')[0])
           .get();
       List<String> times = [];
       for (var doc in bookings.docs) {
@@ -98,7 +99,8 @@ class _DetailPageState extends State<DetailPage> {
       bool isAvailable = true;
       for (int i = 0; i < bookingDuration; i++) {
         final timeToCheck = selectedTime.add(Duration(hours: i));
-        if (unavailableTimes.contains(DateFormat('HH:mm').format(timeToCheck))) {
+        if (unavailableTimes
+            .contains(DateFormat('HH:mm').format(timeToCheck))) {
           isAvailable = false;
           break;
         }
@@ -124,7 +126,8 @@ class _DetailPageState extends State<DetailPage> {
       });
 
       // Add to cart
-      cart.addToCart(widget.lapang, bookingDuration, formattedDate, selectedHour, bookingDuration);
+      cart.addToCart(widget.lapang, bookingDuration, formattedDate,
+          selectedHour, bookingDuration);
       popUpDialog();
       for (int i = 0; i < bookingDuration; i++) {
         final blockedTime = selectedTime.add(Duration(hours: i));
@@ -422,30 +425,31 @@ class _DetailPageState extends State<DetailPage> {
                 spacing: 8.0,
                 runSpacing: 8.0,
                 children: widget.lapang.facilities?.map((facility) {
-                  IconData iconData;
-                  switch (facility) {
-                    case 'WiFi':
-                      iconData = Icons.wifi;
-                      break;
-                    case 'Parkir':
-                      iconData = Icons.local_parking;
-                      break;
-                    case 'Kantin':
-                      iconData = Icons.restaurant;
-                      break;
-                    case 'Toilet':
-                      iconData = Icons.wc;
-                      break;
-                    default:
-                      iconData = Icons.check;
-                  }
-                  return Chip(
-                    avatar: Icon(iconData, color: Colors.white),
-                    label: Text(facility),
-                    backgroundColor: Colors.blue,
-                    labelStyle: const TextStyle(color: Colors.white),
-                  );
-                }).toList() ?? [],
+                      IconData iconData;
+                      switch (facility) {
+                        case 'WiFi':
+                          iconData = Icons.wifi;
+                          break;
+                        case 'Parkir':
+                          iconData = Icons.local_parking;
+                          break;
+                        case 'Kantin':
+                          iconData = Icons.restaurant;
+                          break;
+                        case 'Toilet':
+                          iconData = Icons.wc;
+                          break;
+                        default:
+                          iconData = Icons.check;
+                      }
+                      return Chip(
+                        avatar: Icon(iconData, color: Colors.white),
+                        label: Text(facility),
+                        backgroundColor: Colors.black,
+                        labelStyle: const TextStyle(color: Colors.white),
+                      );
+                    }).toList() ??
+                    [],
               ),
             ],
           ),
@@ -476,13 +480,15 @@ class _DetailPageState extends State<DetailPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black, // Set the background color to black
+              backgroundColor:
+                  Colors.black, // Set the background color to black
             ),
             child: Text(
               selectedDate != null
                   ? "${selectedDate?.toLocal().toString().split(' ')[0]}"
                   : "Pilih Tanggal",
-              style: const TextStyle(color: Colors.white), // Set the text color to white
+              style: const TextStyle(
+                  color: Colors.white), // Set the text color to white
             ),
           ),
         ),
@@ -527,10 +533,14 @@ class _DetailPageState extends State<DetailPage> {
                             selectedHour = "$hour:00";
                           });
                         },
-                  selectedColor: Colors.blue,
-                  backgroundColor: isPast || isDisabled || isUnavailable
+                  backgroundColor: isPast || isUnavailable
                       ? Colors.grey.shade300
-                      : null,
+                      : Colors.grey.shade100,
+                  labelStyle: TextStyle(
+                    color: selectedHour == "$hour:00"
+                        ? Colors.black
+                        : Colors.black,
+                  ),
                 );
               },
             ),
@@ -563,6 +573,13 @@ class _DetailPageState extends State<DetailPage> {
                           int.parse(widget.lapang.price.toString());
                     });
                   },
+                  selectedColor: Colors.grey.shade300,
+                  backgroundColor: Colors.grey.shade100,
+                  labelStyle: TextStyle(
+                    color: bookingDuration == duration
+                        ? Colors.black
+                        : Colors.black,
+                  ),
                 );
               },
             ),
