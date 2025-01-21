@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -17,7 +18,15 @@ class PaymentPage extends StatefulWidget {
 }
 
 class _PaymentPageState extends State<PaymentPage> {
-  bool isPaymentSuccesful = false;
+  String? transactionStatus;
+
+  String getBaseUrl() {
+    if (kIsWeb) {
+      return 'http://localhost:3000'; // Browser
+    } else {
+      return 'http://10.0.2.2:3000'; // Emulator Android/Desktop
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +41,7 @@ class _PaymentPageState extends State<PaymentPage> {
           int.parse(cartModel.price!) * int.parse(cartModel.quantity!),
     );
 
-    // Ambil booking date dan durasi dari item pertama di keranjang
+    // Tanggal booking dari keranjang
     String bookingDate = cart.cart.isNotEmpty
         ? cart.cart.first.bookingDate ?? 'Tidak diketahui'
         : 'Tidak ada data';
@@ -47,11 +56,13 @@ class _PaymentPageState extends State<PaymentPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isPaymentSuccesful)
+              if (transactionStatus != null)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: transactionStatus == 'settlement'
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.red.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
@@ -61,16 +72,19 @@ class _PaymentPageState extends State<PaymentPage> {
                       ),
                     ],
                   ),
-                  child: const Text(
-                    'Pembayaran berhasil! Terima kasih telah melakukan transaksi.',
+                  child: Text(
+                    'Status Transaksi: $transactionStatus',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                      color: transactionStatus == 'settlement'
+                          ? Colors.green
+                          : Colors.red,
                     ),
                   ),
                 ),
               const SizedBox(height: 16),
+
               // Informasi tanggal booking
               Container(
                 padding: const EdgeInsets.all(16),
@@ -134,8 +148,7 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 16),
 
-              // Tombol untuk melanjutkan pembayaran (hanya tampil jika keranjang tidak kosong)
-              if (cart.cart.isNotEmpty && !isPaymentSuccesful)
+              if (cart.cart.isNotEmpty && transactionStatus == null)
                 Center(
                   child: CupertinoButton(
                     color: Colors.black,
@@ -145,7 +158,6 @@ class _PaymentPageState extends State<PaymentPage> {
                     ),
                     onPressed: () async {
                       try {
-                        // Ambil nama depan dan belakang
                         final fullName = userProvider.userName.split(' ');
                         final firstName =
                             fullName.isNotEmpty ? fullName[0] : '';
@@ -153,10 +165,10 @@ class _PaymentPageState extends State<PaymentPage> {
                             ? fullName.sublist(1).join(' ')
                             : '';
 
-                        // Kirim data transaksi ke backend
+                        final baseUrl = getBaseUrl();
+
                         final response = await http.post(
-                          Uri.parse(
-                              'http://localhost:3000/pay'), // Ganti localhost dengan 10.0.2.2
+                          Uri.parse('$baseUrl/pay'),
                           headers: {'Content-Type': 'application/json'},
                           body: json.encode({
                             'orderId':
@@ -168,11 +180,12 @@ class _PaymentPageState extends State<PaymentPage> {
                             'phone': userProvider.userPhone,
                           }),
                         );
+
                         if (response.statusCode == 200) {
                           final data = json.decode(response.body);
                           final transactionToken = data['transactionToken'];
+
                           if (transactionToken != null) {
-                            // Buka popup Midtrans dengan token transaksi
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -183,33 +196,20 @@ class _PaymentPageState extends State<PaymentPage> {
                             );
 
                             if (result == true) {
-                              setState(() {
-                                isPaymentSuccesful = true;
-                              });
-
-                              // Tampilkan popup notifikasi sukses
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Pembayaran Berhasil'),
-                                  content: const Text(
-                                      'Pembayaran Anda berhasil dilakukan.'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text('OK'),
-                                    ),
-                                  ],
-                                ),
+                              final statusResponse = await http.get(
+                                Uri.parse(
+                                    '$baseUrl/transaction-status?orderId=${data['orderId']}'),
                               );
+                              if (statusResponse.statusCode == 200) {
+                                final statusData =
+                                    json.decode(statusResponse.body);
+                                setState(() {
+                                  transactionStatus =
+                                      statusData['transaction_status'];
+                                });
+                              }
                             }
-                          } else {
-                            throw Exception('Transaction token not found');
                           }
-                        } else {
-                          throw Exception('Failed to create payment');
                         }
                       } catch (e) {
                         print('Error: $e');

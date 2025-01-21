@@ -10,24 +10,20 @@ class Cart extends ChangeNotifier {
 
   List<CartModel> get cart => _cart;
 
-  Future<void> addToCart(
-      Lapang lapangItem,
-      int qty,
-      dynamic bookingDate,
-      String selectedHour,
-      int bookingDuration) async {
+  Future<void> addToCart(Lapang lapangItem, int qty, dynamic bookingDate,
+      String selectedHour, int bookingDuration) async {
     try {
       final bookingRef = FirebaseFirestore.instance.collection('bookings');
-      final newBooking = {
-        'lapangId': lapangItem.id, // Use lapangId from JSON
-        'price': lapangItem.price,
-        'image_path': lapangItem.imagePath,
-        'quantity': qty.toString(),
-        'date': bookingDate,
-        'time': selectedHour,
-        'duration': bookingDuration,
-      };
-      final docRef = await bookingRef.add(newBooking);
+      // final newBooking = {
+      //   'lapangId': lapangItem.id, // Use lapangId from JSON
+      //   'price': lapangItem.price,
+      //   'image_path': lapangItem.imagePath,
+      //   'quantity': qty.toString(),
+      //   'date': bookingDate,
+      //   'time': selectedHour,
+      //   'duration': bookingDuration,
+      // };
+      // final docRef = await bookingRef.add(newBooking);
 
       _cart.add(
         CartModel(
@@ -76,7 +72,8 @@ class Cart extends ChangeNotifier {
       for (var item in _cart) {
         final bookingRef = FirebaseFirestore.instance
             .collection('bookings')
-            .where('lapangId', isEqualTo: item.id) // Use lapangId instead of name
+            .where('lapangId',
+                isEqualTo: item.id) // Use lapangId instead of name
             .where('date', isEqualTo: item.bookingDate)
             .where('time', isEqualTo: item.time)
             .where('duration', isEqualTo: item.duration);
