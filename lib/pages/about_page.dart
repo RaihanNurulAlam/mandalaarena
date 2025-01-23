@@ -97,7 +97,9 @@ class _AboutPageState extends State<AboutPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tentang Aplikasi'),
+        title: Text('Tentang Aplikasi', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+        backgroundColor: Colors.black,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -189,9 +191,20 @@ class _AboutPageState extends State<AboutPage> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     ElevatedButton(
-                                      onPressed: () => _addReply(index,
-                                          _replyControllers[index]?.text ?? ''),
-                                      child: Text('Kirim Balasan'),
+                                      onPressed: () => _addReply(
+                                        index,
+                                        _replyControllers[index]?.text ?? '',
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors
+                                            .black, // Atur warna latar belakang di sini
+                                      ),
+                                      child: Text(
+                                        'Kirim Balasan',
+                                        style: TextStyle(
+                                            color: Colors
+                                                .white), // Atur warna teks di sini
+                                      ),
                                     ),
                                     IconButton(
                                       icon:

@@ -1,5 +1,3 @@
-// lib/pages/home_page.dart
-
 // ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously, use_super_parameters, unused_local_variable
 
 import 'dart:convert';
@@ -241,34 +239,34 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
-  builder: (context, state) {
-    return BottomNavigationBar(
-      currentIndex: state.index,
-      selectedItemColor: Colors.black,
-      unselectedItemColor: Colors.black,
-      onTap: (index) {
-        context.read<NavigationCubit>().navigateToIndex(index);
-      },
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Beranda',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.photo_library),
-          label: 'Galeri Aktivitas',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.article),
-          label: 'Informasi Terkini',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.info),
-          label: 'Tentang Aplikasi',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.payment),
-          label: 'Checkout',
+          builder: (context, state) {
+            return BottomNavigationBar(
+              currentIndex: state.index,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black,
+              onTap: (index) {
+                context.read<NavigationCubit>().navigateToIndex(index);
+              },
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
+                  label: 'Beranda',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.photo_library),
+                  label: 'Galeri Aktivitas',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.article),
+                  label: 'Informasi Terkini',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.info),
+                  label: 'Tentang Aplikasi',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.payment),
+                  label: 'Checkout',
                 ),
               ],
             );

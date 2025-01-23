@@ -464,31 +464,33 @@ class _DetailPageState extends State<DetailPage> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: ElevatedButton(
-            onPressed: () async {
-              DateTime? date = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now(),
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 30)),
-              );
-              if (date != null) {
-                setState(() {
-                  selectedDate = date;
-                });
-                _fetchUnavailableTimes();
+          child: ChoiceChip(
+            label: Text(
+              selectedDate != null
+                  ? DateFormat('dd MMM yyyy').format(selectedDate!)
+                  : "Pilih Tanggal",
+            ),
+            selected: selectedDate != null,
+            onSelected: (bool selected) async {
+              if (selected) {
+                DateTime? date = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 30)),
+                );
+                if (date != null) {
+                  setState(() {
+                    selectedDate = date;
+                  });
+                  _fetchUnavailableTimes();
+                }
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  Colors.black, // Set the background color to black
-            ),
-            child: Text(
-              selectedDate != null
-                  ? "${selectedDate?.toLocal().toString().split(' ')[0]}"
-                  : "Pilih Tanggal",
-              style: const TextStyle(
-                  color: Colors.white), // Set the text color to white
+            selectedColor: Colors.grey.shade300,
+            backgroundColor: Colors.grey.shade100,
+            labelStyle: TextStyle(
+              color: selectedDate != null ? Colors.black : Colors.black,
             ),
           ),
         ),

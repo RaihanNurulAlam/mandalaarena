@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class AlamatPage extends StatelessWidget {
   final String address =
-      "Jl. Jendral Sudirman No. 30 Rt. 01 Rw. 22 Rt/Rw: 001/022, Kelurahan Sukamentri, Kabupaten Garut";
+      "RW28+W56, Sukamentri, Kec. Garut Kota, Kabupaten Garut, Jawa Barat 44116";
   final String virtualTourUrl =
       "https://webobook.com/public/66d6aaf1182f59592758ee22,en";
 
@@ -30,7 +30,8 @@ class AlamatPage extends StatelessWidget {
         title: const Text('Lokasi Lapang'),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 20.0), // Padding tambahan untuk ikon globe
+            padding: const EdgeInsets.only(
+                right: 20.0), // Padding tambahan untuk ikon globe
             child: IconButton(
               icon: const Icon(Icons.public, color: Colors.black),
               onPressed: () => _openVirtualTour(context),
@@ -42,7 +43,8 @@ class AlamatPage extends StatelessWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0), // Padding untuk alamat
+            padding: const EdgeInsets.symmetric(
+                horizontal: 20.0), // Padding untuk alamat
             child: Align(
               alignment: Alignment.centerLeft, // Alamat di pinggir kiri
               child: Text(
@@ -54,13 +56,14 @@ class AlamatPage extends StatelessWidget {
           Expanded(
             child: GoogleMap(
               initialCameraPosition: const CameraPosition(
-                target: LatLng(-7.198671794403463, 107.91344726596695),
+                target: LatLng(-7.197728572773785, 107.91646839637045),
                 zoom: 15,
               ),
               markers: {
                 Marker(
                   markerId: const MarkerId('lapang'),
-                  position: const LatLng(-7.198671794403463, 107.91344726596695),
+                  position:
+                      const LatLng(-7.197728572773785, 107.91646839637045),
                   infoWindow: InfoWindow(
                     title: 'Lokasi Lapang',
                     snippet: address,
