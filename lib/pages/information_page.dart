@@ -13,9 +13,9 @@ class InformationPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Informasi Terkini',
-            style: TextStyle(color: Colors.white)),
+            style: TextStyle(color: Colors.black)),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        // backgroundColor: Colors.black,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

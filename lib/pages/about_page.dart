@@ -97,9 +97,9 @@ class _AboutPageState extends State<AboutPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tentang Aplikasi', style: TextStyle(color: Colors.white)),
+        title: Text('Tentang Aplikasi', style: TextStyle(color: Colors.black)),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        // backgroundColor: Colors.black,
       ),
       body: SingleChildScrollView(
         child: Padding(

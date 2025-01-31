@@ -1,11 +1,14 @@
-// ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors, avoid_print, deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print
 
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_cropper/image_cropper.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 class EditProfilePage extends StatefulWidget {
   final String userName;
@@ -45,12 +48,76 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+    try {
+      final pickedFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        // Crop image
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: pickedFile.path,
+          aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Crop Image',
+              toolbarColor: Colors.blue,
+              toolbarWidgetColor: Colors.white,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Crop Image',
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          // Resize image
+          final compressedFile = await FlutterImageCompress.compressAndGetFile(
+            croppedFile.path,
+            '${croppedFile.path}_compressed.jpg',
+            quality: 85, // Adjust image quality (0-100)
+          );
+
+          setState(() {
+            _imageFile = compressedFile != null
+                ? File(compressedFile.path)
+                : File(croppedFile.path);
+          });
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Gagal memproses gambar: $e'),
+      ));
+    }
+  }
+
+  Future<String?> _uploadImageToCloudinary(File imageFile) async {
+    try {
+      final cloudinaryUrl =
+          Uri.parse('https://api.cloudinary.com/v1_1/dru7n46a5/image/upload');
+      final request = http.MultipartRequest('POST', cloudinaryUrl);
+
+      // Tambahkan data wajib ke Cloudinary
+      request.fields['upload_preset'] = 'mandala';
+
+      // Tambahkan file gambar ke request
+      request.files
+          .add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        final jsonResponse = jsonDecode(responseData);
+        return jsonResponse['secure_url']; // URL gambar yang diunggah
+      } else {
+        print('Gagal mengunggah gambar: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error saat mengunggah gambar: $e');
+      return null;
     }
   }
 
@@ -65,25 +132,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
         final userId = user?.uid;
 
         if (user == null) {
-          throw Exception('User tidak ditemukan');
+          throw Exception('Pengguna tidak ditemukan');
         }
 
-        // Cek atau buat dokumen Firestore
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .get();
-
-        if (!userDoc.exists) {
-          await FirebaseFirestore.instance.collection('users').doc(userId).set({
-            'name': _nameController.text,
-            'email': _emailController.text,
-            'phone': _phoneController.text,
-            'profileImageUrl': widget.profileImageUrl,
-          });
+        // Unggah foto profil jika ada perubahan
+        String? newProfileUrl = widget.profileImageUrl;
+        if (_imageFile != null) {
+          newProfileUrl = await _uploadImageToCloudinary(_imageFile!);
+          if (newProfileUrl == null) {
+            throw Exception('Gagal mengunggah gambar');
+          }
         }
 
-        // Update data Firestore
+        // Update data di Firestore
         await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
@@ -91,9 +152,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
           'name': _nameController.text,
           'email': _emailController.text,
           'phone': _phoneController.text,
+          'profileImageUrl': newProfileUrl,
         });
 
-        // Update password
+        // Update foto profil di Firebase Auth
+        if (newProfileUrl != null) {
+          await user.updatePhotoURL(newProfileUrl);
+        }
+
+        // Update nama di Firebase Auth
+        await user.updateDisplayName(_nameController.text);
+
+        // Update password jika dimasukkan
         if (_oldPasswordController.text.isNotEmpty &&
             _newPasswordController.text.isNotEmpty &&
             _confirmPasswordController.text.isNotEmpty) {
@@ -111,18 +181,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
           }
         }
 
-        // Update foto profil
-        String? newProfileUrl = widget.profileImageUrl;
-        if (_imageFile != null) {
-          final ref = FirebaseStorage.instance
-              .ref()
-              .child('profile_images')
-              .child('$userId.jpg');
-          await ref.putFile(_imageFile!);
-          newProfileUrl = await ref.getDownloadURL();
-          await user.updatePhotoURL(newProfileUrl);
-        }
-
         // Reload pengguna untuk memperbarui data
         await user.reload();
         final updatedUser = FirebaseAuth.instance.currentUser;
@@ -131,7 +189,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           SnackBar(content: Text('Profil berhasil diperbarui!')),
         );
 
-        // Kembali ke halaman sebelumnya
+        // Kembali ke halaman sebelumnya dengan data yang diperbarui
         Navigator.pop(context, {
           'userName': updatedUser!.displayName ?? _nameController.text,
           'userEmail': updatedUser.email ?? _emailController.text,
@@ -173,8 +231,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             radius: 50,
                             backgroundImage: _imageFile != null
                                 ? FileImage(_imageFile!)
-                                : NetworkImage(widget.profileImageUrl)
-                                    as ImageProvider,
+                                : widget.profileImageUrl.isNotEmpty
+                                    ? NetworkImage(widget.profileImageUrl)
+                                        as ImageProvider
+                                    : AssetImage('assets/default_avatar.png')
+                                        as ImageProvider,
                           ),
                           Positioned(
                             bottom: 0,
@@ -214,9 +275,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                     SizedBox(height: 20),
                     Divider(),
-                    Text('Ganti Password',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      'Ganti Password',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                     TextFormField(
                       controller: _oldPasswordController,
                       decoration: InputDecoration(
@@ -249,11 +312,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       child: ElevatedButton(
                         onPressed: _updateProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black, // Set the background color to black
+                          backgroundColor: Colors.black,
                         ),
                         child: Text(
                           'Simpan Perubahan',
-                          style: TextStyle(color: Colors.white), // Set the text color to white
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),

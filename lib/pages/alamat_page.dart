@@ -56,14 +56,13 @@ class AlamatPage extends StatelessWidget {
           Expanded(
             child: GoogleMap(
               initialCameraPosition: const CameraPosition(
-                target: LatLng(-7.197728572773785, 107.91646839637045),
+                target: LatLng(-7.197780761030425, 107.9164070197299),
                 zoom: 15,
               ),
               markers: {
                 Marker(
                   markerId: const MarkerId('lapang'),
-                  position:
-                      const LatLng(-7.197728572773785, 107.91646839637045),
+                  position: const LatLng(-7.197780761030425, 107.9164070197299),
                   infoWindow: InfoWindow(
                     title: 'Lokasi Lapang',
                     snippet: address,

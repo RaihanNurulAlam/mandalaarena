@@ -10,9 +10,9 @@ class GalleryPage extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Galeri Aktivitas', style: TextStyle(color: Colors.white)),
+        title: Text('Galeri Aktivitas', style: TextStyle(color: Colors.black)),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        // backgroundColor: Colors.black,
       ),
       body: Center(
         child: Text('Galeri foto aktivitas.'),

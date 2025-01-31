@@ -1,13 +1,49 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const multer = require('multer');
+const { v2: cloudinary } = require('cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const midtransClient = require('midtrans-client');
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Setup Midtrans client
+// === Konfigurasi Cloudinary ===
+cloudinary.config({
+  cloud_name: 'dru7n46a5', // Ganti dengan Cloudinary Cloud Name Anda
+  api_key: '522939137274927',       // Ganti dengan API Key Anda
+  api_secret: 'DhV_qPW7dxmclTU_wQTEZoZR23E', // Ganti dengan API Secret Anda
+});
+
+// Konfigurasi Multer untuk penyimpanan di Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'profile_images', // Nama folder di Cloudinary
+    allowed_formats: ['jpg', 'png', 'jpeg'], // Format gambar yang diizinkan
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// === Endpoint untuk Cloudinary ===
+// Endpoint untuk mengunggah gambar
+app.post('/upload', upload.single('image'), (req, res) => {
+  if (req.file) {
+    res.status(200).json({
+      success: true,
+      message: 'Image uploaded successfully!',
+      imageUrl: req.file.path,
+    });
+  } else {
+    res.status(400).json({ success: false, message: 'Failed to upload image' });
+  }
+});
+
+// === Konfigurasi Midtrans ===
 const snap = new midtransClient.Snap({
   isProduction: false, // Ubah ke `true` jika menggunakan environment produksi
   serverKey: 'SB-Mid-server-cy93tLqGdUiBnvuFQXhVjlH-', // Ganti dengan server key Anda

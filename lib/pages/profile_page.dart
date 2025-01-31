@@ -1,4 +1,3 @@
-// profile_page.dart
 // ignore_for_file: use_super_parameters
 
 import 'package:flutter/material.dart';
@@ -7,30 +6,37 @@ import 'package:provider/provider.dart';
 import '../provider/user_provider.dart';
 import '../pages/edit_profile_page.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    final userName = userProvider.userName;
-    final userEmail = userProvider.userEmail;
-    final profileImageUrl = userProvider.profileImageUrl;
-    final phoneNumber = userProvider.userPhone;
+    String userName = userProvider.userName;
+    String userEmail = userProvider.userEmail;
+    String profileImageUrl = userProvider.profileImageUrl;
+    String phoneNumber = userProvider.userPhone;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profil"),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             CircleAvatar(
-              backgroundImage: NetworkImage(profileImageUrl.isNotEmpty
-                  ? profileImageUrl
-                  : "https://via.placeholder.com/150"),
+              backgroundImage: NetworkImage(
+                profileImageUrl.isNotEmpty
+                    ? profileImageUrl
+                    : "https://via.placeholder.com/150", // Placeholder jika foto kosong
+              ),
               radius: 50,
             ),
             const SizedBox(height: 16),
@@ -45,13 +51,16 @@ class ProfilePage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              phoneNumber.isNotEmpty ? phoneNumber : "Nomor telepon tidak tersedia",
+              phoneNumber.isNotEmpty
+                  ? phoneNumber
+                  : "Nomor telepon tidak tersedia",
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                // Navigasi ke halaman EditProfilePage
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => EditProfilePage(
@@ -62,6 +71,17 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                 );
+
+                // Perbarui profil jika ada perubahan
+                if (result != null && mounted) {
+                  setState(() {
+                    userName = result['userName'] ?? userName;
+                    userEmail = result['userEmail'] ?? userEmail;
+                    profileImageUrl =
+                        result['profileImageUrl'] ?? profileImageUrl;
+                    phoneNumber = result['phoneNumber'] ?? phoneNumber;
+                  });
+                }
               },
               child: const Text("Edit Profil"),
             ),
@@ -70,7 +90,7 @@ class ProfilePage extends StatelessWidget {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // Warna tombol logout
+                backgroundColor: Colors.red, // Warna tombol keluar
               ),
               child: const Text("Keluar"),
             ),
