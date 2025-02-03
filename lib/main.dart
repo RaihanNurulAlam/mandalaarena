@@ -34,10 +34,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider(
             create: (context) => Cart()), // Provider untuk Cart
-        ChangeNotifierProvider(
-            create: (context) => UserProvider()),
-        ChangeNotifierProvider(
-            create: (_) => LoveProvider()),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => LoveProvider()),
       ],
       child: MandalaArenaApp(), // Mengganti MandalaArenaApp menjadi MyApp
     ),

@@ -1,14 +1,14 @@
-// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print
+// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print, unused_field
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_cropper/image_cropper.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class EditProfilePage extends StatefulWidget {
   final String userName;
@@ -28,6 +28,7 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
+  Uint8List? _imageBytes;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -48,71 +49,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _pickImage() async {
-    try {
-      final pickedFile =
-          await ImagePicker().pickImage(source: ImageSource.gallery);
+    final ImagePicker picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
 
-      if (pickedFile != null) {
-        // Crop image
-        final croppedFile = await ImageCropper().cropImage(
-          sourcePath: pickedFile.path,
-          aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1),
-          uiSettings: [
-            AndroidUiSettings(
-              toolbarTitle: 'Crop Image',
-              toolbarColor: Colors.blue,
-              toolbarWidgetColor: Colors.white,
-              lockAspectRatio: true,
-            ),
-            IOSUiSettings(
-              title: 'Crop Image',
-            ),
-          ],
-        );
-
-        if (croppedFile != null) {
-          // Resize image
-          final compressedFile = await FlutterImageCompress.compressAndGetFile(
-            croppedFile.path,
-            '${croppedFile.path}_compressed.jpg',
-            quality: 85, // Adjust image quality (0-100)
-          );
-
-          setState(() {
-            _imageFile = compressedFile != null
-                ? File(compressedFile.path)
-                : File(croppedFile.path);
-          });
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Gagal memproses gambar: $e'),
-      ));
+    if (pickedImage != null) {
+      final imageBytes = await pickedImage.readAsBytes();
+      setState(() {
+        _imageBytes = imageBytes;
+        _imageFile = File(pickedImage.path);
+      });
     }
   }
 
   Future<String?> _uploadImageToCloudinary(File imageFile) async {
+    if (kIsWeb) {
+      print('Upload gambar tidak didukung di web dengan MultipartFile');
+      return null;
+    }
+
     try {
       final cloudinaryUrl =
           Uri.parse('https://api.cloudinary.com/v1_1/dru7n46a5/image/upload');
       final request = http.MultipartRequest('POST', cloudinaryUrl);
 
-      // Tambahkan data wajib ke Cloudinary
       request.fields['upload_preset'] = 'mandala';
-
-      // Tambahkan file gambar ke request
       request.files
           .add(await http.MultipartFile.fromPath('file', imageFile.path));
 
       final response = await request.send();
+      final responseData = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        final responseData = await response.stream.bytesToString();
         final jsonResponse = jsonDecode(responseData);
-        return jsonResponse['secure_url']; // URL gambar yang diunggah
+        return jsonResponse['secure_url'];
       } else {
         print('Gagal mengunggah gambar: ${response.statusCode}');
+        print('Respon: $responseData');
         return null;
       }
     } catch (e) {
@@ -131,20 +103,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
         final user = FirebaseAuth.instance.currentUser;
         final userId = user?.uid;
 
-        if (user == null) {
-          throw Exception('Pengguna tidak ditemukan');
-        }
+        if (user == null) throw Exception('Pengguna tidak ditemukan');
 
-        // Unggah foto profil jika ada perubahan
         String? newProfileUrl = widget.profileImageUrl;
-        if (_imageFile != null) {
+
+        if (_imageFile != null && !kIsWeb) {
           newProfileUrl = await _uploadImageToCloudinary(_imageFile!);
-          if (newProfileUrl == null) {
-            throw Exception('Gagal mengunggah gambar');
-          }
+          if (newProfileUrl == null) throw Exception('Gagal mengunggah gambar');
         }
 
-        // Update data di Firestore
         await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
@@ -155,45 +122,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
           'profileImageUrl': newProfileUrl,
         });
 
-        // Update foto profil di Firebase Auth
         if (newProfileUrl != null) {
           await user.updatePhotoURL(newProfileUrl);
         }
 
-        // Update nama di Firebase Auth
         await user.updateDisplayName(_nameController.text);
-
-        // Update password jika dimasukkan
-        if (_oldPasswordController.text.isNotEmpty &&
-            _newPasswordController.text.isNotEmpty &&
-            _confirmPasswordController.text.isNotEmpty) {
-          final credential = EmailAuthProvider.credential(
-            email: widget.userEmail,
-            password: _oldPasswordController.text,
-          );
-
-          await user.reauthenticateWithCredential(credential);
-
-          if (_newPasswordController.text == _confirmPasswordController.text) {
-            await user.updatePassword(_newPasswordController.text);
-          } else {
-            throw Exception('Password baru tidak cocok');
-          }
-        }
-
-        // Reload pengguna untuk memperbarui data
         await user.reload();
-        final updatedUser = FirebaseAuth.instance.currentUser;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Profil berhasil diperbarui!')),
         );
 
-        // Kembali ke halaman sebelumnya dengan data yang diperbarui
         Navigator.pop(context, {
-          'userName': updatedUser!.displayName ?? _nameController.text,
-          'userEmail': updatedUser.email ?? _emailController.text,
-          'profileImageUrl': updatedUser.photoURL ?? newProfileUrl,
+          'userName': _nameController.text,
+          'userEmail': _emailController.text,
+          'profileImageUrl': newProfileUrl ?? widget.profileImageUrl,
           'phoneNumber': _phoneController.text,
         });
       } catch (e) {
@@ -215,115 +158,125 @@ class _EditProfilePageState extends State<EditProfilePage> {
       appBar: AppBar(
         title: Text('Ubah Profil'),
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Stack(
                   children: [
-                    Center(
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundImage: _imageFile != null
-                                ? FileImage(_imageFile!)
-                                : widget.profileImageUrl.isNotEmpty
-                                    ? NetworkImage(widget.profileImageUrl)
-                                        as ImageProvider
-                                    : AssetImage('assets/default_avatar.png')
-                                        as ImageProvider,
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.grey.shade200,
+                      backgroundImage: _imageBytes != null
+                          ? MemoryImage(_imageBytes!)
+                          : NetworkImage(widget.profileImageUrl)
+                              as ImageProvider?,
+                      child:
+                          _imageBytes == null && widget.profileImageUrl.isEmpty
+                              ? Icon(
+                                  Icons.person,
+                                  size: 70,
+                                  color: Colors.grey.shade700,
+                                )
+                              : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: InkWell(
+                        onTap: _pickImage,
+                        child: CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.blue,
+                          child: Icon(
+                            Icons.edit,
+                            color: Colors.white,
                           ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: IconButton(
-                              icon: Icon(Icons.camera_alt, color: Colors.blue),
-                              onPressed: _pickImage,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nama',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: InputDecoration(
-                        labelText: 'Nomor Telepon',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    SizedBox(height: 20),
-                    Divider(),
-                    Text(
-                      'Ganti Password',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    TextFormField(
-                      controller: _oldPasswordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password Lama',
-                        border: OutlineInputBorder(),
-                      ),
-                      obscureText: true,
-                    ),
-                    SizedBox(height: 20),
-                    TextFormField(
-                      controller: _newPasswordController,
-                      decoration: InputDecoration(
-                        labelText: 'Password Baru',
-                        border: OutlineInputBorder(),
-                      ),
-                      obscureText: true,
-                    ),
-                    SizedBox(height: 20),
-                    TextFormField(
-                      controller: _confirmPasswordController,
-                      decoration: InputDecoration(
-                        labelText: 'Konfirmasi Password Baru',
-                        border: OutlineInputBorder(),
-                      ),
-                      obscureText: true,
-                    ),
-                    SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _updateProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                        ),
-                        child: Text(
-                          'Simpan Perubahan',
-                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Nama',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  labelText: 'Nomor Telepon',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              SizedBox(height: 20),
+              Divider(),
+              Text(
+                'Ganti Password',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              TextFormField(
+                controller: _oldPasswordController,
+                decoration: InputDecoration(
+                  labelText: 'Password Lama',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _newPasswordController,
+                decoration: InputDecoration(
+                  labelText: 'Password Baru',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 20),
+              TextFormField(
+                controller: _confirmPasswordController,
+                decoration: InputDecoration(
+                  labelText: 'Konfirmasi Password Baru',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _updateProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                  ),
+                  child: Text(
+                    'Simpan Perubahan',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
