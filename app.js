@@ -5,6 +5,7 @@ const multer = require('multer');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const midtransClient = require('midtrans-client');
+const axios = require('axios');
 
 const app = express();
 app.use(cors());
@@ -91,18 +92,19 @@ app.post('/pay', async (req, res) => {
 app.get('/transaction-status', async (req, res) => {
   try {
     const { orderId } = req.query;
-
-    // Validasi input
     if (!orderId) {
-      return res.status(400).json({ error: 'Order ID is required' });
+      return res.status(400).json({ error: 'orderId is required' });
     }
 
-    // Mendapatkan status transaksi dari Midtrans
-    const transactionStatus = await snap.transaction.status(orderId);
+    const response = await axios.get(`https://api.sandbox.midtrans.com/v2/${orderId}/status`, {
+      headers: {
+        Authorization: `Basic ${Buffer.from(snap.apiConfig.serverKey + ":").toString("base64")}`,
+      },
+    });
 
-    res.status(200).json(transactionStatus);
+    res.status(200).json(response.data);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching transaction status:', error);
     res.status(500).json({ error: 'Failed to fetch transaction status' });
   }
 });

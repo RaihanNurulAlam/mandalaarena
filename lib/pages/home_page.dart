@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -426,58 +427,103 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildDiscountBanner(BuildContext context) {
+    final List<Map<String, String>> discountBanners = [
+      {
+        "image": "assets/mini.jpg",
+        "title": "Dapatkan Diskon 10%",
+        "description": "Untuk Booking Lapang di Hari Jumat",
+      },
+      {
+        "image": "assets/rubber.jpg",
+        "title": "Diskon 15% Untuk Member",
+        "description": "Nikmati promo eksklusif untuk pengguna setia",
+      },
+      {
+        "image": "assets/vynil.jpg",
+        "title": "Promo Spesial Weekend!",
+        "description": "Diskon 20% untuk pemesanan di Sabtu & Minggu",
+      },
+    ];
+
     return Container(
-      height: 200,
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      width: MediaQuery.sizeOf(context).width,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: AssetImage('assets/mini.jpg'),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.2),
-            BlendMode.darken,
-          ),
+      height: 250,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: CarouselSlider.builder(
+        itemCount: discountBanners.length,
+        options: CarouselOptions(
+          height: 250,
+          autoPlay: true,
+          autoPlayInterval: const Duration(seconds: 20),
+          autoPlayAnimationDuration: const Duration(milliseconds: 800),
+          enlargeCenterPage: true,
+          viewportFraction: 1.0,
         ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: const [
-          ListTile(
-            title: Text(
-              'Dapatkan Diskon 10%',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+        itemBuilder: (context, index, realIndex) {
+          final discount = discountBanners[index];
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                // Gambar sebagai latar belakang
+                Positioned.fill(
+                  child: Image.asset(
+                    discount["image"]!,
+                    fit: BoxFit.cover,
+                    color: Colors.black.withOpacity(0.3),
+                    colorBlendMode: BlendMode.darken,
+                  ),
+                ),
+                // Lapisan putih untuk deskripsi
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(20),
+                      ),
+                    ),
+                    child: ListTile(
+                      title: Text(
+                        discount["title"]!,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        discount["description"]!,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                        ),
+                      ),
+                      trailing: const Icon(
+                        CupertinoIcons.arrow_right,
+                        size: 28,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            subtitle: Text(
-              'Untuk Booking Lapang di Hari Jumat',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-              ),
-            ),
-            trailing: Icon(
-              CupertinoIcons.arrow_right,
-              size: 40,
-              color: Colors.white,
-            ),
-          )
-        ],
+          );
+        },
       ),
     );
   }
 
-  bestSellerWidget(BuildContext context) {
+  Widget bestSellerWidget(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Best Seller',
             style: TextStyle(
               color: Colors.black,
@@ -485,47 +531,88 @@ class _HomePageState extends State<HomePage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           GestureDetector(
             onTap: () {
               goToDetailLapang(1);
             },
-            child: Container(
-              height: 200,
-              width: MediaQuery.sizeOf(context).width,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                image: DecorationImage(
-                  image: AssetImage(lapangs[1].imagePath.toString()),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withOpacity(0.2),
-                    BlendMode.darken,
+            child: Stack(
+              children: [
+                // Gambar dengan deskripsi
+                Container(
+                  height: 250,
+                  width: MediaQuery.sizeOf(context).width,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    image: DecorationImage(
+                      image: AssetImage(lapangs[1].imagePath.toString()),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.2),
+                        BlendMode.darken,
+                      ),
+                    ),
+                  ),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(20),
+                        ),
+                      ),
+                      child: ListTile(
+                        title: Text(
+                          lapangs[1].name.toString(),
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Rp. ${lapangs[1].price}',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ListTile(
-                    title: Text(
-                      lapangs[1].name.toString(),
+                // Banner di pojok kiri atas
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(2, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'Best Seller',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    subtitle: Text(
-                      'Rp. ${lapangs[1].price}',
-                      style: TextStyle(
-                        color: Colors.yellowAccent,
-                        fontSize: 18,
-                      ),
-                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],

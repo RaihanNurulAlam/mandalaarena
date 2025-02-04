@@ -136,7 +136,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         Navigator.pop(context, {
           'userName': _nameController.text,
           'userEmail': _emailController.text,
-          'profileImageUrl': newProfileUrl ?? widget.profileImageUrl,
+          'profileImageUrl': newProfileUrl,
           'phoneNumber': _phoneController.text,
         });
       } catch (e) {

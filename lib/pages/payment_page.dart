@@ -269,6 +269,7 @@ class _PaymentPageState extends State<PaymentPage> {
                               MaterialPageRoute(
                                 builder: (context) => PaymentWebView(
                                   transactionToken: transactionToken,
+                                  orderId: data['orderId'],
                                 ),
                               ),
                             );
@@ -278,6 +279,7 @@ class _PaymentPageState extends State<PaymentPage> {
                                 Uri.parse(
                                     '$baseUrl/transaction-status?orderId=${data['orderId']}'),
                               );
+
                               if (statusResponse.statusCode == 200) {
                                 final statusData =
                                     json.decode(statusResponse.body);
@@ -285,6 +287,16 @@ class _PaymentPageState extends State<PaymentPage> {
                                   transactionStatus =
                                       statusData['transaction_status'];
                                 });
+                                // Jika transaksi berhasil, tampilkan pesan sukses
+                                if (transactionStatus == 'settlement' ||
+                                    transactionStatus == 'capture') {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Pembayaran berhasil!'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
                               }
                             }
                           }
@@ -313,10 +325,12 @@ class _PaymentPageState extends State<PaymentPage> {
 
 class PaymentWebView extends StatelessWidget {
   final String transactionToken;
+  final String orderId;
 
   const PaymentWebView({
     super.key,
     required this.transactionToken,
+    required this.orderId,
   });
 
   @override
@@ -331,11 +345,21 @@ class PaymentWebView extends StatelessWidget {
             'https://app.sandbox.midtrans.com/snap/v2/vtweb/$transactionToken',
           ),
         ),
-        onLoadStop: (controller, url) {
-          if (url.toString().contains('success')) {
-            Navigator.pop(context, true);
-          } else if (url.toString().contains('failure')) {
-            Navigator.pop(context, false);
+        onLoadStop: (controller, url) async {
+          // Use a try-catch block to handle potential errors
+          try {
+            final uri = Uri.parse(url.toString());
+
+            if (uri.queryParameters.containsKey('transaction_status')) {
+              final status = uri.queryParameters['transaction_status'];
+
+              // Navigate back to PaymentPage with the status and orderId
+              Navigator.pop(context, {'status': status, 'orderId': orderId});
+            }
+          } catch (e) {
+            print('Error processing URL: $e');
+            // Handle the error appropriately, e.g., show an error message
+            Navigator.pop(context, {'status': 'error', 'orderId': orderId});
           }
         },
       ),
