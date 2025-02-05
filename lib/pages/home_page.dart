@@ -393,32 +393,35 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: const BoxDecoration(
+                  color: Colors.white60,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(20),
+                  ),
+                ),
+                child: ListTile(
+                  title: Text(
                     lapangs[index].name ?? 'Lapang Tanpa Nama',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
+                  subtitle: Text(
                     'Rp. ${lapangs[index].price}',
-                    style: TextStyle(
-                      color: Colors.yellowAccent,
-                      fontSize: 14,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 12,
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         );
@@ -480,7 +483,7 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 10),
                     decoration: const BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white60,
                       borderRadius: BorderRadius.vertical(
                         bottom: Radius.circular(20),
                       ),
@@ -523,14 +526,14 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Best Seller',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          // const Text(
+          //   'Best Seller',
+          //   style: TextStyle(
+          //     color: Colors.black,
+          //     fontSize: 24,
+          //     fontWeight: FontWeight.bold,
+          //   ),
+          // ),
           const SizedBox(height: 10),
           GestureDetector(
             onTap: () {
@@ -559,7 +562,7 @@ class _HomePageState extends State<HomePage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 10),
                       decoration: const BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.white60,
                         borderRadius: BorderRadius.vertical(
                           bottom: Radius.circular(20),
                         ),

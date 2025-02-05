@@ -1,8 +1,8 @@
 [
     {
       "id": "1",
-      "name": "Aula Basket Lapangan Vinyl",
-      "description": "Deskripsi Vynil Basket.",
+      "name": "Lapang Basket Vynil",
+      "description": "Deskripsi Lapang Basket Vynil.",
       "price": "300000",
       "image_path": "assets/vynil.jpg",
       "rating": "4.9",
@@ -11,8 +11,8 @@
     },
     {
       "id": "2",
-      "name": "Aula Basket Lapangan Karet",
-      "description": "Deskripsi Rubber Basket.",
+      "name": "Lapang Basket Karet",
+      "description": "Deskripsi Lapang Basket Karet.",
       "price": "300000",
       "image_path": "assets/rubber.jpg",
       "rating": "4.8",
@@ -21,8 +21,8 @@
     },
     {
       "id": "3",
-      "name": "Aula Basket Lapangan 3x3",
-      "description": "Deskripsi 3x3 Basket.",
+      "name": "Lapang Basket 3x3",
+      "description": "Deskripsi Lapang Basket 3x3.",
       "price": "300000",
       "image_path": "assets/3x3.jpg",
       "rating": "4.9",
@@ -32,7 +32,7 @@
     {
       "id": "4",
       "name": "Lapang Minisoccer",
-      "description": "Deskripsi Minisoccer.",
+      "description": "Deskripsi Lapang Minisoccer.",
       "price": "120000",
       "image_path": "assets/mini.jpg",
       "rating": "4.9",

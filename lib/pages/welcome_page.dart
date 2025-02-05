@@ -13,88 +13,93 @@ class WelcomePage extends StatelessWidget {
       extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
-          'KPM Corp',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 25,
-          ),
-        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Container(
-        height: MediaQuery.sizeOf(context).height,
-        width: MediaQuery.sizeOf(context).width,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/minisoccer.jpg'),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.5),
-              BlendMode.darken,
+      body: Stack(
+        children: [
+          // Background Image
+          Positioned.fill(
+            child: Image.asset(
+              'assets/welcome1920.jpg',
+              alignment: Alignment.topCenter,
+              width: MediaQuery.of(context).size.width, // Sesuaikan lebar layar
+              height:
+                  MediaQuery.of(context).size.height, // Sesuaikan tinggi layar
+              fit: BoxFit
+                  .cover, // Pastikan gambar menutupi layar tanpa terpotong
             ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Selamat Datang di Aplikasi Mandala Arena',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 25,
-                ),
-              ),
-              Text(
-                'Dirancang untuk memudahkan sewa lapang Mandala Arena',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 15,
-                ),
-              ),
-              SizedBox(height: 20),
-              SizedBox(
-                width: MediaQuery.sizeOf(context).width,
-                child: CupertinoButton(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(50),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Text(
-                          'Mulai',
-                          style: TextStyle(
-                            fontSize: 24,
-                            color: Colors.white,
+          // Overlay Gradient (Opsional)
+          // Container(
+          //   decoration: BoxDecoration(
+          //     gradient: LinearGradient(
+          //       begin: Alignment.topCenter,
+          //       end: Alignment.bottomCenter,
+          //       colors: [
+          //         Colors.black.withOpacity(0.2),
+          //         Colors.black.withOpacity(0.6),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+          // Konten dengan ScrollView
+          SingleChildScrollView(
+            child: Container(
+              height: MediaQuery.of(context)
+                  .size
+                  .height, // Pastikan scroll bisa bekerja
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 50),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 50), // Spasi agar bisa discroll
+
+                  // Tombol "Mulai" di tengah bawah
+                  Align(
+                    alignment:
+                        Alignment.center, // Pastikan tombol berada di tengah
+                    child: CupertinoButton(
+                      color: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12), // Perbesar padding tombol
+                      borderRadius: BorderRadius.circular(50),
+                      minSize: 0,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Text(
+                            'Mulai',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
                           ),
-                        ),
-                        SizedBox(width: 10),
-                        Icon(
-                          CupertinoIcons.arrow_right,
-                          color: Colors.white,
-                        ),
-                      ],
+                          SizedBox(width: 10),
+                          Icon(
+                            CupertinoIcons.arrow_right,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                      onPressed: () {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => LoginScreen()),
+                          (route) => false,
+                        );
+                      },
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                      (route) => false,
-                    );
-                  },
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

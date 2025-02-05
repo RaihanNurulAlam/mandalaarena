@@ -113,7 +113,7 @@ class _SearchPageState extends State<SearchPage> {
                           fontSize: 16,
                         ),
                       ),
-                      subtitle: Text('IDR ${_foundedLapangs[index].price}'),
+                      subtitle: Text('Rp. ${_foundedLapangs[index].price}'),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [

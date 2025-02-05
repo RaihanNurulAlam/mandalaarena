@@ -31,8 +31,7 @@
         android:label="mandalaarenaapp"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:enableOnBackInvokedCallback="true"
-         <!-- Add this inside the <application> tag -->
+        android:enableOnBackInvokedCallback="true">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBpv07s4XGkIb3UY78FmJg8MsOdCZCWDEY"/>
@@ -60,7 +59,6 @@
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
          https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
-
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
         <intent>
