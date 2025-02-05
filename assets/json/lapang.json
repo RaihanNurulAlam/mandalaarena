@@ -4,7 +4,7 @@
       "name": "Lapang Basket Vynil",
       "description": "Deskripsi Lapang Basket Vynil.",
       "price": "300000",
-      "image_path": "assets/vynil.jpg",
+      "image_path": "assets/vynil.JPG",
       "rating": "4.9",
       "bookings": ["2024-12-24T08:00:00.000Z", "2024-12-24T09:00:00.000Z"],
       "facilities": ["Shower", "Parking Area", "Locker Room"]
@@ -14,7 +14,7 @@
       "name": "Lapang Basket Karet",
       "description": "Deskripsi Lapang Basket Karet.",
       "price": "300000",
-      "image_path": "assets/rubber.jpg",
+      "image_path": "assets/rubber.JPG",
       "rating": "4.8",
       "bookings": [],
       "facilities": ["Shower", "Parking Area", "Locker Room"]
@@ -24,7 +24,7 @@
       "name": "Lapang Basket 3x3",
       "description": "Deskripsi Lapang Basket 3x3.",
       "price": "300000",
-      "image_path": "assets/3x3.jpg",
+      "image_path": "assets/3x3.JPG",
       "rating": "4.9",
       "bookings": [],
       "facilities": ["Shower", "Parking Area", "Locker Room"]
@@ -34,7 +34,7 @@
       "name": "Lapang Minisoccer",
       "description": "Deskripsi Lapang Minisoccer.",
       "price": "120000",
-      "image_path": "assets/mini.jpg",
+      "image_path": "assets/mini.JPG",
       "rating": "4.9",
       "bookings": [],
       "facilities": ["Shower", "Parking Area", "Locker Room"]
@@ -44,7 +44,7 @@
       "name": "Gokart",
       "description": "Deskripsi Gokart.",
       "price": "150000",
-      "image_path": "assets/gokart.jpg",
+      "image_path": "assets/gokart.JPG",
       "rating": "5.0",
       "bookings": [],
       "facilities": ["Shower", "Parking Area", "Locker Room"]

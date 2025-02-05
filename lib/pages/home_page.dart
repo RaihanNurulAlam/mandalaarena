@@ -432,17 +432,17 @@ class _HomePageState extends State<HomePage> {
   Widget _buildDiscountBanner(BuildContext context) {
     final List<Map<String, String>> discountBanners = [
       {
-        "image": "assets/mini.jpg",
+        "image": "assets/mini.JPG",
         "title": "Dapatkan Diskon 10%",
         "description": "Untuk Booking Lapang di Hari Jumat",
       },
       {
-        "image": "assets/rubber.jpg",
+        "image": "assets/rubber.JPG",
         "title": "Diskon 15% Untuk Member",
         "description": "Nikmati promo eksklusif untuk pengguna setia",
       },
       {
-        "image": "assets/vynil.jpg",
+        "image": "assets/vynil.JPG",
         "title": "Promo Spesial Weekend!",
         "description": "Diskon 20% untuk pemesanan di Sabtu & Minggu",
       },

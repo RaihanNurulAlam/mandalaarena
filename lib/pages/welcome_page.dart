@@ -21,7 +21,7 @@ class WelcomePage extends StatelessWidget {
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/welcome1920.jpg',
+              'assets/welcome.jpg',
               alignment: Alignment.topCenter,
               width: MediaQuery.of(context).size.width, // Sesuaikan lebar layar
               height:
