@@ -526,98 +526,100 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // const Text(
-          //   'Best Seller',
-          //   style: TextStyle(
-          //     color: Colors.black,
-          //     fontSize: 24,
-          //     fontWeight: FontWeight.bold,
-          //   ),
-          // ),
           const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () {
-              goToDetailLapang(1);
-            },
-            child: Stack(
-              children: [
-                // Gambar dengan deskripsi
-                Container(
-                  height: 250,
-                  width: MediaQuery.sizeOf(context).width,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    image: DecorationImage(
-                      image: AssetImage(lapangs[1].imagePath.toString()),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.2),
-                        BlendMode.darken,
+          if (lapangs.isNotEmpty &&
+              lapangs.length >
+                  1) // Cek apakah lapangs memiliki minimal 2 elemen
+            GestureDetector(
+              onTap: () {
+                goToDetailLapang(1);
+              },
+              child: Stack(
+                children: [
+                  // Gambar dengan deskripsi
+                  Container(
+                    height: 250,
+                    width: MediaQuery.sizeOf(context).width,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      image: DecorationImage(
+                        image: AssetImage(lapangs[1].imagePath.toString()),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withOpacity(0.2),
+                          BlendMode.darken,
+                        ),
+                      ),
+                    ),
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: const BoxDecoration(
+                          color: Colors.white60,
+                          borderRadius: BorderRadius.vertical(
+                            bottom: Radius.circular(20),
+                          ),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                            lapangs[1].name.toString(),
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Rp. ${lapangs[1].price}',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
+                  // Banner di pojok kiri atas
+                  Positioned(
+                    top: 10,
+                    left: 10,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
-                      decoration: const BoxDecoration(
-                        color: Colors.white60,
-                        borderRadius: BorderRadius.vertical(
-                          bottom: Radius.circular(20),
-                        ),
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(2, 2),
+                          ),
+                        ],
                       ),
-                      child: ListTile(
-                        title: Text(
-                          lapangs[1].name.toString(),
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Rp. ${lapangs[1].price}',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 14,
-                          ),
+                      child: const Text(
+                        'Best Seller',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                ),
-                // Banner di pojok kiri atas
-                Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Text(
-                      'Best Seller',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
+            )
+          else
+            Center(
+              child: Text(
+                "Belum ada best seller tersedia",
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
             ),
-          ),
         ],
       ),
     );

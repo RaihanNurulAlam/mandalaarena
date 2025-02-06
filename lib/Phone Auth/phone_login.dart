@@ -26,6 +26,8 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication> {
           myDialogBox(context);
         },
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),

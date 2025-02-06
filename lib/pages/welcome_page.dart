@@ -2,10 +2,19 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
+
+  void _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,57 +30,37 @@ class WelcomePage extends StatelessWidget {
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/welcome.jpg',
+              'assets/1.jpg',
               alignment: Alignment.topCenter,
-              width: MediaQuery.of(context).size.width, // Sesuaikan lebar layar
-              height:
-                  MediaQuery.of(context).size.height, // Sesuaikan tinggi layar
-              fit: BoxFit
-                  .cover, // Pastikan gambar menutupi layar tanpa terpotong
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              fit: BoxFit.cover,
             ),
           ),
-          // Overlay Gradient (Opsional)
-          // Container(
-          //   decoration: BoxDecoration(
-          //     gradient: LinearGradient(
-          //       begin: Alignment.topCenter,
-          //       end: Alignment.bottomCenter,
-          //       colors: [
-          //         Colors.black.withOpacity(0.2),
-          //         Colors.black.withOpacity(0.6),
-          //       ],
-          //     ),
-          //   ),
-          // ),
           // Konten dengan ScrollView
           SingleChildScrollView(
             child: Container(
-              height: MediaQuery.of(context)
-                  .size
-                  .height, // Pastikan scroll bisa bekerja
+              height: MediaQuery.of(context).size.height,
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 50),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const SizedBox(height: 50), // Spasi agar bisa discroll
-
-                  // Tombol "Mulai" di tengah bawah
+                  const SizedBox(height: 50),
+                  // Tombol "Mulai"
                   Align(
-                    alignment:
-                        Alignment.center, // Pastikan tombol berada di tengah
+                    alignment: Alignment.center,
                     child: CupertinoButton(
                       color: Colors.black,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12), // Perbesar padding tombol
+                          horizontal: 24, vertical: 12),
                       borderRadius: BorderRadius.circular(50),
                       minSize: 0,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: const [
                           Text(
-                            'Mulai',
+                            'Book Now!',
                             style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -94,6 +83,37 @@ class WelcomePage extends StatelessWidget {
                         );
                       },
                     ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Social Media Icons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.phone,
+                            color: Colors.green, size: 30),
+                        onPressed: () =>
+                            _launchURL('https://wa.me/6282117556907'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.facebook,
+                            color: Colors.blue, size: 30),
+                        onPressed: () => _launchURL(
+                            'https://www.facebook.com/mandala.arena'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.camera_alt,
+                            color: Colors.purple, size: 30),
+                        onPressed: () => _launchURL(
+                            'https://www.instagram.com/mandalaarena'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.email,
+                            color: Colors.red, size: 30),
+                        onPressed: () =>
+                            _launchURL('mailto:mandalaarena@gmail.com'),
+                      ),
+                    ],
                   ),
                 ],
               ),
