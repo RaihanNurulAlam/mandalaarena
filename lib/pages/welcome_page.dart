@@ -1,17 +1,28 @@
-// ignore_for_file: deprecated_member_use
-
+// ignore_for_file: deprecated_member_use, library_private_types_in_public_api
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
 
+  @override
+  _WelcomePageState createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> {
+  bool isExpanded = false;
+
+  void _toggleMenu() {
+    setState(() {
+      isExpanded = !isExpanded;
+    });
+  }
+
   void _launchURL(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       throw 'Could not launch $url';
     }
   }
@@ -37,6 +48,7 @@ class WelcomePage extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
+
           // Konten dengan ScrollView
           SingleChildScrollView(
             child: Container(
@@ -47,7 +59,8 @@ class WelcomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 50),
-                  // Tombol "Mulai"
+
+                  // Tombol "Book Now"
                   Align(
                     alignment: Alignment.center,
                     child: CupertinoButton(
@@ -84,39 +97,91 @@ class WelcomePage extends StatelessWidget {
                       },
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  // Social Media Icons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.phone,
-                            color: Colors.green, size: 30),
-                        onPressed: () =>
-                            _launchURL('https://wa.me/6282117556907'),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.facebook,
-                            color: Colors.blue, size: 30),
-                        onPressed: () => _launchURL(
-                            'https://www.facebook.com/mandala.arena'),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.camera_alt,
-                            color: Colors.purple, size: 30),
-                        onPressed: () => _launchURL(
-                            'https://www.instagram.com/mandalaarena'),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.email,
-                            color: Colors.red, size: 30),
-                        onPressed: () =>
-                            _launchURL('mailto:mandalaarena@gmail.com'),
-                      ),
-                    ],
-                  ),
                 ],
               ),
+            ),
+          ),
+
+          // Floating Social Media Button
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // WhatsApp
+                Visibility(
+                  visible: isExpanded,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: FloatingActionButton(
+                      heroTag: "whatsapp",
+                      onPressed: () =>
+                          _launchURL('https://wa.me/6282117556907'),
+                      backgroundColor: Colors.green,
+                      child: const Icon(Icons.phone, color: Colors.white),
+                    ),
+                  ),
+                ),
+
+                // Facebook
+                Visibility(
+                  visible: isExpanded,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: FloatingActionButton(
+                      heroTag: "facebook",
+                      onPressed: () =>
+                          _launchURL('https://www.facebook.com/mandala.arena'),
+                      backgroundColor: Colors.blue,
+                      child: const Icon(Icons.facebook, color: Colors.white),
+                    ),
+                  ),
+                ),
+
+                // Instagram
+                Visibility(
+                  visible: isExpanded,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: FloatingActionButton(
+                      heroTag: "instagram",
+                      onPressed: () =>
+                          _launchURL('https://www.instagram.com/mandalaarena'),
+                      backgroundColor: Colors.purple,
+                      child: const Icon(Icons.camera_alt, color: Colors.white),
+                    ),
+                  ),
+                ),
+
+                // Email
+                Visibility(
+                  visible: isExpanded,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: FloatingActionButton(
+                      heroTag: "email",
+                      onPressed: () =>
+                          _launchURL('mailto:mandalaarena@gmail.com'),
+                      backgroundColor: Colors.red,
+                      child: const Icon(Icons.email, color: Colors.white),
+                    ),
+                  ),
+                ),
+
+                // Tombol Utama (Menu)
+                FloatingActionButton(
+                  heroTag: "toggle",
+                  onPressed: _toggleMenu,
+                  backgroundColor: Colors.black,
+                  child: Icon(isExpanded ? Icons.close : Icons.add_comment,
+                      color: Colors.white),
+                ),
+              ],
             ),
           ),
         ],
