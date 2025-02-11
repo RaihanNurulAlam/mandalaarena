@@ -15,6 +15,7 @@ import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
+import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
@@ -224,6 +225,8 @@ class _HomePageState extends State<HomePage> {
                     return AboutPage();
                   case NavigationState.payment:
                     return PaymentPage();
+                  case NavigationState.sparring:
+                    return SparringTeamPage();
                   default:
                     return _buildHomeContent(context);
                 }

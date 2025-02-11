@@ -5,7 +5,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Enum untuk menentukan halaman navigasi
-enum NavigationState { home, gallery, information, about, payment }
+enum NavigationState { home, gallery, information, about, payment, sparring }
 
 /// Cubit untuk mengelola state navigasi
 class NavigationCubit extends Cubit<NavigationState> {
@@ -31,6 +31,9 @@ class NavigationCubit extends Cubit<NavigationState> {
         break;
       case 4:
         emit(NavigationState.payment);
+        break;
+      case 5:
+        emit(NavigationState.sparring);
         break;
       default:
         emit(NavigationState.home);

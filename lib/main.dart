@@ -12,6 +12,7 @@ import 'package:mandalaarenaapp/pages/about_page.dart';
 import 'package:mandalaarenaapp/pages/cart_page.dart';
 import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/information_page.dart';
+import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/love_provider.dart';
@@ -105,6 +106,7 @@ class MandalaArenaApp extends StatelessWidget {
         '/information': (context) => InformationPage(),
         '/about': (context) => AboutPage(),
         '/cart': (context) => CartPage(),
+        '/sparring': (context) => SparringTeamPage(),
       },
     );
   }

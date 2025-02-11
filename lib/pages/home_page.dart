@@ -14,6 +14,7 @@ import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
+import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
@@ -237,6 +238,8 @@ class _HomePageState extends State<HomePage> {
                     return AboutPage();
                   case NavigationState.payment:
                     return PaymentPage();
+                  case NavigationState.sparring:
+                    return SparringTeamPage();
                   default:
                     return _buildHomeContent(context);
                 }
@@ -366,6 +369,10 @@ class _HomePageState extends State<HomePage> {
                   icon: Icon(Icons.payment),
                   label: 'Checkout',
                 ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.attractions),
+                  label: 'Sparring',
+                ),
               ],
             );
           },
@@ -379,7 +386,7 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         children: [
           _buildDiscountBanner(context),
-          bestSellerWidget(context),
+          // bestSellerWidget(context),
           SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -398,67 +405,67 @@ class _HomePageState extends State<HomePage> {
           SizedBox(height: 20),
           _buildGridLapangs(context),
           SizedBox(height: 20),
-          _buildFAQSection(),
+          // _buildFAQSection(),
         ],
       ),
     );
   }
 
-  Widget _buildFAQSection() {
-    List<Map<String, String>> faqs = [
-      {
-        'question':
-            'Apa kelebihan sewa lapangan yang tersedia di Mandala Arena?',
-        'answer':
-            'Lapangan kami memiliki fasilitas lengkap dan lokasi strategis.'
-      },
-      {
-        'question': 'Bagaimana cara memesan lapangan di Mandala Arena?',
-        'answer':
-            'Anda dapat memesan melalui aplikasi atau menghubungi kami langsung.'
-      },
-      {
-        'question':
-            'Berapa biaya sewa lapangan yang tersedia di Mandala Arena?',
-        'answer':
-            'Biaya sewa bervariasi tergantung jenis lapangan dan waktu pemakaian.'
-      },
-      {
-        'question': 'Apakah ada diskon atau promo khusus?',
-        'answer':
-            'Kami menawarkan diskon setiap hari Jumat dan event-event tertentu.'
-      },
-    ];
+  // Widget _buildFAQSection() {
+  //   List<Map<String, String>> faqs = [
+  //     {
+  //       'question':
+  //           'Apa kelebihan sewa lapangan yang tersedia di Mandala Arena?',
+  //       'answer':
+  //           'Lapangan kami memiliki fasilitas lengkap dan lokasi strategis.'
+  //     },
+  //     {
+  //       'question': 'Bagaimana cara memesan lapangan di Mandala Arena?',
+  //       'answer':
+  //           'Anda dapat memesan melalui aplikasi atau menghubungi kami langsung.'
+  //     },
+  //     {
+  //       'question':
+  //           'Berapa biaya sewa lapangan yang tersedia di Mandala Arena?',
+  //       'answer':
+  //           'Biaya sewa bervariasi tergantung jenis lapangan dan waktu pemakaian.'
+  //     },
+  //     {
+  //       'question': 'Apakah ada diskon atau promo khusus?',
+  //       'answer':
+  //           'Kami menawarkan diskon setiap hari Jumat dan event-event tertentu.'
+  //     },
+  //   ];
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'FAQ',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 16),
-          ...faqs.map((faq) => ExpansionTile(
-                title: Text(
-                  faq['question']!,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(faq['answer']!),
-                  ),
-                ],
-              )),
-        ],
-      ),
-    );
-  }
+  //   return Padding(
+  //     padding: const EdgeInsets.all(16.0),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //     //     Text(
+  //     //       'FAQ',
+  //     //       style: TextStyle(
+  //     //         fontSize: 24,
+  //     //         fontWeight: FontWeight.bold,
+  //     //       ),
+  //     //     ),
+  //     //     SizedBox(height: 16),
+  //     //     ...faqs.map((faq) => ExpansionTile(
+  //     //           title: Text(
+  //     //             faq['question']!,
+  //     //             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  //     //           ),
+  //     //           children: [
+  //     //             Padding(
+  //     //               padding: const EdgeInsets.symmetric(horizontal: 16.0),
+  //     //               child: Text(faq['answer']!),
+  //     //             ),
+  //     //           ],
+  //     //         )),
+  //     //   ],
+  //     // ),
+  //   );
+  // }
 
   Widget _buildGridLapangs(BuildContext context) {
     return GridView.builder(
@@ -563,7 +570,7 @@ class _HomePageState extends State<HomePage> {
     ];
 
     return Container(
-      height: 250,
+      height: 200,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: CarouselSlider.builder(
         itemCount: discountBanners.length,
@@ -634,128 +641,128 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget bestSellerWidget(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 10),
-          if (lapangs.isNotEmpty && lapangs.length > 1)
-            GestureDetector(
-              onTap: () {
-                goToDetailLapang(1);
-              },
-              child: Stack(
-                children: [
-                  // Gambar dengan deskripsi
-                  Container(
-                    height: 250,
-                    width: MediaQuery.sizeOf(context).width,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      image: DecorationImage(
-                        image: AssetImage(lapangs[1].imagePath.toString()),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(
-                          Colors.black.withOpacity(0.2),
-                          BlendMode.darken,
-                        ),
-                      ),
-                    ),
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        decoration: const BoxDecoration(
-                          color: Colors.white60,
-                          borderRadius: BorderRadius.vertical(
-                            bottom: Radius.circular(20),
-                          ),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            lapangs[1].name.toString(),
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Rp. ${lapangs[1].price}',
-                            style: const TextStyle(
-                              color: Colors.black,
-                              fontSize: 14,
-                            ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                CupertinoIcons.star_fill,
-                                size: 20,
-                                color: Colors.yellow,
-                              ),
-                              const SizedBox(
-                                  width: 6), // Jarak antara ikon dan teks
-                              Text(
-                                '${lapangs[1].rating ?? 0.0}', // Menampilkan rating
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  // fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Banner di pojok kiri atas
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 4,
-                            offset: const Offset(2, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Text(
-                        'Best Seller',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Center(
-              child: Text(
-                "Belum ada best seller tersedia",
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+//   Widget bestSellerWidget(BuildContext context) {
+//     return Padding(
+//       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           const SizedBox(height: 10),
+//           if (lapangs.isNotEmpty && lapangs.length > 1)
+//             GestureDetector(
+//               onTap: () {
+//                 goToDetailLapang(1);
+//               },
+//               child: Stack(
+//                 children: [
+//                   // Gambar dengan deskripsi
+//                   Container(
+//                     height: 250,
+//                     width: MediaQuery.sizeOf(context).width,
+//                     decoration: BoxDecoration(
+//                       borderRadius: BorderRadius.circular(20),
+//                       image: DecorationImage(
+//                         image: AssetImage(lapangs[1].imagePath.toString()),
+//                         fit: BoxFit.cover,
+//                         colorFilter: ColorFilter.mode(
+//                           Colors.black.withOpacity(0.2),
+//                           BlendMode.darken,
+//                         ),
+//                       ),
+//                     ),
+//                     child: Align(
+//                       alignment: Alignment.bottomCenter,
+//                       child: Container(
+//                         padding: const EdgeInsets.symmetric(
+//                             horizontal: 16, vertical: 10),
+//                         decoration: const BoxDecoration(
+//                           color: Colors.white60,
+//                           borderRadius: BorderRadius.vertical(
+//                             bottom: Radius.circular(20),
+//                           ),
+//                         ),
+//                         child: ListTile(
+//                           title: Text(
+//                             lapangs[1].name.toString(),
+//                             style: const TextStyle(
+//                               color: Colors.black,
+//                               fontSize: 18,
+//                               fontWeight: FontWeight.bold,
+//                             ),
+//                           ),
+//                           subtitle: Text(
+//                             'Rp. ${lapangs[1].price}',
+//                             style: const TextStyle(
+//                               color: Colors.black,
+//                               fontSize: 14,
+//                             ),
+//                           ),
+//                           trailing: Row(
+//                             mainAxisSize: MainAxisSize.min,
+//                             children: [
+//                               const Icon(
+//                                 CupertinoIcons.star_fill,
+//                                 size: 20,
+//                                 color: Colors.yellow,
+//                               ),
+//                               const SizedBox(
+//                                   width: 6), // Jarak antara ikon dan teks
+//                               Text(
+//                                 '${lapangs[1].rating ?? 0.0}', // Menampilkan rating
+//                                 style: const TextStyle(
+//                                   color: Colors.black,
+//                                   fontSize: 14,
+//                                   // fontWeight: FontWeight.bold,
+//                                 ),
+//                               ),
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                   // Banner di pojok kiri atas
+//                   Positioned(
+//                     top: 10,
+//                     left: 10,
+//                     child: Container(
+//                       padding: const EdgeInsets.symmetric(
+//                           horizontal: 10, vertical: 5),
+//                       decoration: BoxDecoration(
+//                         color: Colors.black,
+//                         borderRadius: BorderRadius.circular(10),
+//                         boxShadow: [
+//                           BoxShadow(
+//                             color: Colors.black.withOpacity(0.2),
+//                             blurRadius: 4,
+//                             offset: const Offset(2, 2),
+//                           ),
+//                         ],
+//                       ),
+//                       child: const Text(
+//                         'Best Seller',
+//                         style: TextStyle(
+//                           color: Colors.white,
+//                           fontSize: 14,
+//                           fontWeight: FontWeight.bold,
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             )
+//           else
+//             Center(
+//               child: Text(
+//                 "Belum ada best seller tersedia",
+//                 style: TextStyle(color: Colors.grey, fontSize: 16),
+//               ),
+//             ),
+//         ],
+//       ),
+//     );
+//   }
 }
 
 class ProfilePage extends StatelessWidget {

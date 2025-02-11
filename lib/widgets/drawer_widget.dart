@@ -1,4 +1,4 @@
-// ignore_for_file: unnecessary_import, use_super_parameters, use_build_context_synchronously
+// ignore_for_file: unnecessary_import, use_super_parameters, use_build_context_synchronously, unused_element
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart'; // Import provider
 // import 'package:url_launcher/url_launcher.dart';
-
 import '../cubit/navigation_cubit.dart';
 import '../pages/edit_profile_page.dart';
 import '../pages/welcome_page.dart';
@@ -94,37 +93,44 @@ class DrawerWidget extends StatelessWidget {
               ],
             ),
           ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.home,
-            title: 'Beranda',
-            navigationState: NavigationState.home,
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.photo_library,
-            title: 'Galeri Aktivitas',
-            navigationState: NavigationState.gallery,
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.article,
-            title: 'Informasi Terkini',
-            navigationState: NavigationState.information,
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.info,
-            title: 'Tentang Aplikasi',
-            navigationState: NavigationState.about,
-          ),
-          _buildDrawerItem(
-            context,
-            icon: Icons.payment,
-            title: 'Checkout',
-            navigationState: NavigationState.payment,
-          ),
-          const Divider(),
+          // _buildDrawerItem(
+          //   context,
+          //   icon: Icons.home,
+          //   title: 'Beranda',
+          //   navigationState: NavigationState.home,
+          // ),
+          // _buildDrawerItem(
+          //   context,
+          //   icon: Icons.photo_library,
+          //   title: 'Galeri Aktivitas',
+          //   navigationState: NavigationState.gallery,
+          // ),
+          // _buildDrawerItem(
+          //   context,
+          //   icon: Icons.article,
+          //   title: 'Informasi Terkini',
+          //   navigationState: NavigationState.information,
+          // ),
+          // _buildDrawerItem(
+          //   context,
+          //   icon: Icons.info,
+          //   title: 'Tentang Aplikasi',
+          //   navigationState: NavigationState.about,
+          // ),
+          // _buildDrawerItem(
+          //   context,
+          //   icon: Icons.payment,
+          //   title: 'Checkout',
+          //   navigationState: NavigationState.payment,
+          // ),
+          // const Divider(),
+          // _buildDrawerItem(
+          //   context,
+          //   icon: Icons.sparring,
+          //   title: 'Checkout',
+          //   navigationState: NavigationState.sparring,
+          // ),
+          // const Divider(),
           ListTile(
             leading: const Icon(Icons.edit, color: Colors.orange),
             title: const Text('Ubah Profil'),
