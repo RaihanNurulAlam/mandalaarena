@@ -3,7 +3,7 @@
 import 'dart:convert';
 
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:firebase_database/firebase_database.dart';
+// import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -30,7 +30,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Lapang> lapangs = [];
-  String adminWhatsApp = "";
+  // String adminWhatsApp = "";
+  bool isExpanded = false;
 
   Future<void> getLapangs() async {
     String dataLapangJson =
@@ -44,51 +45,51 @@ class _HomePageState extends State<HomePage> {
     debugPrint(lapangs[0].name);
   }
 
-  Future<void> fetchAdminContact() async {
-    final databaseReference =
-        FirebaseDatabase.instance.ref("admin_contact/whatsapp");
-    try {
-      final snapshot = await databaseReference.get();
-      if (snapshot.exists && snapshot.value != null) {
-        setState(() {
-          adminWhatsApp = snapshot.value.toString();
-        });
-      } else {
-        setState(() {
-          adminWhatsApp = "";
-        });
-        print("Nomor WhatsApp belum tersedia di database.");
-      }
-    } catch (e) {
-      print("Error fetching WhatsApp number: $e");
-    }
-  }
+  // Future<void> fetchAdminContact() async {
+  //   final databaseReference =
+  //       FirebaseDatabase.instance.ref("admin_contact/whatsapp");
+  //   try {
+  //     final snapshot = await databaseReference.get();
+  //     if (snapshot.exists && snapshot.value != null) {
+  //       setState(() {
+  //         adminWhatsApp = snapshot.value.toString();
+  //       });
+  //     } else {
+  //       setState(() {
+  //         adminWhatsApp = "";
+  //       });
+  //       print("Nomor WhatsApp belum tersedia di database.");
+  //     }
+  //   } catch (e) {
+  //     print("Error fetching WhatsApp number: $e");
+  //   }
+  // }
 
-  String formatWhatsAppNumber(String number) {
-    String formattedNumber = number.replaceAll(RegExp(r'[^0-9]'), '');
+  // String formatWhatsAppNumber(String number) {
+  //   String formattedNumber = number.replaceAll(RegExp(r'[^0-9]'), '');
 
-    if (formattedNumber.startsWith('0')) {
-      formattedNumber = '62' + formattedNumber.substring(1);
-    }
+  //   if (formattedNumber.startsWith('0')) {
+  //     formattedNumber = '62' + formattedNumber.substring(1);
+  //   }
 
-    return formattedNumber;
-  }
+  //   return formattedNumber;
+  // }
 
-  void openWhatsApp() async {
-    final defaultNumber = "082117556907";
-    final numberToUse =
-        adminWhatsApp.isNotEmpty ? adminWhatsApp : defaultNumber;
+  // void openWhatsApp() async {
+  //   final defaultNumber = "082117556907";
+  //   final numberToUse =
+  //       adminWhatsApp.isNotEmpty ? adminWhatsApp : defaultNumber;
 
-    final formattedNumber = formatWhatsAppNumber(numberToUse);
-    final url = Uri.parse("https://wa.me/$formattedNumber");
+  //   final formattedNumber = formatWhatsAppNumber(numberToUse);
+  //   final url = Uri.parse("https://wa.me/$formattedNumber");
 
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Tidak dapat membuka WhatsApp.")));
-    }
-  }
+  //   if (await canLaunchUrl(url)) {
+  //     await launchUrl(url, mode: LaunchMode.externalApplication);
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text("Tidak dapat membuka WhatsApp.")));
+  //   }
+  // }
 
   void goToDetailLapang(int index) {
     Navigator.push(
@@ -105,11 +106,24 @@ class _HomePageState extends State<HomePage> {
     Navigator.pushNamed(context, '/cart');
   }
 
+  void _toggleMenu() {
+    setState(() {
+      isExpanded = !isExpanded;
+    });
+  }
+
+  void _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     getLapangs();
-    fetchAdminContact();
+    // fetchAdminContact();
   }
 
   @override
@@ -201,7 +215,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 );
@@ -228,15 +242,98 @@ class _HomePageState extends State<HomePage> {
                 }
               },
             ),
+            // Floating Social Media Button
             Positioned(
               bottom: 16,
               right: 16,
-              child: FloatingActionButton(
-                onPressed: openWhatsApp,
-                backgroundColor: Colors.black,
-                child: Icon(Icons.message, color: Colors.white),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // WhatsApp
+                  Visibility(
+                    visible: isExpanded,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: FloatingActionButton(
+                        heroTag: "whatsapp",
+                        onPressed: () =>
+                            _launchURL('https://wa.me/6282117556907'),
+                        backgroundColor: Colors.green,
+                        child: const Icon(Icons.phone, color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  // Facebook
+                  Visibility(
+                    visible: isExpanded,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: FloatingActionButton(
+                        heroTag: "facebook",
+                        onPressed: () => _launchURL(
+                            'https://www.facebook.com/mandala.arena'),
+                        backgroundColor: Colors.blue,
+                        child: const Icon(Icons.facebook, color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  // Instagram
+                  Visibility(
+                    visible: isExpanded,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: FloatingActionButton(
+                        heroTag: "instagram",
+                        onPressed: () => _launchURL(
+                            'https://www.instagram.com/mandalaarena'),
+                        backgroundColor: Colors.purple,
+                        child:
+                            const Icon(Icons.camera_alt, color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  // Email
+                  Visibility(
+                    visible: isExpanded,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: FloatingActionButton(
+                        heroTag: "email",
+                        onPressed: () =>
+                            _launchURL('mailto:mandalaarena@gmail.com'),
+                        backgroundColor: Colors.red,
+                        child: const Icon(Icons.email, color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  // Tombol Utama (Menu)
+                  FloatingActionButton(
+                    heroTag: "toggle",
+                    onPressed: _toggleMenu,
+                    backgroundColor: Colors.black,
+                    child: Icon(isExpanded ? Icons.close : Icons.add_comment,
+                        color: Colors.white),
+                  ),
+                ],
               ),
             ),
+            // Positioned(
+            //   bottom: 16,
+            //   right: 16,
+            //   child: FloatingActionButton(
+            //     onPressed: openWhatsApp,
+            //     backgroundColor: Colors.black,
+            //     child: Icon(Icons.message, color: Colors.white),
+            //   ),
+            // ),
           ],
         ),
         bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
@@ -404,22 +501,39 @@ class _HomePageState extends State<HomePage> {
                     bottom: Radius.circular(20),
                   ),
                 ),
-                child: ListTile(
-                  title: Text(
-                    lapangs[index].name ?? 'Lapang Tanpa Nama',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lapangs[index].name ?? 'Lapang Tanpa Nama',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    'Rp. ${lapangs[index].price}',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
+                    Text(
+                      'Rp. ${lapangs[index].price}',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.yellow, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          '${lapangs[index].rating ?? 0.0}',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -527,9 +641,7 @@ class _HomePageState extends State<HomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 10),
-          if (lapangs.isNotEmpty &&
-              lapangs.length >
-                  1) // Cek apakah lapangs memiliki minimal 2 elemen
+          if (lapangs.isNotEmpty && lapangs.length > 1)
             GestureDetector(
               onTap: () {
                 goToDetailLapang(1);
@@ -577,6 +689,26 @@ class _HomePageState extends State<HomePage> {
                               color: Colors.black,
                               fontSize: 14,
                             ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                CupertinoIcons.star_fill,
+                                size: 20,
+                                color: Colors.yellow,
+                              ),
+                              const SizedBox(
+                                  width: 6), // Jarak antara ikon dan teks
+                              Text(
+                                '${lapangs[1].rating ?? 0.0}', // Menampilkan rating
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  // fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

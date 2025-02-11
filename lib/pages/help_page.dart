@@ -8,21 +8,21 @@ class HelpPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Bantuan"),
-        centerTitle: true,
+        // centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Pusat Bantuan",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
+            // const Text(
+            //   "Pusat Bantuan",
+            //   style: TextStyle(
+            //     fontSize: 24,
+            //     fontWeight: FontWeight.bold,
+            //   ),
+            // ),
+            // const SizedBox(height: 16),
             const Text(
               "Di bawah ini adalah beberapa topik yang mungkin membantu Anda:",
               style: TextStyle(fontSize: 16),
@@ -77,7 +77,7 @@ class HelpPage extends StatelessWidget {
                   builder: (context) => AlertDialog(
                     title: const Text("Hubungi Dukungan"),
                     content: const Text(
-                        "Anda dapat menghubungi tim dukungan kami melalui email di support@mandalaarenaapp.com atau melalui telepon di +62 812-3456-7890."),
+                        "Anda dapat menghubungi tim dukungan kami melalui email di mandalaarena@gmail.com atau melalui telepon di +62 821-1755-6907."),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
