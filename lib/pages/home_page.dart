@@ -370,7 +370,7 @@ class _HomePageState extends State<HomePage> {
                   label: 'Checkout',
                 ),
                 BottomNavigationBarItem(
-                  icon: Icon(Icons.attractions),
+                  icon: Icon(Icons.group),
                   label: 'Sparring',
                 ),
               ],

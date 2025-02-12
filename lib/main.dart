@@ -4,13 +4,13 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:mandalaarenaapp/Login%20Signup/Screen/home_screen.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/signup.dart';
 import 'package:mandalaarenaapp/firebase_options.dart';
 import 'package:mandalaarenaapp/pages/about_page.dart';
 import 'package:mandalaarenaapp/pages/cart_page.dart';
 import 'package:mandalaarenaapp/pages/galery_page.dart';
+import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/pages/information_page.dart';
 import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/welcome_page.dart';
@@ -99,7 +99,7 @@ class MandalaArenaApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => WelcomePage(),
-        '/homescreen': (context) => HomeScreen(),
+        '/home': (context) => HomePage(),
         '/login': (context) => LoginScreen(),
         '/signup': (context) => SignupScreen(),
         '/gallery': (context) => GalleryPage(),

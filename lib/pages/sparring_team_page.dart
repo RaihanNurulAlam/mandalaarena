@@ -1,10 +1,11 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
-import 'add_sparring_team_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SparringTeamPage extends StatefulWidget {
   @override
@@ -12,6 +13,17 @@ class SparringTeamPage extends StatefulWidget {
 }
 
 class _SparringTeamPageState extends State<SparringTeamPage> {
+  String? _selectedCategory;
+  final List<String> _categories = [
+    'Semua',
+    'Tim Basket',
+    'Tim Basket 3x3',
+    'Tim Minisoccer',
+  ];
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   void _launchWhatsApp(String phoneNumber) async {
     final url = 'https://wa.me/$phoneNumber';
     if (await canLaunch(url)) {
@@ -23,8 +35,30 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     }
   }
 
+  Future<void> _deleteTeam(String teamId) async {
+    await _firestore.collection('sparring_teams').doc(teamId).delete();
+  }
+
+  void _editTeam(SparringTeam team) async {
+    final updatedTeam = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddSparringTeamPage(team: team),
+      ),
+    );
+
+    if (updatedTeam != null) {
+      await _firestore
+          .collection('sparring_teams')
+          .doc(updatedTeam.id)
+          .update(updatedTeam.toMap());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = _auth.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Sparring Tim'),
@@ -41,65 +75,114 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream:
-            FirebaseFirestore.instance.collection('sparring_teams').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              onChanged: (value) {
+                setState(() {
+                  _selectedCategory = value;
+                });
+              },
+              items: _categories.map((category) {
+                return DropdownMenuItem(
+                  value: category,
+                  child: Text(category),
+                );
+              }).toList(),
+              decoration: InputDecoration(
+                labelText: 'Filter Kategori',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _firestore.collection('sparring_teams').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('Tidak ada tim sparring.'));
-          }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(child: Text('Tidak ada tim sparring.'));
+                }
 
-          final teams = snapshot.data!.docs.map((doc) {
-            return SparringTeam.fromMap(doc.data() as Map<String, dynamic>);
-          }).toList();
+                final teams = snapshot.data!.docs.map((doc) {
+                  return SparringTeam.fromMap(
+                      doc.data() as Map<String, dynamic>);
+                }).toList();
 
-          return ListView.builder(
-            itemCount: teams.length,
-            itemBuilder: (context, index) {
-              final team = teams[index];
-              return Card(
-                margin: EdgeInsets.all(8),
-                child: Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: Image.network(
-                          team.imageUrl,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                final filteredTeams =
+                    _selectedCategory == null || _selectedCategory == 'Semua'
+                        ? teams
+                        : teams
+                            .where((team) => team.category == _selectedCategory)
+                            .toList();
+
+                return ListView.builder(
+                  itemCount: filteredTeams.length,
+                  itemBuilder: (context, index) {
+                    final team = filteredTeams[index];
+                    final isCreator = team.createdBy == user?.uid;
+
+                    return Card(
+                      margin: EdgeInsets.all(8),
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Row(
                           children: [
-                            Text(team.name,
-                                style: TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold)),
-                            Text('Hari: ${team.availableDays.join(', ')}'),
-                            Text('Jam: ${team.availableHours.join(', ')}'),
-                            Text('Kontak: ${team.contact}'),
+                            SizedBox(
+                              width: 80,
+                              height: 80,
+                              child: Image.network(
+                                team.imageUrl,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(team.name,
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold)),
+                                  Text(
+                                      'Hari: ${team.availableDays.join(', ')}'),
+                                  Text(
+                                      'Jam: ${team.availableHours.join(', ')}'),
+                                  Text('Kontak: ${team.contact}'),
+                                ],
+                              ),
+                            ),
+                            if (isCreator)
+                              IconButton(
+                                icon: Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () => _editTeam(team),
+                              ),
+                            if (isCreator)
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteTeam(team.id),
+                              ),
+                            IconButton(
+                              icon: Icon(Icons.chat, color: Colors.green),
+                              onPressed: () => _launchWhatsApp(team.contact),
+                            ),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.chat, color: Colors.green),
-                        onPressed: () => _launchWhatsApp(team.contact),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
