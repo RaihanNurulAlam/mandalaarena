@@ -1,10 +1,13 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, avoid_print
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Widget/button.dart';
 import 'package:mandalaarenaapp/Login%20With%20Google/google_auth.dart';
 import 'package:mandalaarenaapp/Password%20Forgot/forgot_password.dart';
 import 'package:mandalaarenaapp/Phone%20Auth/phone_login.dart';
+import 'package:mandalaarenaapp/pages/admin_home_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import 'package:mandalaarenaapp/pages/help_page.dart';
@@ -39,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // Email and password auth method
   void loginUser() async {
     setState(() {
-      isLoading = true;
+      isLoading = false;
     });
 
     String res = await AuthMethod().loginUser(
@@ -52,31 +55,51 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (res == "Berhasil") {
-      // Fetch user details from Firebase (after successful login)
-      final user = await AuthMethod().getUserDetails();
-      final String userName =
-          user?.displayName ?? "Nama User"; // Using Firebase's displayName
-      final String userEmail = emailController.text;
-      final String profileImageUrl =
-          user?.photoURL ?? "https://via.placeholder.com/150";
-      final String userPhone =
-          user?.phoneNumber ?? "Nomor telepon tidak ditemukan";
+      try {
+        User? currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .get();
 
-      // Set user data in UserProvider
-      if (mounted) {
-        Provider.of<UserProvider>(context, listen: false).setUserData(
-          userName: userName,
-          userEmail: userEmail,
-          profileImageUrl: profileImageUrl,
-          userPhone: userPhone,
-        );
+          if (userDoc.exists) {
+            bool isAdmin = userDoc.get('isAdmin') as bool;
+            Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomePage(),
-          ),
-        );
+            // PINDAHKAN NAVIGATOR KE BAWAH
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => targetPage),
+            );
+
+            // Ambil data user SETELAH navigasi
+            final userData = userDoc.data() as Map<String, dynamic>;
+            final String userName = userData['name'] ?? "Nama User";
+            final String userEmail =
+                userData['email'] ?? "Email tidak ditemukan";
+            final String profileImageUrl = userData['profileImageUrl'] ??
+                "https://via.placeholder.com/150";
+            final String userPhone =
+                userData['phone'] ?? ""; // Ambil dari userDoc
+
+            // Set user data in UserProvider setelah navigasi
+            if (mounted) {
+              Provider.of<UserProvider>(context, listen: false).setUserData(
+                userName: userName,
+                userEmail: userEmail,
+                profileImageUrl: profileImageUrl,
+                userPhone: userPhone,
+              );
+            }
+          }
+        } else {
+          showSnackBar(context, "Data pengguna tidak ditemukan.");
+        }
+      } catch (e) {
+        // Handle error Firestore
+        print("Error Firestore: $e");
+        showSnackBar(context, "Terjadi kesalahan. Silakan coba lagi.");
       }
     } else {
       showSnackBar(context, res);

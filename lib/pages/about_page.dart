@@ -1,25 +1,55 @@
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, unused_field, prefer_final_fields, use_build_context_synchronously
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AboutPage extends StatefulWidget {
+  const AboutPage({super.key});
   @override
   _AboutPageState createState() => _AboutPageState();
 }
 
 class _AboutPageState extends State<AboutPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final List<Map<String, dynamic>> _reviews = [];
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final Map<int, TextEditingController> _replyControllers = {};
   double _currentRating = 3.0;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
     _fetchReviews();
+    _checkAdminStatus();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    for (var controller in _replyControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          _isAdmin = userDoc.get('isAdmin') as bool;
+        });
+      }
+    }
   }
 
   Future<void> _fetchReviews() async {
@@ -81,16 +111,29 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   Future<void> _deleteReview(int index) async {
-    final reviewId = _reviews[index]['id'];
-    await FirebaseFirestore.instance
-        .collection('reviews')
-        .doc(reviewId)
-        .delete();
-
-    setState(() {
-      _reviews.removeAt(index);
-      _replyControllers.remove(index);
-    });
+    if (_isAdmin) {
+      try {
+        final reviewId = _reviews[index]['id'];
+        await FirebaseFirestore.instance
+            .collection('reviews')
+            .doc(reviewId)
+            .delete();
+        setState(() {
+          _reviews.removeAt(index);
+          _replyControllers.remove(index);
+        });
+      } catch (e) {
+        // Handle error jika penghapusan gagal
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus ulasan.')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Anda tidak memiliki izin untuk menghapus ulasan.')),
+      );
+    }
   }
 
   @override
@@ -206,11 +249,12 @@ class _AboutPageState extends State<AboutPage> {
                                                 .white), // Atur warna teks di sini
                                       ),
                                     ),
-                                    IconButton(
-                                      icon:
-                                          Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () => _deleteReview(index),
-                                    ),
+                                    if (_isAdmin)
+                                      IconButton(
+                                        icon: Icon(Icons.delete,
+                                            color: Colors.red),
+                                        onPressed: () => _deleteReview(index),
+                                      ),
                                   ],
                                 ),
                               ],

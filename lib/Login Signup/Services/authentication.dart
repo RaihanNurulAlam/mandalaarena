@@ -14,6 +14,7 @@ class AuthMethod {
     required String email,
     required String password,
     required String name,
+    required String phone,
   }) async {
     String res = "Terjadi beberapa kesalahan";
     try {
@@ -27,6 +28,8 @@ class AuthMethod {
           'name': name,
           'email': email,
           'uid': cred.user!.uid,
+          'phone': phone,
+          'isAdmin': false,
         });
 
         res = "Berhasil";

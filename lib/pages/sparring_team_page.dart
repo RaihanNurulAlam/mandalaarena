@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher.dart'; // Import Firebase Auth
 
 class SparringTeamPage extends StatefulWidget {
   @override
@@ -115,6 +115,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                       doc.data() as Map<String, dynamic>);
                 }).toList();
 
+                // Filter teams based on selected category
                 final filteredTeams =
                     _selectedCategory == null || _selectedCategory == 'Semua'
                         ? teams
@@ -126,6 +127,8 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                   itemCount: filteredTeams.length,
                   itemBuilder: (context, index) {
                     final team = filteredTeams[index];
+                    final isAdmin = user?.email ==
+                        'raihannurulalam14@gmail.com'; // Ganti dengan email admin yang valid
                     final isCreator = team.createdBy == user?.uid;
 
                     return Card(
@@ -159,12 +162,12 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                 ],
                               ),
                             ),
-                            if (isCreator)
+                            if (isCreator || isAdmin)
                               IconButton(
                                 icon: Icon(Icons.edit, color: Colors.blue),
                                 onPressed: () => _editTeam(team),
                               ),
-                            if (isCreator)
+                            if (isAdmin)
                               IconButton(
                                 icon: Icon(Icons.delete, color: Colors.red),
                                 onPressed: () => _deleteTeam(team.id),

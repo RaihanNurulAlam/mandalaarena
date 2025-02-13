@@ -1,6 +1,6 @@
 // ignore_for_file: use_build_context_synchronously, unused_local_variable
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Widget/button.dart';
 import 'package:mandalaarenaapp/pages/help_page.dart';
@@ -44,9 +44,11 @@ class _SignupScreenState extends State<SignupScreen> {
 
     // signup user using our authmethod
     String res = await AuthMethod().signupUser(
-        email: emailController.text,
-        password: passwordController.text,
-        name: nameController.text);
+      email: emailController.text,
+      password: passwordController.text,
+      name: nameController.text,
+      phone: phoneController.text,
+    ); // signup user
 
     // if string return is success, user has been created and navigate to next screen, otherwise show error.
     if (res == "Berhasil") {
@@ -54,45 +56,45 @@ class _SignupScreenState extends State<SignupScreen> {
         isLoading = false;
       });
 
-      // Ambil data pengguna setelah signup
-      final String userName = nameController.text;
-      final String userEmail = emailController.text;
-      final String phoneNumber = phoneController.text; // Ambil nomor telepon
-      final String profileImageUrl = "https://via.placeholder.com/150";
+      // // Ambil data pengguna setelah signup
+      // final String userName = nameController.text;
+      // final String userEmail = emailController.text;
+      // final String phoneNumber = phoneController.text; // Ambil nomor telepon
+      // final String profileImageUrl = "https://via.placeholder.com/150";
 
-      // Ambil userId setelah signup
-      final String userId = AuthMethod()
-          .getUserId(); // Ambil userId dari Firebase Auth (gunakan cred.user!.uid)
-      if (userId.isEmpty) {
-        setState(() {
-          isLoading = false;
-        });
-        showSnackBar(context, 'ID User kosong');
-        return;
-      }
+      // // Ambil userId setelah signup
+      // final String userId = AuthMethod()
+      //     .getUserId(); // Ambil userId dari Firebase Auth (gunakan cred.user!.uid)
+      // if (userId.isEmpty) {
+      //   setState(() {
+      //     isLoading = false;
+      //   });
+      //   showSnackBar(context, 'ID User kosong');
+      //   return;
+      // }
 
-      // Menyimpan data pengguna ke Firebase Firestore
-      try {
-        await FirebaseFirestore.instance.collection('users').doc(userId).set({
-          'name': userName,
-          'email': userEmail,
-          'phone': phoneNumber,
-          'profileImageUrl': profileImageUrl,
-          'uid': userId,
-        });
+      // // Menyimpan data pengguna ke Firebase Firestore
+      // try {
+      //   await FirebaseFirestore.instance.collection('users').doc(userId).set({
+      //     'name': userName,
+      //     'email': userEmail,
+      //     'phone': phoneNumber,
+      //     'profileImageUrl': profileImageUrl,
+      //     'uid': userId,
+      //   });
 
-        // Navigate to the next screen
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => HomePage(),
-          ),
-        );
-      } catch (e) {
-        setState(() {
-          isLoading = false;
-        });
-        showSnackBar(context, 'Gagal menyimpan ke firebase: ${e.toString()}');
-      }
+      // Navigate to the next screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => HomePage(),
+        ),
+      );
+      // } catch (e) {
+      //   setState(() {
+      //     isLoading = false;
+      //   });
+      //   showSnackBar(context, 'Gagal menyimpan ke firebase: ${e.toString()}');
+      // }
     } else {
       setState(() {
         isLoading = false;
