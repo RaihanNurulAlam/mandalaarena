@@ -1,6 +1,7 @@
-// ignore_for_file: unused_local_variable, avoid_print, deprecated_member_use
+// ignore_for_file: unused_local_variable, avoid_print, deprecated_member_use, use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +31,9 @@ class _DetailPageState extends State<DetailPage> {
   DateTime? selectedDate;
   bool isLoved = false;
   List<String> unavailableTimes = [];
+  String? userName;
+  String? userPhone;
+  User? user;
 
   @override
   void initState() {
@@ -41,6 +45,7 @@ class _DetailPageState extends State<DetailPage> {
       print("Error initializing SharedPreferences: $error");
     });
     _fetchUnavailableTimes();
+    user = FirebaseAuth.instance.currentUser; // Get current user in initState
   }
 
   Future<void> _loadLovedState() async {
@@ -90,12 +95,14 @@ class _DetailPageState extends State<DetailPage> {
   Future<void> addToCart() async {
     if (selectedHour.isNotEmpty &&
         bookingDuration > 0 &&
-        selectedDate != null) {
+        selectedDate != null &&
+        user != null) {
       final cart = context.read<Cart>();
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
       final selectedTime = DateTime(selectedDate!.year, selectedDate!.month,
           selectedDate!.day, int.parse(selectedHour.split(":")[0]));
 
+      // Check availability for the entire duration
       bool isAvailable = true;
       for (int i = 0; i < bookingDuration; i++) {
         final timeToCheck = selectedTime.add(Duration(hours: i));
@@ -113,30 +120,75 @@ class _DetailPageState extends State<DetailPage> {
         return;
       }
 
-      // Add booking to Firebase
-      await FirebaseFirestore.instance.collection('bookings').add({
-        'date': formattedDate,
-        'time': selectedHour,
-        'duration': bookingDuration,
-        'lapangId': widget.lapang.id,
-      }).then((value) {
-        print("Booking added successfully");
-      }).catchError((error) {
-        print("Failed to add booking: $error");
-      });
+      try {
+        // Get user data from Firestore
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .get();
 
-      // Add to cart
-      cart.addToCart(widget.lapang, bookingDuration, formattedDate,
-          selectedHour, bookingDuration);
-      popUpDialog();
-      for (int i = 0; i < bookingDuration; i++) {
-        final blockedTime = selectedTime.add(Duration(hours: i));
-        unavailableTimes.add(DateFormat('HH:mm').format(blockedTime));
+        if (!userDoc.exists) {
+          throw Exception("User data not found in Firestore.");
+        }
+
+        final userData = userDoc.data() as Map<String, dynamic>;
+        userName = userData['name'];
+        userPhone = userData['phone'] as String?;
+
+        final bookingData = {
+          'lapangan': widget.lapang.name,
+          'tanggal': formattedDate,
+          'jamMulai': selectedHour,
+          'jamSelesai': DateFormat('HH:mm').format(
+            selectedTime.add(Duration(hours: bookingDuration)),
+          ),
+          'statusBooking': 'Pending',
+          'lapangId': widget.lapang.id,
+          'userId': user!.uid,
+          'namaPengguna': userName,
+          'noWhatsapp': userPhone ?? "",
+          'duration': bookingDuration.toString(), // Store as string
+        };
+
+        // Add booking to Firestore
+        await FirebaseFirestore.instance
+            .collection('bookings')
+            .add(bookingData);
+
+        // Add to cart and update UI only after successful booking
+        cart.addToCart(widget.lapang, bookingDuration, formattedDate,
+            selectedHour, totalPrice);
+        popUpDialog();
+
+        // Update unavailable times
+        for (int i = 0; i < bookingDuration; i++) {
+          final blockedTime = selectedTime.add(Duration(hours: i));
+          unavailableTimes.add(DateFormat('HH:mm').format(blockedTime));
+        }
+      } catch (e) {
+        print("Error adding booking: $e"); // Print the error for debugging
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Terjadi kesalahan saat booking.")),
+        );
       }
     } else {
+      // More specific error messages
+      String message = "";
+      if (user == null) {
+        message = "Anda harus login untuk melakukan booking.";
+      } else if (selectedDate == null) {
+        message = "Harap pilih tanggal.";
+      } else if (selectedHour.isEmpty) {
+        message = "Harap pilih jam.";
+      } else if (bookingDuration <= 0) {
+        message = "Harap pilih durasi booking.";
+      } else {
+        message =
+            "Terjadi kesalahan. Silakan coba lagi."; // General error message
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Harap pilih tanggal, jam, dan durasi booking!")),
+        SnackBar(content: Text(message)),
       );
     }
   }
