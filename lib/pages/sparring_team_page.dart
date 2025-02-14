@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
+import 'package:mandalaarenaapp/pages/edit_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 import 'package:url_launcher/url_launcher.dart'; // Import Firebase Auth
 
@@ -43,7 +44,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     final updatedTeam = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddSparringTeamPage(team: team),
+        builder: (context) => EditSparringTeamPage(team: team),
       ),
     );
 

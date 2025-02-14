@@ -91,7 +91,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             children: const [
               Text(
                 'Halaman Admin',
-                style: TextStyle(color: Colors.black, fontSize: 30),
+                style: TextStyle(color: Colors.black, fontSize: 20),
               ),
             ],
           ),
