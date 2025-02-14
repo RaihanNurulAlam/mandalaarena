@@ -12,6 +12,7 @@ class ArticleCard extends StatelessWidget {
     required this.title,
     required this.imagePath,
     required this.onTap,
+    Row? trailing,
   });
 
   @override
@@ -25,7 +26,8 @@ class ArticleCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(10)),
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.cover,

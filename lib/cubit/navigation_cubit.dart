@@ -1,6 +1,6 @@
 // lib/cubit/navigation_cubit.dart
 
-// ignore_for_file: constant_identifier_names
+// ignore_for_file: constant_identifier_names, dead_code
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -12,7 +12,8 @@ enum NavigationState {
   about,
   payment,
   sparring,
-  admin
+  booking,
+  admin,
 }
 
 /// Cubit untuk mengelola state navigasi
@@ -42,6 +43,9 @@ class NavigationCubit extends Cubit<NavigationState> {
         break;
       case 5:
         emit(NavigationState.sparring);
+        break;
+      case 6:
+        emit(NavigationState.booking);
         break;
       default:
         emit(NavigationState.home);

@@ -1,10 +1,27 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, unused_element, deprecated_member_use
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mandalaarenaapp/cubit/navigation_cubit.dart';
+import 'package:mandalaarenaapp/pages/about_page.dart';
+import 'package:mandalaarenaapp/pages/alamat_page.dart';
+import 'package:mandalaarenaapp/pages/detailpage.dart';
+import 'package:mandalaarenaapp/pages/galery_page.dart';
+import 'package:mandalaarenaapp/pages/information_page.dart';
+import 'package:mandalaarenaapp/pages/models/lapang.dart';
+import 'package:mandalaarenaapp/pages/payment_page.dart';
+import 'package:mandalaarenaapp/pages/search_page.dart';
+import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:mandalaarenaapp/widgets/drawer_widget.dart';
 import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminHomePage extends StatefulWidget {
   @override
@@ -12,240 +29,538 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
+  List<Lapang> lapangs = [];
+  bool isExpanded = false;
+
+  Future<void> getLapangs() async {
+    String dataLapangJson =
+        await rootBundle.loadString('assets/json/lapang.json');
+    List<dynamic> jsonMap = json.decode(dataLapangJson);
+
+    setState(() {
+      lapangs = jsonMap.map((e) => Lapang.fromJson(e)).toList();
+    });
+
+    debugPrint(lapangs[0].name);
+  }
+
+  void goToDetailLapang(int index) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DetailPage(
+          lapang: lapangs[index],
+        ),
+      ),
+    );
+  }
+
+  void goToCart() {
+    Navigator.pushNamed(context, '/cart');
+  }
+
+  void _toggleMenu() {
+    setState(() {
+      isExpanded = !isExpanded;
+    });
+  }
+
+  void _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw 'Could not launch $url';
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getLapangs();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Halaman Admin'),
-      ),
-      drawer: DrawerWidget(),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'Selamat Datang, Admin!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
+    final userProvider = Provider.of<UserProvider>(context);
+    return BlocProvider(
+      create: (context) => NavigationCubit(),
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 80,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Halaman Admin',
+                style: TextStyle(color: Colors.black, fontSize: 30),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SparringTeamPage(),
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => AlamatPage()));
+              },
+              icon: Icon(
+                Icons.location_on,
+                size: 30,
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => SearchPage()));
+              },
+              icon: Icon(
+                CupertinoIcons.search,
+                size: 30,
+              ),
+            ),
+            Consumer<Cart>(
+              builder: (context, value, child) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 14, left: 10),
+                  child: Stack(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          goToCart();
+                        },
+                        icon: Icon(
+                          CupertinoIcons.bag,
+                          size: 30,
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Visibility(
+                          visible: value.cart.isNotEmpty ? true : false,
+                          child: CircleAvatar(
+                            radius: 10,
+                            backgroundColor: Colors.yellow,
+                            child: Center(
+                              child: Text(
+                                value.cart.length.toString(),
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
-              child: Text('Kelola Tim Sparring'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ManageBookingsPage(),
-                  ),
-                );
+            )
+          ],
+        ),
+        drawer: DrawerWidget(),
+        body: Stack(
+          children: [
+            BlocBuilder<NavigationCubit, NavigationState>(
+              builder: (context, state) {
+                switch (state) {
+                  case NavigationState.gallery:
+                    return GalleryPage();
+                  case NavigationState.information:
+                    return InformationPage();
+                  case NavigationState.about:
+                    return AboutPage();
+                  case NavigationState.payment:
+                    return PaymentPage();
+                  case NavigationState.sparring:
+                    return SparringTeamPage();
+                  default:
+                    return _buildHomeContent(context);
+                }
               },
-              child: Text('Kelola Booking Lapangan'),
+            ),
+            // Floating Social Media Button
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // WhatsApp
+                  Visibility(
+                    visible: isExpanded,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: FloatingActionButton(
+                        heroTag: "whatsapp",
+                        onPressed: () =>
+                            _launchURL('https://wa.me/6282117556907'),
+                        backgroundColor: Colors.green,
+                        child: const Icon(Icons.phone, color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  // Facebook
+                  Visibility(
+                    visible: isExpanded,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: FloatingActionButton(
+                        heroTag: "facebook",
+                        onPressed: () => _launchURL(
+                            'https://www.facebook.com/mandala.arena'),
+                        backgroundColor: Colors.blue,
+                        child: const Icon(Icons.facebook, color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  // Instagram
+                  Visibility(
+                    visible: isExpanded,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: FloatingActionButton(
+                        heroTag: "instagram",
+                        onPressed: () => _launchURL(
+                            'https://www.instagram.com/mandalaarena'),
+                        backgroundColor: Colors.purple,
+                        child:
+                            const Icon(Icons.camera_alt, color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  // Email
+                  Visibility(
+                    visible: isExpanded,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: FloatingActionButton(
+                        heroTag: "email",
+                        onPressed: () =>
+                            _launchURL('mailto:mandalaarena@gmail.com'),
+                        backgroundColor: Colors.red,
+                        child: const Icon(Icons.email, color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  // Tombol Utama (Menu)
+                  FloatingActionButton(
+                    heroTag: "toggle",
+                    onPressed: _toggleMenu,
+                    backgroundColor: Colors.black,
+                    child: Icon(isExpanded ? Icons.close : Icons.add_comment,
+                        color: Colors.white),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
+        bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
+          builder: (context, state) {
+            return BottomNavigationBar(
+              currentIndex: state.index,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black,
+              onTap: (index) {
+                context.read<NavigationCubit>().navigateToIndex(index);
+              },
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
+                  label: 'Beranda',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.photo_library),
+                  label: 'Galeri Aktivitas',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.article),
+                  label: 'Informasi Terkini',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.info),
+                  label: 'Tentang Aplikasi',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.payment),
+                  label: 'Checkout',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.group),
+                  label: 'Sparring',
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeContent(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildDiscountBanner(context),
+          SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Pilih Lapang',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 20),
+          _buildGridLapangs(context),
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGridLapangs(BuildContext context) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        childAspectRatio: 4 / 5,
+      ),
+      itemCount: lapangs.length,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () {
+            goToDetailLapang(index);
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              image: DecorationImage(
+                image: AssetImage(
+                    lapangs[index].imagePath ?? 'assets/default_image.jpg'),
+                fit: BoxFit.cover,
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withOpacity(0.2),
+                  BlendMode.darken,
+                ),
+              ),
+            ),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: const BoxDecoration(
+                  color: Colors.white60,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lapangs[index].name ?? 'Lapang Tanpa Nama',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Rp. ${lapangs[index].price}',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.yellow, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          '${lapangs[index].rating ?? 0.0}',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDiscountBanner(BuildContext context) {
+    final List<Map<String, String>> discountBanners = [
+      {
+        "image": "assets/mini.JPG",
+        "title": "Dapatkan Diskon 10%",
+        "description": "Untuk Booking Lapang di Hari Jumat",
+      },
+      {
+        "image": "assets/rubber.JPG",
+        "title": "Diskon 15% Untuk Member",
+        "description": "Nikmati promo eksklusif untuk pengguna setia",
+      },
+      {
+        "image": "assets/vynil.JPG",
+        "title": "Promo Spesial Weekend!",
+        "description": "Diskon 20% untuk pemesanan di Sabtu & Minggu",
+      },
+    ];
+
+    return Container(
+      height: 200,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: CarouselSlider.builder(
+        itemCount: discountBanners.length,
+        options: CarouselOptions(
+          height: 250,
+          autoPlay: true,
+          autoPlayInterval: const Duration(seconds: 20),
+          autoPlayAnimationDuration: const Duration(milliseconds: 800),
+          enlargeCenterPage: true,
+          viewportFraction: 1.0,
+        ),
+        itemBuilder: (context, index, realIndex) {
+          final discount = discountBanners[index];
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                // Gambar sebagai latar belakang
+                Positioned.fill(
+                  child: Image.asset(
+                    discount["image"]!,
+                    fit: BoxFit.cover,
+                    color: Colors.black.withOpacity(0.3),
+                    colorBlendMode: BlendMode.darken,
+                  ),
+                ),
+                // Lapisan putih untuk deskripsi
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: const BoxDecoration(
+                      color: Colors.white60,
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(20),
+                      ),
+                    ),
+                    child: ListTile(
+                      title: Text(
+                        discount["title"]!,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Text(
+                        discount["description"]!,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                        ),
+                      ),
+                      trailing: const Icon(
+                        CupertinoIcons.arrow_right,
+                        size: 28,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-class ManageBookingsPage extends StatefulWidget {
-  @override
-  _ManageBookingsPageState createState() => _ManageBookingsPageState();
-}
+class ProfilePage extends StatelessWidget {
+  final String userName;
+  final String userEmail;
+  final String profileImageUrl;
 
-class _ManageBookingsPageState extends State<ManageBookingsPage> {
-  String? selectedLapangan;
-  DateTime? selectedDate;
-  List<String> lapanganList = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchLapanganList();
-  }
-
-  Future<void> _fetchLapanganList() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('bookings').get();
-    final lapanganSet = <String>{};
-
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      if (data.containsKey('lapangan')) {
-        lapanganSet.add(data['lapangan']);
-      }
-    }
-
-    setState(() {
-      lapanganList = lapanganSet.toList();
-    });
-  }
+  const ProfilePage({
+    super.key,
+    required this.userName,
+    required this.userEmail,
+    required this.profileImageUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kelola Booking'),
+        title: const Text("Halaman Profil"),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: DropdownButtonFormField<String>(
-              value: selectedLapangan,
-              hint: Text('Pilih Lapangan'),
-              items: lapanganList.map((String lapangan) {
-                return DropdownMenuItem<String>(
-                  value: lapangan,
-                  child: Text(lapangan),
-                );
-              }).toList(),
-              onChanged: (String? value) {
-                setState(() {
-                  selectedLapangan = value;
-                });
-              },
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundImage: NetworkImage(profileImageUrl),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: InkWell(
-              onTap: () async {
-                final DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate ?? DateTime.now(),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(Duration(days: 365)),
-                );
-                if (pickedDate != null) {
-                  setState(() {
-                    selectedDate = pickedDate;
-                  });
-                }
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Pilih Tanggal',
-                  border: OutlineInputBorder(),
-                ),
-                child: Text(
-                  selectedDate != null
-                      ? DateFormat('dd MMMM yyyy').format(selectedDate!)
-                      : 'Pilih Tanggal',
-                ),
+            const SizedBox(height: 20),
+            Text(
+              userName,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('bookings')
-                  .where('lapangan', isEqualTo: selectedLapangan)
-                  .where('tanggal',
-                      isEqualTo: selectedDate != null
-                          ? DateFormat('yyyy-MM-dd').format(selectedDate!)
-                          : null)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('Tidak ada booking.'));
-                }
-                final bookings = snapshot.data!.docs;
-                return ListView.builder(
-                  itemCount: bookings.length,
-                  itemBuilder: (context, index) {
-                    final bookingData =
-                        bookings[index].data() as Map<String, dynamic>?;
-                    if (bookingData == null) {
-                      return SizedBox.shrink();
-                    }
-                    final booking = bookingData;
-                    final bookingId = bookings[index].id;
-                    final lapangan = booking['lapangan'] as String? ?? '';
-                    final tanggal = (booking['tanggal'] as String?) != null
-                        ? DateFormat('yyyy-MM-dd').parse(booking['tanggal'])
-                        : DateTime.now();
-                    final jamMulai = booking['jamMulai'] as String? ?? '';
-                    final jamSelesai = booking['jamSelesai'] as String? ?? '';
-                    final status =
-                        booking['statusBooking'] as String? ?? 'Pending';
-                    final namaPengguna =
-                        booking['namaPengguna'] as String? ?? 'Tidak Diketahui';
-                    final noWhatsapp = booking['noWhatsapp'] as String? ?? '-';
-                    return Card(
-                      margin: EdgeInsets.all(8),
-                      child: ListTile(
-                        title: Text('Lapangan: $lapangan'),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                'Tanggal: ${DateFormat('dd MMMM yyyy').format(tanggal)}'),
-                            Text('Jam: $jamMulai - $jamSelesai'),
-                            Text('Status: $status'),
-                            Text('Nama: $namaPengguna'),
-                            Text('No WhatsApp: $noWhatsapp'),
-                          ],
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () async {
-                            final shouldDelete = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text('Konfirmasi Hapus'),
-                                content:
-                                    Text('Yakin ingin menghapus booking ini?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                    child: Text('Batal'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(true),
-                                    child: Text('Hapus'),
-                                  ),
-                                ],
-                              ),
-                            );
-                            if (shouldDelete == true) {
-                              try {
-                                await FirebaseFirestore.instance
-                                    .collection('bookings')
-                                    .doc(bookingId)
-                                    .delete();
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text('Gagal menghapus booking.')),
-                                );
-                              }
-                            }
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+            const SizedBox(height: 10),
+            Text(
+              userEmail,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
             ),
-          ),
-        ],
+            const Spacer(),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Kembali ke beranda"),
+            ),
+          ],
+        ),
       ),
     );
   }

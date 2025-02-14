@@ -1,14 +1,12 @@
-// ignore_for_file: unnecessary_import, use_super_parameters, use_build_context_synchronously, unused_element
+// ignore_for_file: unnecessary_import, use_super_parameters, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:provider/provider.dart'; // Import provider
-// import 'package:url_launcher/url_launcher.dart';
-import '../cubit/navigation_cubit.dart';
+import 'package:provider/provider.dart';
 import '../pages/edit_profile_page.dart';
 import '../pages/welcome_page.dart';
+import '../pages/manage_booking_page.dart';
 import '../provider/user_provider.dart';
 
 class DrawerWidget extends StatelessWidget {
@@ -24,7 +22,6 @@ class DrawerWidget extends StatelessWidget {
             .get();
         final userData = userDoc.data();
         if (userData != null) {
-          // Update data di UserProvider
           Provider.of<UserProvider>(context, listen: false).setUserData(
             userName: userData['name'] ?? '',
             userEmail: user.email ?? '',
@@ -73,18 +70,14 @@ class DrawerWidget extends StatelessWidget {
                         Text(
                           userName.isNotEmpty ? userName : "Tamu",
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
+                              color: Colors.white, fontSize: 16),
                         ),
                         Text(
                           userEmail.isNotEmpty
                               ? userEmail
                               : "Email tidak ditemukan",
                           style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
+                              color: Colors.white70, fontSize: 14),
                         ),
                       ],
                     ),
@@ -93,60 +86,20 @@ class DrawerWidget extends StatelessWidget {
               ],
             ),
           ),
-          // _buildDrawerItem(
-          //   context,
-          //   icon: Icons.home,
-          //   title: 'Beranda',
-          //   navigationState: NavigationState.home,
-          // ),
-          // _buildDrawerItem(
-          //   context,
-          //   icon: Icons.photo_library,
-          //   title: 'Galeri Aktivitas',
-          //   navigationState: NavigationState.gallery,
-          // ),
-          // _buildDrawerItem(
-          //   context,
-          //   icon: Icons.article,
-          //   title: 'Informasi Terkini',
-          //   navigationState: NavigationState.information,
-          // ),
-          // _buildDrawerItem(
-          //   context,
-          //   icon: Icons.info,
-          //   title: 'Tentang Aplikasi',
-          //   navigationState: NavigationState.about,
-          // ),
-          // _buildDrawerItem(
-          //   context,
-          //   icon: Icons.payment,
-          //   title: 'Checkout',
-          //   navigationState: NavigationState.payment,
-          // ),
-          // const Divider(),
-          // _buildDrawerItem(
-          //   context,
-          //   icon: Icons.sparring,
-          //   title: 'Checkout',
-          //   navigationState: NavigationState.sparring,
-          // ),
-          // const Divider(),
           ListTile(
             leading: const Icon(Icons.edit, color: Colors.orange),
             title: const Text('Ubah Profil'),
             onTap: () async {
               await _syncUserData(context);
               Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditProfilePage(
-                    userName: userProvider.userName,
-                    userEmail: userProvider.userEmail,
-                    profileImageUrl: userProvider.profileImageUrl,
-                    phoneNumber: userProvider.userPhone,
-                  ),
-                ),
-              );
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => EditProfilePage(
+                            userName: userProvider.userName,
+                            userEmail: userProvider.userEmail,
+                            profileImageUrl: userProvider.profileImageUrl,
+                            phoneNumber: userProvider.userPhone,
+                          )));
             },
           ),
           ListTile(
@@ -154,52 +107,60 @@ class DrawerWidget extends StatelessWidget {
             title: const Text('Keluar'),
             onTap: () async {
               await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const WelcomePage(),
-                ),
-              );
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => const WelcomePage()));
             },
           ),
-          // const Divider(),
-          // ListTile(
-          //   leading: const Icon(Icons.facebook, color: Colors.blue),
-          //   title: const Text('Facebook'),
-          //   onTap: () => _launchURL('https://www.facebook.com/mandala.arena'),
-          // ),
-          // ListTile(
-          //   leading: const Icon(Icons.camera_alt, color: Colors.purple),
-          //   title: const Text('Instagram'),
-          //   onTap: () => _launchURL('https://www.instagram.com/mandalaarena'),
-          // ),
+          const Divider(),
+
+          // Kelola Booking hanya untuk admin
+          FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                debugPrint("Error: ${snapshot.error}");
+                return const Text('Gagal memuat data pengguna');
+              }
+
+              if (!snapshot.hasData || !snapshot.data!.exists) {
+                debugPrint("Dokumen pengguna tidak ditemukan");
+                return const Text('Data pengguna tidak ditemukan');
+              }
+
+              final userData = snapshot.data!.data() as Map<String, dynamic>;
+              final isAdmin = userData['isAdmin'] ??
+                  false; // Ambil nilai isAdmin, default false jika tidak ada
+
+              debugPrint("Data pengguna: $userData");
+              debugPrint("isAdmin: $isAdmin");
+
+              if (isAdmin) {
+                return ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: const Text('Kelola Booking'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ManageBookingsPage(),
+                      ),
+                    );
+                  },
+                );
+              } else {
+                return const SizedBox.shrink(); // Sembunyikan jika bukan admin
+              }
+            },
+          ),
         ],
       ),
     );
   }
-
-  Widget _buildDrawerItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required NavigationState navigationState,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: () {
-        context.read<NavigationCubit>().navigateTo(navigationState);
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  // void _launchURL(String url) async {
-  //   final Uri uri = Uri.parse(url);
-  //   if (await canLaunchUrl(uri)) {
-  //     await launchUrl(uri, mode: LaunchMode.externalApplication);
-  //   } else {
-  //     debugPrint('Tidak dapat membuka URL $url');
-  //   }
-  // }
 }
