@@ -99,15 +99,27 @@ class _DetailPageState extends State<DetailPage> {
         user != null) {
       final cart = context.read<Cart>();
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
-      final selectedTime = DateTime(selectedDate!.year, selectedDate!.month,
-          selectedDate!.day, int.parse(selectedHour.split(":")[0]));
+      final selectedTime = DateTime(
+        selectedDate!.year,
+        selectedDate!.month,
+        selectedDate!.day,
+        int.parse(selectedHour.split(":")[0]),
+      );
 
-      // Check availability for the entire duration
+      // Cek ketersediaan slot di Firestore untuk seluruh durasi
       bool isAvailable = true;
       for (int i = 0; i < bookingDuration; i++) {
         final timeToCheck = selectedTime.add(Duration(hours: i));
-        if (unavailableTimes
-            .contains(DateFormat('HH:mm').format(timeToCheck))) {
+        final timeToCheckFormatted = DateFormat('HH:mm').format(timeToCheck);
+
+        final bookingSnapshot = await FirebaseFirestore.instance
+            .collection('bookings')
+            .where('lapangId', isEqualTo: widget.lapang.id)
+            .where('tanggal', isEqualTo: formattedDate)
+            .where('jamMulai', isEqualTo: timeToCheckFormatted)
+            .get();
+
+        if (bookingSnapshot.docs.isNotEmpty) {
           isAvailable = false;
           break;
         }
@@ -115,13 +127,28 @@ class _DetailPageState extends State<DetailPage> {
 
       if (!isAvailable) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Jam ini sudah terbooking!")),
+          const SnackBar(content: Text("Tidak bisa booking di jam tersebut!")),
+        );
+        return;
+      }
+
+      // Cek apakah booking sudah ada di Cart (local)
+      bool existsInCart = cart.cart.any((element) =>
+          element.id == widget.lapang.id &&
+          element.bookingDate == formattedDate &&
+          element.time == selectedHour &&
+          element.duration == bookingDuration);
+
+      if (existsInCart) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("Booking dengan slot tersebut sudah ada di cart!")),
         );
         return;
       }
 
       try {
-        // Get user data from Firestore
+        // Ambil data user dari Firestore
         final userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user!.uid)
@@ -147,49 +174,30 @@ class _DetailPageState extends State<DetailPage> {
           'userId': user!.uid,
           'namaPengguna': userName,
           'noWhatsapp': userPhone ?? "",
-          'duration': bookingDuration.toString(), // Store as string
+          'duration': bookingDuration.toString(), // disimpan sebagai string
         };
 
-        // Add booking to Firestore
-        await FirebaseFirestore.instance
+        // Tambahkan booking ke Firestore dan ambil docId-nya
+        final docRef = await FirebaseFirestore.instance
             .collection('bookings')
             .add(bookingData);
 
-        // Add to cart and update UI only after successful booking
-        cart.addToCart(widget.lapang, bookingDuration, formattedDate,
-            selectedHour, totalPrice);
-        popUpDialog();
+        // Tambahkan ke cart (local) dengan menyertakan docId
+        cart.addToCart(
+          docRef.id,
+          widget.lapang,
+          bookingDuration,
+          formattedDate,
+          selectedHour,
+          totalPrice,
+        );
 
-        // Update unavailable times
-        for (int i = 0; i < bookingDuration; i++) {
-          final blockedTime = selectedTime.add(Duration(hours: i));
-          unavailableTimes.add(DateFormat('HH:mm').format(blockedTime));
-        }
+        popUpDialog(); // Tampilkan dialog sukses atau aksi selanjutnya
       } catch (e) {
-        print("Error adding booking: $e"); // Print the error for debugging
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Terjadi kesalahan saat booking.")),
+          SnackBar(content: Text("Terjadi kesalahan: $e")),
         );
       }
-    } else {
-      // More specific error messages
-      String message = "";
-      if (user == null) {
-        message = "Anda harus login untuk melakukan booking.";
-      } else if (selectedDate == null) {
-        message = "Harap pilih tanggal.";
-      } else if (selectedHour.isEmpty) {
-        message = "Harap pilih jam.";
-      } else if (bookingDuration <= 0) {
-        message = "Harap pilih durasi booking.";
-      } else {
-        message =
-            "Terjadi kesalahan. Silakan coba lagi."; // General error message
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
     }
   }
 

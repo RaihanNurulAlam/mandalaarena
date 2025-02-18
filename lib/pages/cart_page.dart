@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable
+// ignore_for_file: unused_local_variable, use_build_context_synchronously
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -17,45 +17,65 @@ class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    double totalPrice = 0;
+    final cartProvider = context.watch<Cart>();
 
     return Consumer<Cart>(
-      builder: (context, value, child) {
-        // Calculate total price based on cart items
-        for (var cartModel in value.cart) {
-          double price = int.parse(cartModel.quantity.toString()) *
-              int.parse(cartModel.price.toString()).toDouble();
-          totalPrice += price;
-        }
+      builder: (context, cart, child) {
+        // Menghitung total harga berdasarkan data dari cart provider
+        double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
+          final double price = double.tryParse(cartModel.price ?? '0') ?? 0;
+          final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
+          return previousValue + (price * quantity);
+        });
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('Keranjang'),
             actions: [
-              // Show "Hapus Semua" button only if the cart is not empty
-              Visibility(
-                visible: value.cart.isNotEmpty ? true : false,
-                child: Padding(
+              // Tampilkan tombol "Hapus Semua" hanya jika cart tidak kosong
+              if (cart.cart.isNotEmpty)
+                Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: IconButton(
                     onPressed: () async {
-                      // Clear the entire cart and remove from Firebase
-                      await value.clearCart();
-                      setState(() {
-                        totalPrice = 0;
-                      });
+                      final shouldDelete = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Konfirmasi Hapus Semua'),
+                          content: const Text(
+                              'Apakah Anda yakin ingin menghapus semua item di keranjang?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Batal'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Hapus Semua'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (shouldDelete == true) {
+                        try {
+                          await cart.clearCart();
+                          // Tidak perlu setState() karena notifyListeners() pada clearCart sudah trigger rebuild
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Gagal menghapus semua item. Coba lagi.')),
+                          );
+                        }
+                      }
                     },
-                    icon: Row(
-                      children: const [
-                        Text('Hapus Semua'),
-                      ],
-                    ),
+                    icon: const Text('Hapus Semua'),
                   ),
                 ),
-              ),
             ],
           ),
-          body: value.cart.isEmpty
+          body: cart.cart.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -79,7 +99,9 @@ class _CartPageState extends State<CartPage> {
                         onPressed: () {
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(builder: (context) => HomePage()),
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(),
+                            ),
                             (route) => false,
                           );
                         },
@@ -91,9 +113,9 @@ class _CartPageState extends State<CartPage> {
                   children: [
                     Expanded(
                       child: ListView.builder(
-                        itemCount: value.cart.length,
+                        itemCount: cart.cart.length,
                         itemBuilder: (context, index) {
-                          final lapang = value.cart[index];
+                          final item = cart.cart[index];
                           return ListTile(
                             leading: ClipRRect(
                               borderRadius: BorderRadius.circular(6),
@@ -101,13 +123,13 @@ class _CartPageState extends State<CartPage> {
                                 height: 50,
                                 width: 50,
                                 child: Image.asset(
-                                  lapang.imagePath.toString(),
+                                  item.imagePath.toString(),
                                   fit: BoxFit.cover,
                                 ),
                               ),
                             ),
                             title: Text(
-                              lapang.name.toString(),
+                              item.name.toString(),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -116,22 +138,49 @@ class _CartPageState extends State<CartPage> {
                             subtitle: Row(
                               children: [
                                 Text(
-                                    'Rp. ${lapang.price} x ${lapang.quantity} Jam'),
+                                    'Rp. ${item.price} x ${item.quantity} Jam'),
                               ],
                             ),
                             trailing: IconButton(
                               onPressed: () async {
-                                // Remove the selected item from Firebase and the cart
-                                await value.deleteItemCart(lapang);
-                                setState(() {
-                                  totalPrice = 0;
-                                  for (var cartModel in value.cart) {
-                                    totalPrice += int.parse(cartModel.quantity.toString()) *
-                                        int.parse(cartModel.price.toString()).toDouble();
+                                final shouldDelete = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Konfirmasi Hapus'),
+                                    content: const Text(
+                                        'Yakin ingin menghapus item ini dari keranjang?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(false),
+                                        child: const Text('Batal'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(true),
+                                        child: const Text('Hapus'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (shouldDelete == true) {
+                                  try {
+                                    await cart.deleteItemCart(item);
+                                    // Tidak perlu setState(), karena notifyListeners() akan rebuild widget
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'Gagal menghapus item. Silakan coba lagi.')),
+                                    );
                                   }
-                                });
+                                }
                               },
-                              icon: const Icon(CupertinoIcons.trash_circle),
+                              icon: const Icon(
+                                CupertinoIcons.trash_circle,
+                                color: Colors.black,
+                              ),
                             ),
                           );
                         },
@@ -148,7 +197,9 @@ class _CartPageState extends State<CartPage> {
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => HomePage()),
+                          MaterialPageRoute(
+                            builder: (context) => HomePage(),
+                          ),
                           (route) => false,
                         );
                       },
@@ -213,8 +264,10 @@ class _CartPageState extends State<CartPage> {
                                 ),
                               ),
                               SizedBox(width: 10),
-                              Icon(CupertinoIcons.arrow_right,
-                                  color: Colors.white),
+                              Icon(
+                                CupertinoIcons.arrow_right,
+                                color: Colors.white,
+                              ),
                             ],
                           ),
                           onPressed: () {

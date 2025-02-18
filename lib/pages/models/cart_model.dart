@@ -1,4 +1,5 @@
 class CartModel {
+  String? docId;
   String? id; // ID dari Firebase
   String? name;
   String? price;
@@ -9,6 +10,7 @@ class CartModel {
   int? duration; // Durasi booking dari Firebase
 
   CartModel({
+    this.docId,
     this.id,
     this.name,
     this.price,

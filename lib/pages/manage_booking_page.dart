@@ -3,6 +3,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:provider/provider.dart';
 
 class ManageBookingsPage extends StatefulWidget {
   @override
@@ -146,6 +148,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                             Text('No WhatsApp: $noWhatsapp'),
                           ],
                         ),
+                        // Di bagian tombol hapus (trailing IconButton)
                         trailing: IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
@@ -171,10 +174,23 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                             );
                             if (shouldDelete == true) {
                               try {
+                                // Hapus dokumen di Firestore
                                 await FirebaseFirestore.instance
                                     .collection('bookings')
-                                    .doc(bookingId)
+                                    .doc(
+                                        bookingId) // bookingId merupakan doc.id
                                     .delete();
+
+                                // Sinkronkan dengan cart: hapus item dari provider berdasarkan docId
+                                final cart =
+                                    Provider.of<Cart>(context, listen: false);
+                                cart.removeItemByDocId(bookingId);
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text('Booking berhasil dihapus.')),
+                                );
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(

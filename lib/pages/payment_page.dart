@@ -181,7 +181,7 @@ class _PaymentPageState extends State<PaymentPage> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Harga: Rp. ${item.price}, Durasi: ${item.quantity} Jam',
+                                'Harga: Rp. ${item.price} x ${item.quantity} Jam',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.black54,
