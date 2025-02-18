@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
@@ -150,7 +151,10 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                         ),
                         // Di bagian tombol hapus (trailing IconButton)
                         trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
+                          icon: Icon(
+                            CupertinoIcons.trash_circle,
+                            color: Colors.black,
+                          ),
                           onPressed: () async {
                             final shouldDelete = await showDialog<bool>(
                               context: context,

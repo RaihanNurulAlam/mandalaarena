@@ -101,28 +101,13 @@ class _DetailPageState extends State<DetailPage> {
         bookingDuration > 0 &&
         selectedDate != null &&
         user != null) {
-      // Tambahkan pemeriksaan batas tutup lapangan (misal tutup pukul 22:00)
-      final int currentStartHour = int.parse(selectedHour.split(":")[0]);
-      final int maxAllowedDuration =
-          22 - currentStartHour; // jam tersisa hingga 22:00
-      if (bookingDuration > maxAllowedDuration) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Tidak bisa booking pada jam tersebut karena melebihi jam tutup!",
-            ),
-          ),
-        );
-        return;
-      }
-
       final cart = context.read<Cart>();
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
       final selectedTime = DateTime(
         selectedDate!.year,
         selectedDate!.month,
         selectedDate!.day,
-        currentStartHour,
+        int.parse(selectedHour.split(":")[0]),
       );
 
       // Cek ketersediaan slot di Firestore untuk seluruh durasi

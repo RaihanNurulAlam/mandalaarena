@@ -2,6 +2,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/edit_sparring_team_page.dart';
@@ -170,7 +171,10 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                               ),
                             if (isAdmin)
                               IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
+                                icon: Icon(
+                                  CupertinoIcons.trash_circle,
+                                  color: Colors.black,
+                                ),
                                 onPressed: () => _deleteTeam(team.id),
                               ),
                             IconButton(
