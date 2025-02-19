@@ -1,5 +1,6 @@
 // ignore_for_file: unused_local_variable, use_build_context_synchronously
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/payment_page.dart';
@@ -14,6 +15,20 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  @override
+  void initState() {
+    super.initState();
+
+    final cartProvider = Provider.of<Cart>(context, listen: false);
+
+    // Ambil userId dari FirebaseAuth
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      cartProvider
+          .loadCart(user.uid); // Memuat data terbaru saat halaman dibuka
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);

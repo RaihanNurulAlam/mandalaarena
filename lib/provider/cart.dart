@@ -82,23 +82,39 @@ class Cart extends ChangeNotifier {
   }
 
   /// Menghapus item dari cart berdasarkan docId
+  // Future<void> removeItemByDocId(String docId) async {
+  //   try {
+  //     // Temukan item di cart yang docId-nya sama
+  //     final itemToRemove = _cart.firstWhere(
+  //       (item) => item.docId == docId,
+  //       orElse: () => null as CartModel,
+  //     );
+
+  //     if (itemToRemove != null) {
+  //       // Hapus dari Firestore
+  //       await FirebaseFirestore.instance
+  //           .collection('bookings')
+  //           .doc(docId)
+  //           .delete();
+
+  //       // Hapus dari list cart
+  //       _cart.remove(itemToRemove);
+  //       notifyListeners();
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error removing item by docId: $e');
+  //   }
+  // }
+
   Future<void> removeItemByDocId(String docId) async {
     try {
-      // Temukan item di cart yang docId-nya sama
-      final itemToRemove = _cart.firstWhere(
-        (item) => item.docId == docId,
-        orElse: () => null as CartModel,
-      );
-
-      if (itemToRemove != null) {
-        // Hapus dari Firestore
+      final index = _cart.indexWhere((item) => item.docId == docId);
+      if (index != -1) {
         await FirebaseFirestore.instance
             .collection('bookings')
             .doc(docId)
             .delete();
-
-        // Hapus dari list cart
-        _cart.remove(itemToRemove);
+        _cart.removeAt(index);
         notifyListeners();
       }
     } catch (e) {
@@ -124,7 +140,12 @@ class Cart extends ChangeNotifier {
           await doc.reference.delete();
         }
 
-        _cart.remove(item);
+        // _cart.remove(item);
+        _cart.removeWhere((cartItem) =>
+            cartItem.id == item.id &&
+            cartItem.bookingDate == item.bookingDate &&
+            cartItem.time == item.time &&
+            cartItem.duration == item.duration);
         notifyListeners();
       }
     } catch (e) {

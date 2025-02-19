@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -176,19 +177,24 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                 ],
                               ),
                             );
+
                             if (shouldDelete == true) {
                               try {
-                                // Hapus dokumen di Firestore
                                 await FirebaseFirestore.instance
                                     .collection('bookings')
-                                    .doc(
-                                        bookingId) // bookingId merupakan doc.id
+                                    .doc(bookingId)
                                     .delete();
 
-                                // Sinkronkan dengan cart: hapus item dari provider berdasarkan docId
                                 final cart =
                                     Provider.of<Cart>(context, listen: false);
                                 cart.removeItemByDocId(bookingId);
+
+                                final User? user =
+                                    FirebaseAuth.instance.currentUser;
+                                if (user != null) {
+                                  await cart.loadCart(
+                                      user.uid); // Pastikan cart diperbarui
+                                }
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
