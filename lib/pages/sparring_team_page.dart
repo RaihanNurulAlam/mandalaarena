@@ -160,6 +160,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                       'Hari: ${team.availableDays.join(', ')}'),
                                   Text(
                                       'Jam: ${team.availableHours.join(', ')}'),
+                                  Text('Kategori: ${team.category}'),
                                   Text('Kontak: ${team.contact}'),
                                 ],
                               ),

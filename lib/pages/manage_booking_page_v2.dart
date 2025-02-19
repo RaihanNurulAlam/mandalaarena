@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, unnecessary_to_list_in_spreads
+// ignore_for_file: use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,7 +16,7 @@ class ManageBookingsPage extends StatefulWidget {
 class _ManageBookingsPageState extends State<ManageBookingsPage> {
   String? selectedLapangan;
   DateTime? selectedDate;
-  List<String> lapanganList = ['Semua Lapangan'];
+  List<String> lapanganList = [];
 
   @override
   void initState() {
@@ -37,7 +37,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     }
 
     setState(() {
-      lapanganList = ['Semua Lapangan', ...lapanganSet.toList()];
+      lapanganList = lapanganSet.toList();
     });
   }
 
@@ -56,7 +56,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
               hint: Text('Pilih Lapangan'),
               items: lapanganList.map((String lapangan) {
                 return DropdownMenuItem<String>(
-                  value: lapangan == 'Semua Lapangan' ? null : lapangan,
+                  value: lapangan,
                   child: Text(lapangan),
                 );
               }).toList(),
@@ -100,10 +100,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('bookings')
-                  .where('lapangan',
-                      isEqualTo: selectedLapangan == 'Semua Lapangan'
-                          ? null
-                          : selectedLapangan)
+                  .where('lapangan', isEqualTo: selectedLapangan)
                   .where('tanggal',
                       isEqualTo: selectedDate != null
                           ? DateFormat('yyyy-MM-dd').format(selectedDate!)
@@ -138,14 +135,9 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                     final namaPengguna =
                         booking['namaPengguna'] as String? ?? 'Tidak Diketahui';
                     final noWhatsapp = booking['noWhatsapp'] as String? ?? '-';
-                    final imagePath = booking['imagePath'] as String? ?? '';
                     return Card(
                       margin: EdgeInsets.all(8),
                       child: ListTile(
-                        leading: imagePath.isNotEmpty
-                            ? Image.network(imagePath,
-                                width: 50, height: 50, fit: BoxFit.cover)
-                            : Icon(Icons.image_not_supported, size: 50),
                         title: Text('Lapangan: $lapangan'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,6 +150,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                             Text('No WhatsApp: $noWhatsapp'),
                           ],
                         ),
+                        // Di bagian tombol hapus (trailing IconButton)
                         trailing: IconButton(
                           icon: Icon(
                             CupertinoIcons.trash_circle,
