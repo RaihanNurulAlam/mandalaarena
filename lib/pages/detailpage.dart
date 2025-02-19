@@ -117,6 +117,7 @@ class _DetailPageState extends State<DetailPage> {
       }
 
       final cart = context.read<Cart>();
+      final userId = user?.uid ?? ""; // Pastikan userId tidak null
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
       final selectedTime = DateTime(
         selectedDate!.year,
@@ -203,12 +204,13 @@ class _DetailPageState extends State<DetailPage> {
 
         // Tambahkan ke cart (local) dengan menyertakan docId
         cart.addToCart(
-          docRef.id,
-          widget.lapang,
-          bookingDuration,
-          formattedDate,
-          selectedHour,
-          totalPrice,
+          userId, // Ambil userId dengan aman
+          docRef.id, // ID dari Firestore
+          widget.lapang, // Objek Lapang sesuai dengan cart.dart
+          bookingDuration, // Durasi booking (int)
+          formattedDate, // Tanggal booking (String)
+          selectedHour, // Jam mulai booking (String)
+          totalPrice, // Total harga (num)
         );
 
         // Setelah booking berhasil, perbarui daftar unavailableTimes

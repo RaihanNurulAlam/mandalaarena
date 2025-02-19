@@ -1,9 +1,12 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
-import 'package:flutter/foundation.dart'; // Tambahkan ini untuk deteksi platform
+import 'package:flutter/foundation.dart';
+import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:provider/provider.dart'; // Tambahkan ini untuk deteksi platform
 
 class FirebaseServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -11,17 +14,22 @@ class FirebaseServices {
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance; // Instance Firestore
 
-  Future<User?> signInWithGoogle() async {
+  Future<User?> signInWithGoogle(BuildContext context) async {
     try {
       if (kIsWeb) {
-        // Autentikasi Google untuk Web
         GoogleAuthProvider googleProvider = GoogleAuthProvider();
         UserCredential userCredential =
             await _auth.signInWithPopup(googleProvider);
-        await _saveUserToFirestore(userCredential.user); // Simpan ke Firestore
+        await _saveUserToFirestore(userCredential.user);
+
+        // 🚀 Load cart setelah login
+        if (userCredential.user != null) {
+          final cartProvider = Provider.of<Cart>(context, listen: false);
+          await cartProvider.loadCart(userCredential.user!.uid);
+        }
+
         return userCredential.user;
       } else {
-        // Autentikasi Google untuk Android & iOS
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
         if (googleUser != null) {
           final GoogleSignInAuthentication googleAuth =
@@ -34,8 +42,14 @@ class FirebaseServices {
 
           UserCredential userCredential =
               await _auth.signInWithCredential(credential);
-          await _saveUserToFirestore(
-              userCredential.user); // Simpan ke Firestore
+          await _saveUserToFirestore(userCredential.user);
+
+          // 🚀 Load cart setelah login
+          if (userCredential.user != null) {
+            final cartProvider = Provider.of<Cart>(context, listen: false);
+            await cartProvider.loadCart(userCredential.user!.uid);
+          }
+
           return userCredential.user;
         }
       }

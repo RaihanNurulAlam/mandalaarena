@@ -1,15 +1,19 @@
 class CartModel {
-  String? docId;
-  String? id; // ID dari Firebase
+  String? userId; // User ID dari Firebase
+  String? docId; // Document ID dari Firebase
+  String? id; // ID dari lapangan
   String? name;
   String? price;
   String? imagePath;
   String? quantity;
-  String? bookingDate; // Tanggal booking dari Firebase
-  String? time; // Waktu booking dari Firebase
-  int? duration; // Durasi booking dari Firebase
+  String? bookingDate; // Tanggal booking
+  String? time; // Waktu booking
+  int? duration; // Durasi booking
+  String? namaPengguna; // Nama pengguna
+  String? noWhatsapp; // Nomor WhatsApp
 
   CartModel({
+    this.userId,
     this.docId,
     this.id,
     this.name,
@@ -19,30 +23,40 @@ class CartModel {
     this.bookingDate,
     this.time,
     this.duration,
+    this.namaPengguna,
+    this.noWhatsapp,
   });
 
   // Konversi dari JSON Firebase ke CartModel
   CartModel.fromJson(Map<String, dynamic> json, {String? documentId}) {
-    id = documentId; // Set ID dari dokumen Firebase
+    docId = documentId;
+    userId = json['userId'];
+    id = json['lapangId'];
     name = json['name'];
     price = json['price'];
-    imagePath = json['image_path'];
+    imagePath = json['imagePath'];
     quantity = json['quantity'];
-    bookingDate = json['date']; // Ambil `date` dari Firebase
-    time = json['time']; // Ambil `time` dari Firebase
-    duration = json['duration']; // Ambil `duration` dari Firebase
+    bookingDate = json['bookingDate'];
+    time = json['time'];
+    duration = json['duration'];
+    namaPengguna = json['namaPengguna'];
+    noWhatsapp = json['noWhatsapp'];
   }
 
   // Konversi dari CartModel ke JSON Firebase
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['name'] = name;
-    data['price'] = price;
-    data['image_path'] = imagePath;
-    data['quantity'] = quantity;
-    data['date'] = bookingDate; // Tambahkan ke JSON
-    data['time'] = time; // Tambahkan ke JSON
-    data['duration'] = duration; // Tambahkan ke JSON
-    return data;
+    return {
+      'userId': userId,
+      'lapangId': id,
+      'name': name,
+      'price': price,
+      'imagePath': imagePath,
+      'quantity': quantity,
+      'bookingDate': bookingDate,
+      'time': time,
+      'duration': duration,
+      'namaPengguna': namaPengguna,
+      'noWhatsapp': noWhatsapp,
+    };
   }
 }

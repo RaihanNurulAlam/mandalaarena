@@ -11,6 +11,7 @@ import 'package:mandalaarenaapp/pages/admin_home_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import 'package:mandalaarenaapp/pages/help_page.dart';
+import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -42,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // Email and password auth method
   void loginUser() async {
     setState(() {
-      isLoading = false;
+      isLoading = true;
     });
 
     String res = await AuthMethod().loginUser(
@@ -67,23 +68,25 @@ class _LoginScreenState extends State<LoginScreen> {
             bool isAdmin = userDoc.get('isAdmin') as bool;
             Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
 
-            // PINDAHKAN NAVIGATOR KE BAWAH
+            // 🚀 **Tambahkan pemanggilan `loadCart()` di sini**
+            final cartProvider = Provider.of<Cart>(context, listen: false);
+            await cartProvider.loadCart(currentUser.uid);
+
+            // Navigasi setelah `loadCart` selesai
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => targetPage),
             );
 
-            // Ambil data user SETELAH navigasi
+            // Set data user setelah navigasi
             final userData = userDoc.data() as Map<String, dynamic>;
             final String userName = userData['name'] ?? "Nama User";
             final String userEmail =
                 userData['email'] ?? "Email tidak ditemukan";
             final String profileImageUrl = userData['profileImageUrl'] ??
                 "https://via.placeholder.com/150";
-            final String userPhone =
-                userData['phone'] ?? ""; // Ambil dari userDoc
+            final String userPhone = userData['phone'] ?? "";
 
-            // Set user data in UserProvider setelah navigasi
             if (mounted) {
               Provider.of<UserProvider>(context, listen: false).setUserData(
                 userName: userName,
@@ -97,7 +100,6 @@ class _LoginScreenState extends State<LoginScreen> {
           showSnackBar(context, "Data pengguna tidak ditemukan.");
         }
       } catch (e) {
-        // Handle error Firestore
         print("Error Firestore: $e");
         showSnackBar(context, "Terjadi kesalahan. Silakan coba lagi.");
       }
@@ -182,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           backgroundColor: Colors.blueGrey),
                       onPressed: () async {
                         final user =
-                            await FirebaseServices().signInWithGoogle();
+                            await FirebaseServices().signInWithGoogle(context);
                         if (user != null) {
                           final String userName =
                               user.displayName ?? "Nama User";
