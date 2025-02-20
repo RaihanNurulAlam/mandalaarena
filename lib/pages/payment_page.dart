@@ -1,11 +1,13 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously, avoid_print, unnecessary_import
 
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
+import 'package:mandalaarenaapp/pages/history_payment_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +27,16 @@ class _PaymentPageState extends State<PaymentPage> {
       return 'http://localhost:3000'; // Browser
     } else {
       return 'http://10.0.2.2:3000'; // Emulator Android/Desktop
+    }
+  }
+
+  Future<void> updateBookingStatus(String orderId, String status) async {
+    try {
+      final bookingRef =
+          FirebaseFirestore.instance.collection('bookings').doc(orderId);
+      await bookingRef.update({'statusBooking': status});
+    } catch (e) {
+      print('Error updating booking status: $e');
     }
   }
 
@@ -287,13 +299,24 @@ class _PaymentPageState extends State<PaymentPage> {
                                   transactionStatus =
                                       statusData['transaction_status'];
                                 });
-                                // Jika transaksi berhasil, tampilkan pesan sukses
+                                // Jika transaksi berhasil, update status booking dan navigasi ke histori pembayaran
                                 if (transactionStatus == 'settlement' ||
                                     transactionStatus == 'capture') {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Pembayaran berhasil!'),
-                                      backgroundColor: Colors.green,
+                                  await updateBookingStatus(
+                                      data['orderId'], 'Sudah Bayar');
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => HistoryPaymentPage(
+                                          status: 'berhasil'),
+                                    ),
+                                  );
+                                } else {
+                                  // Jika transaksi gagal, arahkan kembali ke payment page
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PaymentPage(),
                                     ),
                                   );
                                 }
