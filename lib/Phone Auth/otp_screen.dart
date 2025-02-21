@@ -25,90 +25,99 @@ class _OTPScreenState extends State<OTPScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Image.asset("images/otpimage.jpg"),
-              const SizedBox(height: 20),
-              const Text(
-                "Verifikasi OTP",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
-              ),
-              const SizedBox(height: 10),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  "Masukkan kode OTP yang telah dikirim ke nomor Anda.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: TextField(
-                  controller: otpController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: "Masukkan Kode OTP",
-                    labelText: "Kode OTP",
+          child: Center(
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width > 500
+                  ? 500
+                  : double.infinity, // ✅ Batasi lebar di desktop
+              child: Column(
+                children: [
+                  Image.asset("images/otpimage.jpg"),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Verifikasi OTP",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                      ),
-                      onPressed: () async {
-                        setState(() {
-                          isLoading = true;
-                        });
-
-                        try {
-                          if (kIsWeb && widget.confirmationResult != null) {
-                            // Untuk Web
-                            await widget.confirmationResult!
-                                .confirm(otpController.text);
-                          } else {
-                            // Untuk Mobile (Android/iOS)
-                            final credential = PhoneAuthProvider.credential(
-                              verificationId: widget.verificationId,
-                              smsCode: otpController.text,
-                            );
-                            await FirebaseAuth.instance
-                                .signInWithCredential(credential);
-                          }
-
-                          // Berhasil, arahkan ke HomePage
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => HomePage()),
-                          );
-                        } catch (e) {
-                          print("Error OTP: $e");
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(
-                                    "Kode OTP salah atau sudah kedaluwarsa.")),
-                          );
-                        }
-
-                        setState(() {
-                          isLoading = false;
-                        });
-                      },
-                      child: const Text(
-                        "Verifikasi Kode OTP",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white),
+                  const SizedBox(height: 10),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      "Masukkan kode OTP yang telah dikirim ke nomor Anda.",
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: TextField(
+                      controller: otpController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: "Masukkan Kode OTP",
+                        labelText: "Kode OTP",
                       ),
                     ),
-              const SizedBox(height: 20),
-            ],
+                  ),
+                  const SizedBox(height: 20),
+                  isLoading
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                          ),
+                          onPressed: () async {
+                            setState(() {
+                              isLoading = true;
+                            });
+
+                            try {
+                              if (kIsWeb && widget.confirmationResult != null) {
+                                // Untuk Web
+                                await widget.confirmationResult!
+                                    .confirm(otpController.text);
+                              } else {
+                                // Untuk Mobile (Android/iOS)
+                                final credential = PhoneAuthProvider.credential(
+                                  verificationId: widget.verificationId,
+                                  smsCode: otpController.text,
+                                );
+                                await FirebaseAuth.instance
+                                    .signInWithCredential(credential);
+                              }
+
+                              // Berhasil, arahkan ke HomePage
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => HomePage()),
+                              );
+                            } catch (e) {
+                              print("Error OTP: $e");
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        "Kode OTP salah atau sudah kedaluwarsa.")),
+                              );
+                            }
+
+                            setState(() {
+                              isLoading = false;
+                            });
+                          },
+                          child: const Text(
+                            "Verifikasi Kode OTP",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.white),
+                          ),
+                        ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
           ),
         ),
       ),

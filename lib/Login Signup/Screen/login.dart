@@ -118,150 +118,162 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Stack(
           children: [
             SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: height / 2.7,
-                    child: Image.asset('images/login.jpg'),
-                  ),
-                  TextFieldInput(
-                    icon: Icons.person,
-                    textEditingController: emailController,
-                    hintText: 'Masukan email anda',
-                    textInputType: TextInputType.emailAddress,
-                  ),
-                  TextFieldInput(
-                    icon: Icons.lock,
-                    textEditingController: passwordController,
-                    hintText: 'Masukan password anda',
-                    textInputType: TextInputType.visiblePassword,
-                    isPass: !isPasswordVisible,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+              child: Center(
+                // ✅ Pusatkan tampilan
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width > 500
+                      ? 500
+                      : double.infinity, // ✅ Batasi lebar di desktop
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const ForgotPassword(),
-                      Spacer(),
-                      Padding(
-                        padding: EdgeInsets.only(
-                            right: MediaQuery.of(context).size.width * 0.025),
-                        child: TextButton(
-                          onPressed: () {
-                            setState(() {
-                              isPasswordVisible = !isPasswordVisible;
-                            });
-                          },
-                          child: Text(
-                            isPasswordVisible
-                                ? "Sembunyikan Password"
-                                : "Tampilkan Password",
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue),
-                          ),
-                        ),
+                      SizedBox(
+                        height: height / 2.7,
+                        child: Image.asset('images/login.jpg'),
                       ),
-                    ],
-                  ),
-                  MyButtons(onTap: loginUser, text: "Masuk"),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(height: 1, color: Colors.black26),
+                      TextFieldInput(
+                        icon: Icons.person,
+                        textEditingController: emailController,
+                        hintText: 'Masukan email anda',
+                        textInputType: TextInputType.emailAddress,
                       ),
-                      const Text("  atau  "),
-                      Expanded(
-                        child: Container(height: 1, color: Colors.black26),
+                      TextFieldInput(
+                        icon: Icons.lock,
+                        textEditingController: passwordController,
+                        hintText: 'Masukan password anda',
+                        textInputType: TextInputType.visiblePassword,
+                        isPass: !isPasswordVisible,
                       ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 25, vertical: 10),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueGrey),
-                      onPressed: () async {
-                        final user =
-                            await FirebaseServices().signInWithGoogle(context);
-                        if (user != null) {
-                          final String userName =
-                              user.displayName ?? "Nama User";
-                          final String userEmail =
-                              user.email ?? "Email tidak ditemukan";
-                          final String profileImageUrl = user.photoURL ??
-                              "https://via.placeholder.com/150";
-                          final String userPhone = user.phoneNumber ??
-                              "Nomor telepon tidak ditemukan";
-
-                          // Set user data in UserProvider
-                          if (mounted) {
-                            Provider.of<UserProvider>(context, listen: false)
-                                .setUserData(
-                              userName: userName,
-                              userEmail: userEmail,
-                              profileImageUrl: profileImageUrl,
-                              userPhone: userPhone,
-                            );
-
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HomePage(),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
+                          const ForgotPassword(),
+                          Spacer(),
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Image.network(
-                              "https://ouch-cdn2.icons8.com/VGHyfDgzIiyEwg3RIll1nYupfj653vnEPRLr0AeoJ8g/rs:fit:456:456/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvODg2/LzRjNzU2YThjLTQx/MjgtNGZlZS04MDNl/LTAwMTM0YzEwOTMy/Ny5wbmc.png",
-                              height: 32,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text(
-                            "Masuk dengan Google",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                              color: Colors.white,
+                            padding: EdgeInsets.only(
+                                right:
+                                    MediaQuery.of(context).size.width * 0.025),
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  isPasswordVisible = !isPasswordVisible;
+                                });
+                              },
+                              child: Text(
+                                isPasswordVisible
+                                    ? "Sembunyikan Password"
+                                    : "Tampilkan Password",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  const PhoneAuthentication(),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10, left: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Tidak punya akun? "),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const SignupScreen(),
-                              ),
-                            );
+                      MyButtons(onTap: loginUser, text: "Masuk"),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(height: 1, color: Colors.black26),
+                          ),
+                          const Text("  atau  "),
+                          Expanded(
+                            child: Container(height: 1, color: Colors.black26),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 25, vertical: 10),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueGrey),
+                          onPressed: () async {
+                            final user = await FirebaseServices()
+                                .signInWithGoogle(context);
+                            if (user != null) {
+                              final String userName =
+                                  user.displayName ?? "Nama User";
+                              final String userEmail =
+                                  user.email ?? "Email tidak ditemukan";
+                              final String profileImageUrl = user.photoURL ??
+                                  "https://via.placeholder.com/150";
+                              final String userPhone = user.phoneNumber ??
+                                  "Nomor telepon tidak ditemukan";
+
+                              // Set user data in UserProvider
+                              if (mounted) {
+                                Provider.of<UserProvider>(context,
+                                        listen: false)
+                                    .setUserData(
+                                  userName: userName,
+                                  userEmail: userEmail,
+                                  profileImageUrl: profileImageUrl,
+                                  userPhone: userPhone,
+                                );
+
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => HomePage(),
+                                  ),
+                                );
+                              }
+                            }
                           },
-                          child: const Text(
-                            "Daftar",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                child: Image.network(
+                                  "https://ouch-cdn2.icons8.com/VGHyfDgzIiyEwg3RIll1nYupfj653vnEPRLr0AeoJ8g/rs:fit:456:456/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvODg2/LzRjNzU2YThjLTQx/MjgtNGZlZS04MDNl/LTAwMTM0YzEwOTMy/Ny5wbmc.png",
+                                  height: 32,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                "Masuk dengan Google",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const PhoneAuthentication(),
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            top: 10, left: 20, bottom: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text("Tidak punya akun? "),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const SignupScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Daftar",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
             Positioned(

@@ -116,85 +116,95 @@ class _SignupScreenState extends State<SignupScreen> {
           children: [
             SingleChildScrollView(
               child: SizedBox(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: height / 2.8,
-                      child: Image.asset('images/signup.jpeg'),
-                    ),
-                    TextFieldInput(
-                      icon: Icons.person,
-                      textEditingController: nameController,
-                      hintText: 'Masukan nama anda',
-                      textInputType: TextInputType.text,
-                    ),
-                    TextFieldInput(
-                      icon: Icons.email,
-                      textEditingController: emailController,
-                      hintText: 'Masukan email anda',
-                      textInputType: TextInputType.text,
-                    ),
-                    TextFieldInput(
-                      icon: Icons.lock,
-                      textEditingController: passwordController,
-                      hintText: 'Masukan password anda',
-                      textInputType: TextInputType.text,
-                      isPass: !isPasswordVisible,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width > 500
+                        ? 500
+                        : double.infinity, // ✅ Batasi lebar di desktop
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const SizedBox(),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 30.0),
-                          child: TextButton(
-                            onPressed: () {
-                              setState(() {
-                                isPasswordVisible = !isPasswordVisible;
-                              });
-                            },
-                            child: Text(
-                              isPasswordVisible
-                                  ? "Sembunyikan Password"
-                                  : "Tampilkan Password",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue),
-                            ),
-                          ),
+                        SizedBox(
+                          height: height / 2.8,
+                          child: Image.asset('images/signup.jpeg'),
                         ),
-                      ],
-                    ),
-                    TextFieldInput(
-                      icon: Icons.phone,
-                      textEditingController: phoneController,
-                      hintText: 'Masukan no telepon anda',
-                      textInputType: TextInputType.phone,
-                    ),
-                    MyButtons(onTap: signupUser, text: "Daftar"),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Sudah mempunyai akun?"),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
+                        TextFieldInput(
+                          icon: Icons.person,
+                          textEditingController: nameController,
+                          hintText: 'Masukan nama anda',
+                          textInputType: TextInputType.text,
+                        ),
+                        TextFieldInput(
+                          icon: Icons.email,
+                          textEditingController: emailController,
+                          hintText: 'Masukan email anda',
+                          textInputType: TextInputType.text,
+                        ),
+                        TextFieldInput(
+                          icon: Icons.lock,
+                          textEditingController: passwordController,
+                          hintText: 'Masukan password anda',
+                          textInputType: TextInputType.text,
+                          isPass: !isPasswordVisible,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 30.0),
+                              child: TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    isPasswordVisible = !isPasswordVisible;
+                                  });
+                                },
+                                child: Text(
+                                  isPasswordVisible
+                                      ? "Sembunyikan Password"
+                                      : "Tampilkan Password",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue),
+                                ),
                               ),
-                            );
-                          },
-                          child: const Text(
-                            " Masuk",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        TextFieldInput(
+                          icon: Icons.phone,
+                          textEditingController: phoneController,
+                          hintText: 'Masukan no telepon anda',
+                          textInputType: TextInputType.phone,
+                        ),
+                        MyButtons(onTap: signupUser, text: "Daftar"),
+                        const SizedBox(height: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text("Sudah mempunyai akun?"),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const LoginScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  " Masuk",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
