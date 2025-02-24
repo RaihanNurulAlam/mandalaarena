@@ -104,8 +104,8 @@ class _WelcomePageState extends State<WelcomePage> {
 
           // Floating Social Media Button
           Positioned(
-            bottom: 20,
-            right: 20,
+            bottom: 16,
+            right: 16,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -120,7 +120,11 @@ class _WelcomePageState extends State<WelcomePage> {
                       onPressed: () =>
                           _launchURL('https://wa.me/6282117556907'),
                       backgroundColor: Colors.green,
-                      child: const Icon(Icons.phone, color: Colors.white),
+                      child: Image.network(
+                        "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
+                        width: 25, // Sesuaikan ukuran
+                        height: 25,
+                      ),
                     ),
                   ),
                 ),
@@ -148,12 +152,15 @@ class _WelcomePageState extends State<WelcomePage> {
                     duration: const Duration(milliseconds: 300),
                     margin: const EdgeInsets.only(bottom: 10),
                     child: FloatingActionButton(
-                      heroTag: "instagram",
-                      onPressed: () =>
-                          _launchURL('https://www.instagram.com/mandalaarena'),
-                      backgroundColor: Colors.purple,
-                      child: const Icon(Icons.camera_alt, color: Colors.white),
-                    ),
+                        heroTag: "instagram",
+                        onPressed: () => _launchURL(
+                            'https://www.instagram.com/mandalaarena'),
+                        backgroundColor: Colors.purple,
+                        child: Image.network(
+                          "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                          width: 25, // Sesuaikan ukuran
+                          height: 25,
+                        )),
                   ),
                 ),
 
@@ -168,7 +175,11 @@ class _WelcomePageState extends State<WelcomePage> {
                       onPressed: () =>
                           _launchURL('mailto:mandalaarena@gmail.com'),
                       backgroundColor: Colors.red,
-                      child: const Icon(Icons.email, color: Colors.white),
+                      child: Image.network(
+                        "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
+                        width: 25, // Sesuaikan ukuran
+                        height: 25,
+                      ),
                     ),
                   ),
                 ),

@@ -103,6 +103,61 @@ class _AlamatPageState extends State<AlamatPage> {
     }
   }
 
+  void _showNavigationOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text("Pilih Metode Navigasi"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 12.0, horizontal: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50.0),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(context); // Tutup dialog
+                  _determinePosition(
+                      context); // Fungsi untuk navigasi lewat aplikasi
+                },
+                icon: const Icon(Icons.directions, color: Colors.white),
+                label: const Text("Melalui Aplikasi"),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 12.0, horizontal: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50.0),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(context); // Tutup dialog
+                  _openWebNavigation(); // Fungsi untuk navigasi lewat web
+                },
+                icon: const Icon(Icons.open_in_browser, color: Colors.white),
+                label: const Text("Melalui Web"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,35 +213,120 @@ class _AlamatPageState extends State<AlamatPage> {
               },
             ),
           ),
+          // Padding(
+          //   padding:
+          //       const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+          //   child: Column(
+          //     crossAxisAlignment: CrossAxisAlignment.stretch,
+          //     children: [
+          //       ElevatedButton.icon(
+          //         style: ElevatedButton.styleFrom(
+          //           backgroundColor: Colors.black,
+          //           foregroundColor: Colors.white,
+          //           padding: const EdgeInsets.symmetric(
+          //               vertical: 12.0), // Padding responsif
+          //           shape: RoundedRectangleBorder(
+          //             borderRadius:
+          //                 BorderRadius.circular(50.0), // Sudut lebih lembut
+          //           ),
+          //         ),
+          //         onPressed: () => _determinePosition(context),
+          //         icon: const Icon(Icons.directions, color: Colors.white),
+          //         label: const Text('Navigasi ke Lokasi (Aplikasi)',
+          //             style: TextStyle(color: Colors.white)),
+          //       ),
+          //       const SizedBox(height: 10),
+          //       ElevatedButton.icon(
+          //         style: ElevatedButton.styleFrom(
+          //           backgroundColor: Colors.black,
+          //           foregroundColor: Colors.white,
+          //           padding: const EdgeInsets.symmetric(
+          //               vertical: 12.0), // Padding responsif
+          //           shape: RoundedRectangleBorder(
+          //             borderRadius: BorderRadius.circular(50.0),
+          //           ),
+          //         ),
+          //         onPressed: _openWebNavigation,
+          //         icon: const Icon(Icons.open_in_browser, color: Colors.white),
+          //         label: const Text('Navigasi ke Lokasi (Web)',
+          //             style: TextStyle(color: Colors.white)),
+          //       ),
+          //     ],
+          //   ),
+          // )
+          //   Padding(
+          //     padding:
+          //         const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+          //     child: Column(
+          //       children: [
+          //         Align(
+          //           alignment:
+          //               Alignment.center, // Pusatkan tombol jika diperlukan
+          //           child: ElevatedButton.icon(
+          //             style: ElevatedButton.styleFrom(
+          //               backgroundColor: Colors.black,
+          //               foregroundColor: Colors.white,
+          //               padding: const EdgeInsets.symmetric(
+          //                   vertical: 12.0,
+          //                   horizontal: 16.0), // Padding untuk isi tombol
+          //               shape: RoundedRectangleBorder(
+          //                 borderRadius: BorderRadius.circular(50.0),
+          //               ),
+          //             ),
+          //             onPressed: () => _determinePosition(context),
+          //             icon: const Icon(Icons.directions, color: Colors.white),
+          //             label: const Text('Navigasi ke Lokasi (Aplikasi)',
+          //                 style: TextStyle(color: Colors.white)),
+          //           ),
+          //         ),
+          //         const SizedBox(height: 10),
+          //         Align(
+          //           alignment: Alignment.center,
+          //           child: ElevatedButton.icon(
+          //             style: ElevatedButton.styleFrom(
+          //               backgroundColor: Colors.black,
+          //               foregroundColor: Colors.white,
+          //               padding: const EdgeInsets.symmetric(
+          //                   vertical: 12.0,
+          //                   horizontal: 16.0), // Sesuaikan padding
+          //               shape: RoundedRectangleBorder(
+          //                 borderRadius: BorderRadius.circular(50.0),
+          //               ),
+          //             ),
+          //             onPressed: _openWebNavigation,
+          //             icon:
+          //                 const Icon(Icons.open_in_browser, color: Colors.white),
+          //             label: const Text('Navigasi ke Lokasi (Web)',
+          //                 style: TextStyle(color: Colors.white)),
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   )
+          // ],
           Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors
-                        .black, // Mengatur warna teks dan ikon menjadi putih
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            child: Align(
+              alignment: Alignment.center,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 12.0, horizontal: 16.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50.0),
                   ),
-                  onPressed: () => _determinePosition(context),
-                  icon: const Icon(Icons.directions,
-                      color: Colors.black), // Ikon putih
-                  label: const Text('Navigasi ke Lokasi (Aplikasi)',
-                      style: TextStyle(color: Colors.black)), // Teks putih
                 ),
-                SizedBox(height: 10),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.black),
-                  onPressed: _openWebNavigation,
-                  icon: const Icon(Icons.open_in_browser, color: Colors.black),
-                  label: const Text('Navigasi ke Lokasi (Web)',
-                      style: TextStyle(color: Colors.black)),
-                ),
-              ],
+                onPressed: () => _showNavigationOptions(
+                    context), // Panggil dialog saat ditekan
+                icon: const Icon(Icons.navigation, color: Colors.white),
+                label: const Text("Navigasi ke Lokasi",
+                    style: TextStyle(color: Colors.white)),
+              ),
             ),
-          ),
+          )
         ],
       ),
     );

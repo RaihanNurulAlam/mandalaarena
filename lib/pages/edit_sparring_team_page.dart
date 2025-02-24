@@ -255,10 +255,10 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                 ElevatedButton(
                   onPressed: _updateTeam,
                   child: Text('Simpan Perubahan',
-                      style: TextStyle(color: Colors.black)),
+                      style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                    backgroundColor: Colors.white,
+                    backgroundColor: Colors.black,
                   ),
                 ),
               ],

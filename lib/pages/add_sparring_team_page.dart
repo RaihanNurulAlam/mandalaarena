@@ -260,10 +260,10 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _saveTeam,
-                  child: Text('Simpan', style: TextStyle(color: Colors.black)),
+                  child: Text('Simpan', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                    backgroundColor: Colors.white,
+                    backgroundColor: Colors.black,
                   ),
                 ),
               ],

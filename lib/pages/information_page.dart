@@ -21,7 +21,7 @@ class InformationPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 50),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             child: ArticleCard(
               title: 'Mau Tau? Sejarah Masuknya Mini Soccer ke Indonesia',
               imagePath: 'assets/lapangan_a.jpg',
@@ -128,7 +128,7 @@ class InformationPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 50),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             child: ArticleCard(
               title: 'Berita Terkini Seputar Basket di Tahun 2025',
               imagePath: 'assets/basket3x3.jpg',

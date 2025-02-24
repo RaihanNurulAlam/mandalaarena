@@ -69,13 +69,23 @@ class FirebaseServices {
           user.phoneNumber ?? ''; // Jika tidak ada nomor telepon, kosongkan
 
       // Menambahkan data pengguna ke Firestore
+      // await _firestore.collection('users').doc(uid).set({
+      //   'uid': uid, // Menyimpan UID
+      //   'email': email,
+      //   'isAdmin': false,
+      //   'name': name,
+      //   'phone': phone, // Biarkan kosong jika tidak ada
+      // }).catchError((e) {
+      //   print("Error menyimpan data ke Firestore: $e");
+      // });
+      // }
       await _firestore.collection('users').doc(uid).set({
-        'uid': uid, // Menyimpan UID
+        'uid': uid,
         'email': email,
         'isAdmin': false,
         'name': name,
-        'phone': phone, // Biarkan kosong jika tidak ada
-      }).catchError((e) {
+        'phone': phone,
+      }, SetOptions(merge: true)).catchError((e) {
         print("Error menyimpan data ke Firestore: $e");
       });
     }

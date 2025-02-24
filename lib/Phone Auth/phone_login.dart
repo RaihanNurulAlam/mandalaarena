@@ -61,6 +61,7 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Container(
+            constraints: BoxConstraints(maxWidth: 400),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
@@ -89,13 +90,16 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    hintText: "+6281234567890",
-                    labelText: "Masukkan No Telepon",
+                SizedBox(
+                  width: 250,
+                  child: TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      hintText: "+6281234567890",
+                      labelText: "Masukkan No Telepon",
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

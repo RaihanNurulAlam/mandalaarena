@@ -263,7 +263,11 @@ class _HomePageState extends State<HomePage> {
                         onPressed: () =>
                             _launchURL('https://wa.me/6282117556907'),
                         backgroundColor: Colors.green,
-                        child: const Icon(Icons.phone, color: Colors.white),
+                        child: Image.network(
+                          "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
+                          width: 25, // Sesuaikan ukuran
+                          height: 25,
+                        ),
                       ),
                     ),
                   ),
@@ -291,13 +295,15 @@ class _HomePageState extends State<HomePage> {
                       duration: const Duration(milliseconds: 300),
                       margin: const EdgeInsets.only(bottom: 10),
                       child: FloatingActionButton(
-                        heroTag: "instagram",
-                        onPressed: () => _launchURL(
-                            'https://www.instagram.com/mandalaarena'),
-                        backgroundColor: Colors.purple,
-                        child:
-                            const Icon(Icons.camera_alt, color: Colors.white),
-                      ),
+                          heroTag: "instagram",
+                          onPressed: () => _launchURL(
+                              'https://www.instagram.com/mandalaarena'),
+                          backgroundColor: Colors.purple,
+                          child: Image.network(
+                            "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                            width: 25, // Sesuaikan ukuran
+                            height: 25,
+                          )),
                     ),
                   ),
 
@@ -312,7 +318,11 @@ class _HomePageState extends State<HomePage> {
                         onPressed: () =>
                             _launchURL('mailto:mandalaarena@gmail.com'),
                         backgroundColor: Colors.red,
-                        child: const Icon(Icons.email, color: Colors.white),
+                        child: Image.network(
+                          "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
+                          width: 25, // Sesuaikan ukuran
+                          height: 25,
+                        ),
                       ),
                     ),
                   ),
@@ -355,15 +365,15 @@ class _HomePageState extends State<HomePage> {
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.photo_library),
-                  label: 'Galeri Aktivitas',
+                  label: 'Galeri',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.article),
-                  label: 'Informasi Terkini',
+                  label: 'Informasi',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.info),
-                  label: 'Tentang Aplikasi',
+                  label: 'Tentang',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.payment),
@@ -389,7 +399,7 @@ class _HomePageState extends State<HomePage> {
           // bestSellerWidget(context),
           // SizedBox(height: 20),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -473,7 +483,7 @@ class _HomePageState extends State<HomePage> {
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: MediaQuery.of(context).size.width > 1200
-            ? 5 // Jika lebar layar lebih dari 1200px, tampilkan 5 kolom
+            ? 4 // Jika lebar layar lebih dari 1200px, tampilkan 4 kolom
             : MediaQuery.of(context).size.width > 750
                 ? 3 // Jika layar lebih dari 750px, tampilkan 3 kolom (tablet)
                 : 2, // Selain itu (mobile), tampilkan 2 kolom
@@ -482,7 +492,7 @@ class _HomePageState extends State<HomePage> {
         childAspectRatio: 4 / 5,
       ),
       itemCount: lapangs.length,
-      padding: const EdgeInsets.symmetric(horizontal: 50),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       itemBuilder: (context, index) {
         return GestureDetector(
           onTap: () {
@@ -574,8 +584,8 @@ class _HomePageState extends State<HomePage> {
     ];
 
     return Container(
-      height: 300,
-      margin: const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
+      height: 250,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: CarouselSlider.builder(
         itemCount: discountBanners.length,
         options: CarouselOptions(
