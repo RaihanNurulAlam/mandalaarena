@@ -1,3 +1,4 @@
+const functions = require("firebase-functions");
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -108,6 +109,9 @@ app.get('/transaction-status', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch transaction status' });
   }
 });
+
+// === Ekspor ke Firebase Cloud Functions ===
+exports.api = functions.https.onRequest(app);
 
 // Jalankan server
 app.listen(3000, () => {

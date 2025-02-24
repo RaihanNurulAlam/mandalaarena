@@ -3,91 +3,99 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mandalaarenaapp/pages/admin_home_page.dart';
+import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
-import 'package:provider/provider.dart'; // Tambahkan ini untuk deteksi platform
+import 'package:provider/provider.dart';
 
 class FirebaseServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseFirestore _firestore =
-      FirebaseFirestore.instance; // Instance Firestore
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   Future<User?> signInWithGoogle(BuildContext context) async {
     try {
+      UserCredential userCredential;
       if (kIsWeb) {
         GoogleAuthProvider googleProvider = GoogleAuthProvider();
-        UserCredential userCredential =
-            await _auth.signInWithPopup(googleProvider);
-        await _saveUserToFirestore(userCredential.user);
-
-        // 🚀 Load cart setelah login
-        if (userCredential.user != null) {
-          final cartProvider = Provider.of<Cart>(context, listen: false);
-          await cartProvider.loadCart(userCredential.user!.uid);
-        }
-
-        return userCredential.user;
+        userCredential = await _auth.signInWithPopup(googleProvider);
       } else {
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-        if (googleUser != null) {
-          final GoogleSignInAuthentication googleAuth =
-              await googleUser.authentication;
+        if (googleUser == null) return null;
 
-          final OAuthCredential credential = GoogleAuthProvider.credential(
-            accessToken: googleAuth.accessToken,
-            idToken: googleAuth.idToken,
-          );
-
-          UserCredential userCredential =
-              await _auth.signInWithCredential(credential);
-          await _saveUserToFirestore(userCredential.user);
-
-          // 🚀 Load cart setelah login
-          if (userCredential.user != null) {
-            final cartProvider = Provider.of<Cart>(context, listen: false);
-            await cartProvider.loadCart(userCredential.user!.uid);
-          }
-
-          return userCredential.user;
-        }
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        userCredential = await _auth.signInWithCredential(credential);
       }
+
+      await _saveUserToFirestore(userCredential.user);
+
+      if (userCredential.user != null) {
+        final cartProvider = Provider.of<Cart>(context, listen: false);
+        await cartProvider.loadCart(userCredential.user!.uid);
+        await _navigateUser(context, userCredential.user!.uid);
+      }
+
+      return userCredential.user;
     } catch (e) {
       print("Kesalahan Masuk Google: $e");
+      return null;
     }
-    return null;
   }
 
   Future<void> _saveUserToFirestore(User? user) async {
     if (user != null) {
-      // Mengambil data pengguna
-      String uid = user.uid; // UID dari Firebase Authentication
+      String uid = user.uid;
       String email = user.email ?? '';
       String name = user.displayName ?? 'User Name';
-      String phone =
-          user.phoneNumber ?? ''; // Jika tidak ada nomor telepon, kosongkan
+      String phone = user.phoneNumber ?? '';
 
-      // Menambahkan data pengguna ke Firestore
-      // await _firestore.collection('users').doc(uid).set({
-      //   'uid': uid, // Menyimpan UID
-      //   'email': email,
-      //   'isAdmin': false,
-      //   'name': name,
-      //   'phone': phone, // Biarkan kosong jika tidak ada
-      // }).catchError((e) {
-      //   print("Error menyimpan data ke Firestore: $e");
-      // });
-      // }
-      await _firestore.collection('users').doc(uid).set({
-        'uid': uid,
-        'email': email,
-        'isAdmin': false,
-        'name': name,
-        'phone': phone,
-      }, SetOptions(merge: true)).catchError((e) {
-        print("Error menyimpan data ke Firestore: $e");
-      });
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(uid).get();
+
+      if (!userDoc.exists) {
+        await _firestore.collection('users').doc(uid).set({
+          'uid': uid,
+          'email': email,
+          'isAdmin': false,
+          'name': name,
+          'phone': phone,
+        }).catchError((e) {
+          print("Error menyimpan data ke Firestore: $e");
+        });
+      }
+    }
+  }
+
+  Future<void> _navigateUser(BuildContext context, String uid) async {
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(uid).get();
+
+    if (userDoc.exists) {
+      final data = userDoc.data() as Map<String, dynamic>;
+      bool isAdmin = data['isAdmin'] ?? false;
+
+      print("User role: ${isAdmin ? 'Admin' : 'User'}"); // Debugging log
+
+      if (isAdmin) {
+        Navigator.pushReplacement(
+          context,
+          CupertinoPageRoute(builder: (context) => AdminHomePage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          CupertinoPageRoute(builder: (context) => HomePage()),
+        );
+      }
+    } else {
+      print("User document not found in Firestore");
     }
   }
 

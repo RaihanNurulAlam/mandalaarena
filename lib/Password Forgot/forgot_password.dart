@@ -46,6 +46,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Container(
+              constraints: BoxConstraints(maxWidth: 400),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),

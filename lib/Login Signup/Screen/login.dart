@@ -65,8 +65,12 @@ class _LoginScreenState extends State<LoginScreen> {
               .get();
 
           if (userDoc.exists) {
-            bool isAdmin = userDoc.get('isAdmin') as bool;
+            bool isAdmin = userDoc.get('isAdmin') ??
+                false; // Default to false if isAdmin is null
             Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
+
+            print("User is admin: $isAdmin");
+            print("Navigating to: ${targetPage.runtimeType}");
 
             // 🚀 **Tambahkan pemanggilan `loadCart()` di sini**
             final cartProvider = Provider.of<Cart>(context, listen: false);
@@ -95,9 +99,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 userPhone: userPhone,
               );
             }
+          } else {
+            showSnackBar(context, "Data pengguna tidak ditemukan.");
           }
-        } else {
-          showSnackBar(context, "Data pengguna tidak ditemukan.");
         }
       } catch (e) {
         print("Error Firestore: $e");
@@ -119,11 +123,10 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             SingleChildScrollView(
               child: Center(
-                // ✅ Pusatkan tampilan
                 child: SizedBox(
                   width: MediaQuery.of(context).size.width > 500
                       ? 500
-                      : double.infinity, // ✅ Batasi lebar di desktop
+                      : double.infinity,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -131,29 +134,38 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: height / 2.7,
                         child: Image.asset('images/login.jpg'),
                       ),
-                      TextFieldInput(
-                        icon: Icons.person,
-                        textEditingController: emailController,
-                        hintText: 'Masukan email anda',
-                        textInputType: TextInputType.emailAddress,
+                      // Tambahkan padding horizontal untuk email dan password
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                        child: Column(
+                          children: [
+                            TextFieldInput(
+                              icon: Icons.person,
+                              textEditingController: emailController,
+                              hintText: 'Masukan email anda',
+                              textInputType: TextInputType.emailAddress,
+                            ),
+                            const SizedBox(
+                                height: 3), // Jarak antara email dan password
+                            TextFieldInput(
+                              icon: Icons.lock,
+                              textEditingController: passwordController,
+                              hintText: 'Masukan password anda',
+                              textInputType: TextInputType.visiblePassword,
+                              isPass: !isPasswordVisible,
+                            ),
+                          ],
+                        ),
                       ),
-                      TextFieldInput(
-                        icon: Icons.lock,
-                        textEditingController: passwordController,
-                        hintText: 'Masukan password anda',
-                        textInputType: TextInputType.visiblePassword,
-                        isPass: !isPasswordVisible,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const ForgotPassword(),
-                          Spacer(),
-                          Padding(
-                            padding: EdgeInsets.only(
-                                right:
-                                    MediaQuery.of(context).size.width * 0.025),
-                            child: TextButton(
+                      // Tambahkan padding horizontal untuk "Lupa Password" dan "Tampilkan Password"
+                      Padding(
+                        padding: const EdgeInsets.only(right: 55.0, left: 25.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment
+                              .spaceBetween, // Atur jarak antara dua teks
+                          children: [
+                            const ForgotPassword(), // Teks "Lupa Password"
+                            TextButton(
                               onPressed: () {
                                 setState(() {
                                   isPasswordVisible = !isPasswordVisible;
@@ -164,93 +176,123 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ? "Sembunyikan Password"
                                     : "Tampilkan Password",
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue),
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      MyButtons(onTap: loginUser, text: "Masuk"),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(height: 1, color: Colors.black26),
-                          ),
-                          const Text("  atau  "),
-                          Expanded(
-                            child: Container(height: 1, color: Colors.black26),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(
+                          height:
+                              5), // Jarak antara "Tampilkan Password" dan tombol "Masuk"
+                      // Tambahkan padding horizontal untuk tombol "Masuk"
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 25, vertical: 10),
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueGrey),
-                          onPressed: () async {
-                            final user = await FirebaseServices()
-                                .signInWithGoogle(context);
-                            if (user != null) {
-                              final String userName =
-                                  user.displayName ?? "Nama User";
-                              final String userEmail =
-                                  user.email ?? "Email tidak ditemukan";
-                              final String profileImageUrl = user.photoURL ??
-                                  "https://via.placeholder.com/150";
-                              final String userPhone = user.phoneNumber ??
-                                  "Nomor telepon tidak ditemukan";
-
-                              // Set user data in UserProvider
-                              if (mounted) {
-                                Provider.of<UserProvider>(context,
-                                        listen: false)
-                                    .setUserData(
-                                  userName: userName,
-                                  userEmail: userEmail,
-                                  profileImageUrl: profileImageUrl,
-                                  userPhone: userPhone,
-                                );
-
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => HomePage(),
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                        child: MyButtons(onTap: loginUser, text: "Masuk"),
+                      ),
+                      const SizedBox(
+                          height:
+                              5), // Jarak antara tombol "Masuk" dan garis pemisah
+                      // Garis pemisah "atau"
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child:
+                                  Container(height: 1, color: Colors.black26),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10),
+                              child: Text("atau"),
+                            ),
+                            Expanded(
+                              child:
+                                  Container(height: 1, color: Colors.black26),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(
+                          height:
+                              5), // Jarak antara garis pemisah dan tombol Google/Phone
+                      // Tombol Google dan Phone
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Tombol Google
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 10),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side:
+                                        BorderSide(color: Colors.grey.shade300),
                                   ),
-                                );
-                              }
-                            }
-                          },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
+                                ),
+                                onPressed: () async {
+                                  final user = await FirebaseServices()
+                                      .signInWithGoogle(context);
+                                  if (user != null) {
+                                    final String userName =
+                                        user.displayName ?? "Nama User";
+                                    final String userEmail =
+                                        user.email ?? "Email tidak ditemukan";
+                                    final String profileImageUrl =
+                                        user.photoURL ??
+                                            "https://via.placeholder.com/150";
+                                    final String userPhone = user.phoneNumber ??
+                                        "Nomor telepon tidak ditemukan";
+
+                                    // Set user data in UserProvider
+                                    if (mounted) {
+                                      Provider.of<UserProvider>(context,
+                                              listen: false)
+                                          .setUserData(
+                                        userName: userName,
+                                        userEmail: userEmail,
+                                        profileImageUrl: profileImageUrl,
+                                        userPhone: userPhone,
+                                      );
+
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => HomePage(),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
                                 child: Image.network(
                                   "https://ouch-cdn2.icons8.com/VGHyfDgzIiyEwg3RIll1nYupfj653vnEPRLr0AeoJ8g/rs:fit:456:456/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvODg2/LzRjNzU2YThjLTQx/MjgtNGZlZS04MDNl/LTAwMTM0YzEwOTMy/Ny5wbmc.png",
                                   height: 32,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              const Text(
-                                "Masuk dengan Google",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(
+                                width:
+                                    8), // Jarak kecil antara tombol Google dan telepon
+                            // Tombol Telepon
+                            Expanded(
+                              child: const PhoneAuthentication(),
+                            ),
+                          ],
                         ),
                       ),
-                      const PhoneAuthentication(),
+                      const SizedBox(
+                          height:
+                              20), // Jarak antara tombol Google/Phone dan teks "Tidak punya akun?"
+                      // Teks "Tidak punya akun?"
                       Padding(
-                        padding: const EdgeInsets.only(
-                            top: 10, left: 20, bottom: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -276,6 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+            // Tombol kembali dan bantuan
             Positioned(
               top: 10,
               left: 10,
@@ -311,25 +354,25 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
 
-Container socialIcon(image) {
-  return Container(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 32,
-      vertical: 15,
-    ),
-    decoration: BoxDecoration(
-      color: const Color(0xFFedf0f8),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: Colors.black45,
-        width: 2,
+  Container socialIcon(image) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 32,
+        vertical: 15,
       ),
-    ),
-    child: Image.network(
-      image,
-      height: 40,
-    ),
-  );
+      decoration: BoxDecoration(
+        color: const Color(0xFFedf0f8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.black45,
+          width: 2,
+        ),
+      ),
+      child: Image.network(
+        image,
+        height: 40,
+      ),
+    );
+  }
 }

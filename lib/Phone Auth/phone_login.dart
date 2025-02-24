@@ -18,36 +18,23 @@ class _PhoneAuthenticationState extends State<PhoneAuthentication> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-        onPressed: () {
-          myDialogBox(context);
-        },
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Image.network(
-                "https://static.vecteezy.com/system/resources/thumbnails/010/829/986/small/phone-icon-in-trendy-flat-style-free-png.png",
-                height: 32,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              "Masuk dengan No Telepon",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                color: Colors.white,
-              ),
-            )
-          ],
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white, // Warna latar belakang menyesuaikan logo
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+              color: Colors.grey.shade300), // Border untuk tampilan lebih baik
         ),
+      ),
+      onPressed: () {
+        myDialogBox(context);
+      },
+      child: Image.network(
+        "https://static.vecteezy.com/system/resources/thumbnails/010/829/986/small/phone-icon-in-trendy-flat-style-free-png.png",
+        height: 32,
+        color: Colors.green, // Warna logo disesuaikan
       ),
     );
   }
