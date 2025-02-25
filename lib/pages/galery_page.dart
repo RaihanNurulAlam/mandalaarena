@@ -11,7 +11,7 @@ class GalleryPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Galeri Aktivitas', style: TextStyle(color: Colors.black)),
-        centerTitle: true,
+        // centerTitle: true,
         // backgroundColor: Colors.black,
       ),
       body: Center(

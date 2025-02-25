@@ -10,9 +10,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
-import 'package:mandalaarenaapp/pages/galery_page.dart';
+// import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
-import 'package:mandalaarenaapp/pages/payment_page.dart';
+import 'package:mandalaarenaapp/pages/profile_navigation.dart';
+// import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
 import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
@@ -20,9 +21,9 @@ import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
-import '../widgets/drawer_widget.dart';
-import '../pages/information_page.dart';
-import '../pages/about_page.dart';
+// import '../widgets/drawer_widget.dart';
+// import '../pages/information_page.dart';
+// import '../pages/about_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -135,31 +136,34 @@ class _HomePageState extends State<HomePage> {
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 80,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Mandala Arena',
-                style: TextStyle(color: Colors.black, fontSize: 28),
-              ),
-              Row(
-                children: [
-                  Icon(
-                    CupertinoIcons.map_pin,
-                    size: 14,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(width: 1),
-                  Text(
-                    'Garut, Indonesia',
-                    style: TextStyle(
+          title: Padding(
+            padding: const EdgeInsets.only(left: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Mandala Arena',
+                  style: TextStyle(color: Colors.black, fontSize: 28),
+                ),
+                Row(
+                  children: [
+                    Icon(
+                      CupertinoIcons.map_pin,
+                      size: 14,
                       color: Colors.grey,
-                      fontSize: 14,
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    SizedBox(width: 1),
+                    Text(
+                      'Garut, Indonesia',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           actions: [
             IconButton(
@@ -224,22 +228,24 @@ class _HomePageState extends State<HomePage> {
             )
           ],
         ),
-        drawer: DrawerWidget(),
+        // drawer: DrawerWidget(),
         body: Stack(
           children: [
             BlocBuilder<NavigationCubit, NavigationState>(
               builder: (context, state) {
                 switch (state) {
-                  case NavigationState.gallery:
-                    return GalleryPage();
-                  case NavigationState.information:
-                    return InformationPage();
-                  case NavigationState.about:
-                    return AboutPage();
-                  case NavigationState.payment:
-                    return PaymentPage();
+                  // case NavigationState.gallery:
+                  //   return GalleryPage();
+                  // case NavigationState.information:
+                  //   return InformationPage();
+                  // case NavigationState.about:
+                  //   return AboutPage();
+                  // case NavigationState.payment:
+                  //   return PaymentPage();
                   case NavigationState.sparring:
                     return SparringTeamPage();
+                  case NavigationState.profile:
+                    return ProfilePageNavigation();
                   default:
                     return _buildHomeContent(context);
                 }
@@ -363,25 +369,29 @@ class _HomePageState extends State<HomePage> {
                   icon: Icon(Icons.home),
                   label: 'Beranda',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.photo_library),
-                  label: 'Galeri',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.article),
-                  label: 'Informasi',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.info),
-                  label: 'Tentang',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.payment),
-                  label: 'Checkout',
-                ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.photo_library),
+                //   label: 'Galeri',
+                // ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.article),
+                //   label: 'Informasi',
+                // ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.info),
+                //   label: 'Tentang',
+                // ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.payment),
+                //   label: 'Checkout',
+                // ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.group),
                   label: 'Sparring',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: 'Profile',
                 ),
               ],
             );

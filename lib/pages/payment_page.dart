@@ -60,8 +60,8 @@ class _PaymentPageState extends State<PaymentPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pembayaran', style: TextStyle(color: Colors.black)),
-        centerTitle: true,
+        title: const Text('Transaksi', style: TextStyle(color: Colors.black)),
+        // centerTitle: true,
         // backgroundColor: Colors.black,
       ),
       body: SingleChildScrollView(

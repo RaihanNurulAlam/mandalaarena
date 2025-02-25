@@ -8,17 +8,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mandalaarenaapp/cubit/navigation_cubit.dart';
-import 'package:mandalaarenaapp/pages/about_page.dart';
+// import 'package:mandalaarenaapp/pages/about_page.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
-import 'package:mandalaarenaapp/pages/galery_page.dart';
-import 'package:mandalaarenaapp/pages/information_page.dart';
+// import 'package:mandalaarenaapp/pages/galery_page.dart';
+// import 'package:mandalaarenaapp/pages/information_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
-import 'package:mandalaarenaapp/pages/payment_page.dart';
+// import 'package:mandalaarenaapp/pages/payment_page.dart';
+import 'package:mandalaarenaapp/pages/profile_navigation.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
-import 'package:mandalaarenaapp/widgets/drawer_widget.dart';
+// import 'package:mandalaarenaapp/widgets/drawer_widget.dart';
 import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -86,14 +87,17 @@ class _AdminHomePageState extends State<AdminHomePage> {
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 80,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Halaman Admin',
-                style: TextStyle(color: Colors.black, fontSize: 20),
-              ),
-            ],
+          title: Padding(
+            padding: const EdgeInsets.only(left: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Halaman Admin',
+                  style: TextStyle(color: Colors.black, fontSize: 20),
+                ),
+              ],
+            ),
           ),
           actions: [
             IconButton(
@@ -158,22 +162,24 @@ class _AdminHomePageState extends State<AdminHomePage> {
             )
           ],
         ),
-        drawer: DrawerWidget(),
+        // drawer: DrawerWidget(),
         body: Stack(
           children: [
             BlocBuilder<NavigationCubit, NavigationState>(
               builder: (context, state) {
                 switch (state) {
-                  case NavigationState.gallery:
-                    return GalleryPage();
-                  case NavigationState.information:
-                    return InformationPage();
-                  case NavigationState.about:
-                    return AboutPage();
-                  case NavigationState.payment:
-                    return PaymentPage();
+                  // case NavigationState.gallery:
+                  //   return GalleryPage();
+                  // case NavigationState.information:
+                  //   return InformationPage();
+                  // case NavigationState.about:
+                  //   return AboutPage();
+                  // case NavigationState.payment:
+                  //   return PaymentPage();
                   case NavigationState.sparring:
                     return SparringTeamPage();
+                  case NavigationState.profile:
+                    return ProfilePageNavigation();
                   default:
                     return _buildHomeContent(context);
                 }
@@ -288,25 +294,29 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   icon: Icon(Icons.home),
                   label: 'Beranda',
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.photo_library),
-                  label: 'Galeri',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.article),
-                  label: 'Informasi',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.info),
-                  label: 'Tentang',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.payment),
-                  label: 'Checkout',
-                ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.photo_library),
+                //   label: 'Galeri',
+                // ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.article),
+                //   label: 'Informasi',
+                // ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.info),
+                //   label: 'Tentang',
+                // ),
+                // BottomNavigationBarItem(
+                //   icon: Icon(Icons.payment),
+                //   label: 'Checkout',
+                // ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.group),
                   label: 'Sparring',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.person),
+                  label: 'Profile',
                 ),
               ],
             );

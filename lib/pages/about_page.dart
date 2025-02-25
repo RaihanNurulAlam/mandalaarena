@@ -142,7 +142,7 @@ class _AboutPageState extends State<AboutPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Tentang Aplikasi', style: TextStyle(color: Colors.black)),
-        centerTitle: true,
+        // centerTitle: true,
         // backgroundColor: Colors.black,
       ),
       body: SingleChildScrollView(

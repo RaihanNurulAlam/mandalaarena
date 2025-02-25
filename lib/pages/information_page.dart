@@ -12,9 +12,8 @@ class InformationPage extends StatelessWidget {
     final userProvider = Provider.of<UserProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Informasi Terkini',
-            style: TextStyle(color: Colors.black)),
-        centerTitle: true,
+        title: const Text('Artikel', style: TextStyle(color: Colors.black)),
+        // centerTitle: true,
         // backgroundColor: Colors.black,
       ),
       body: ListView(

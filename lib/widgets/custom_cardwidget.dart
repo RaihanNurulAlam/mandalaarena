@@ -11,9 +11,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
-import 'package:mandalaarenaapp/pages/galery_page.dart';
+// import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
-import 'package:mandalaarenaapp/pages/payment_page.dart';
+// import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
 import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
@@ -22,8 +22,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
 import '../widgets/drawer_widget.dart';
-import '../pages/information_page.dart';
-import '../pages/about_page.dart';
+// import '../pages/information_page.dart';
+// import '../pages/about_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -217,14 +217,14 @@ class _HomePageState extends State<HomePage> {
             BlocBuilder<NavigationCubit, NavigationState>(
               builder: (context, state) {
                 switch (state) {
-                  case NavigationState.gallery:
-                    return GalleryPage();
-                  case NavigationState.information:
-                    return InformationPage();
-                  case NavigationState.about:
-                    return AboutPage();
-                  case NavigationState.payment:
-                    return PaymentPage();
+                  // case NavigationState.gallery:
+                  //   return GalleryPage();
+                  // case NavigationState.information:
+                  //   return InformationPage();
+                  // case NavigationState.about:
+                  //   return AboutPage();
+                  // case NavigationState.payment:
+                  //   return PaymentPage();
                   case NavigationState.sparring:
                     return SparringTeamPage();
                   default:
