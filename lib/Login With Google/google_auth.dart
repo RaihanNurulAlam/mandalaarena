@@ -66,9 +66,21 @@ class FirebaseServices {
           'isAdmin': false,
           'name': name,
           'phone': phone,
+          'points': 0,
         }).catchError((e) {
           print("Error menyimpan data ke Firestore: $e");
         });
+      } else {
+        // Jika pengguna sudah ada, pastikan field points ada
+        Map<String, dynamic>? data = userDoc.data() as Map<String, dynamic>?;
+
+        if (data != null && !data.containsKey('points')) {
+          await _firestore.collection('users').doc(uid).update({
+            'points': 0, // Jika field points belum ada, tambahkan
+          }).catchError((e) {
+            print("Error menambahkan field points: $e");
+          });
+        }
       }
     }
   }

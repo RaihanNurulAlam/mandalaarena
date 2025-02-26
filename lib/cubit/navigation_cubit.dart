@@ -9,6 +9,7 @@ enum NavigationState {
   home,
   sparring,
   profile,
+  points,
   // gallery,
   // information,
   // about,
@@ -36,19 +37,22 @@ class NavigationCubit extends Cubit<NavigationState> {
       case 2:
         emit(NavigationState.profile);
         break;
-      // case 3:
+      case 3:
+        emit(NavigationState.points);
+        break;
+      // case 4:
       //   emit(NavigationState.about);
       //   break;
-      // case 4:
+      // case 5:
       //   emit(NavigationState.payment);
       //   break;
-      // case 5:
+      // case 6:
       //   emit(NavigationState.gallery);
       //   break;
-      // case 6:
+      // case 7:
       //   emit(NavigationState.booking);
       //   break;
-      // case 7:
+      // case 8:
       //   emit(NavigationState.information);
       //   break;
       default:

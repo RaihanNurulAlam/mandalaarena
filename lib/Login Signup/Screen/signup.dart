@@ -1,6 +1,8 @@
 // ignore_for_file: use_build_context_synchronously, unused_local_variable
 
 // import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Widget/button.dart';
 import 'package:mandalaarenaapp/pages/help_page.dart';
@@ -83,18 +85,32 @@ class _SignupScreenState extends State<SignupScreen> {
       //     'uid': userId,
       //   });
 
-      // Navigate to the next screen
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => HomePage(),
-        ),
-      );
-      // } catch (e) {
-      //   setState(() {
-      //     isLoading = false;
-      //   });
-      //   showSnackBar(context, 'Gagal menyimpan ke firebase: ${e.toString()}');
-      // }
+      try {
+        // Get the current user's UID after signup
+        String userId = FirebaseAuth.instance.currentUser!.uid;
+
+        // Create a new user document in Firestore with additional points field
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+          'name': nameController.text,
+          'email': emailController.text,
+          'phone': phoneController.text,
+          'profileImageUrl': 'https://via.placeholder.com/150', // Default image
+          'uid': userId,
+          'points': 0, // Add the points field with default value 0
+        });
+
+        // Navigate to the next screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => HomePage(),
+          ),
+        );
+      } catch (e) {
+        setState(() {
+          isLoading = false;
+        });
+        showSnackBar(context, 'Gagal menyimpan ke firebase: ${e.toString()}');
+      }
     } else {
       setState(() {
         isLoading = false;

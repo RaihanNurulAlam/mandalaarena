@@ -59,12 +59,21 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         User? currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
-          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          // DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          //     .collection('users')
+          //     .doc(currentUser.uid)
+          //     .get();
+          DocumentReference userRef = FirebaseFirestore.instance
               .collection('users')
-              .doc(currentUser.uid)
-              .get();
+              .doc(currentUser.uid);
+
+          DocumentSnapshot userDoc = await userRef.get();
 
           if (userDoc.exists) {
+            if (!userDoc.data().toString().contains('points')) {
+              await userRef.update({'points': 0});
+              print("Field `points` berhasil ditambahkan ke Firestore.");
+            }
             bool isAdmin = userDoc.get('isAdmin') ??
                 false; // Default to false if isAdmin is null
             Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
@@ -93,6 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             if (mounted) {
               Provider.of<UserProvider>(context, listen: false).setUserData(
+                userId: currentUser.uid,
                 userName: userName,
                 userEmail: userEmail,
                 profileImageUrl: profileImageUrl,
@@ -256,6 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       Provider.of<UserProvider>(context,
                                               listen: false)
                                           .setUserData(
+                                        userId: user.uid,
                                         userName: userName,
                                         userEmail: userEmail,
                                         profileImageUrl: profileImageUrl,

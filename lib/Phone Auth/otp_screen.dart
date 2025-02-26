@@ -3,6 +3,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mandalaarenaapp/pages/admin_home_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import 'package:mandalaarenaapp/pages/help_page.dart';
@@ -21,6 +23,8 @@ class OTPScreen extends StatefulWidget {
 class _OTPScreenState extends State<OTPScreen> {
   TextEditingController otpController = TextEditingController();
   bool isLoading = false;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +35,7 @@ class _OTPScreenState extends State<OTPScreen> {
             SingleChildScrollView(
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 30), // ✅ Padding horizontal 30
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: SizedBox(
                     width: MediaQuery.of(context).size.width > 500
                         ? 500
@@ -41,7 +44,7 @@ class _OTPScreenState extends State<OTPScreen> {
                       children: [
                         Image.asset(
                           "images/otpimage.jpg",
-                          width: 180, // ✅ Ukuran gambar lebih besar
+                          width: 180,
                           height: 180,
                         ),
                         const SizedBox(height: 20),
@@ -59,7 +62,7 @@ class _OTPScreenState extends State<OTPScreen> {
                         ),
                         const SizedBox(height: 20),
                         SizedBox(
-                          width: 200, // ✅ Kolom input lebih kecil
+                          width: 200,
                           child: TextField(
                             controller: otpController,
                             keyboardType: TextInputType.number,
@@ -84,9 +87,11 @@ class _OTPScreenState extends State<OTPScreen> {
                                   });
 
                                   try {
+                                    UserCredential userCredential;
                                     if (kIsWeb &&
                                         widget.confirmationResult != null) {
-                                      await widget.confirmationResult!
+                                      userCredential = await widget
+                                          .confirmationResult!
                                           .confirm(otpController.text);
                                     } else {
                                       final credential =
@@ -94,15 +99,15 @@ class _OTPScreenState extends State<OTPScreen> {
                                         verificationId: widget.verificationId,
                                         smsCode: otpController.text,
                                       );
-                                      await FirebaseAuth.instance
+                                      userCredential = await _auth
                                           .signInWithCredential(credential);
                                     }
 
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => HomePage()),
-                                    );
+                                    User? user = userCredential.user;
+                                    if (user != null) {
+                                      await _saveUserToFirestore(user);
+                                      await _navigateUser(user.uid);
+                                    }
                                   } catch (e) {
                                     print("Error OTP: $e");
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -167,5 +172,62 @@ class _OTPScreenState extends State<OTPScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveUserToFirestore(User user) async {
+    String uid = user.uid;
+    String phone = user.phoneNumber ?? '';
+
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(uid).get();
+
+    if (!userDoc.exists) {
+      // Jika pengguna baru, tambahkan field points = 0
+      await _firestore.collection('users').doc(uid).set({
+        'uid': uid,
+        'phone': phone,
+        'isAdmin': false, // Default pengguna bukan admin
+        'points': 0, // Menambahkan field points dengan nilai awal 0
+      }).catchError((e) {
+        print("Error menyimpan data ke Firestore: $e");
+      });
+    } else {
+      // Jika pengguna sudah ada, pastikan field points ada
+      Map<String, dynamic>? data = userDoc.data() as Map<String, dynamic>?;
+
+      if (data != null && !data.containsKey('points')) {
+        await _firestore.collection('users').doc(uid).update({
+          'points': 0, // Jika field points belum ada, tambahkan
+        }).catchError((e) {
+          print("Error menambahkan field points: $e");
+        });
+      }
+    }
+  }
+
+  Future<void> _navigateUser(String uid) async {
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(uid).get();
+
+    if (userDoc.exists) {
+      final data = userDoc.data() as Map<String, dynamic>;
+      bool isAdmin = data['isAdmin'] ?? false;
+
+      print("User role: ${isAdmin ? 'Admin' : 'User'}");
+
+      if (isAdmin) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AdminHomePage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+      }
+    } else {
+      print("User document not found in Firestore");
+    }
   }
 }

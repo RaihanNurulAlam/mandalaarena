@@ -40,6 +40,48 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
+  Future<void> saveUserPointsTransaction(
+      String userId, int earnedPoints, String orderId) async {
+    try {
+      final pointsRef = FirebaseFirestore.instance.collection('points').doc();
+
+      await pointsRef.set({
+        'userId': userId,
+        'points': earnedPoints,
+        'orderId': orderId,
+        'type': 'earned', // Menandakan poin diperoleh
+        'timestamp': FieldValue.serverTimestamp(),
+        'description': 'Poin dari pembayaran booking',
+      });
+
+      print('Poin berhasil disimpan');
+    } catch (e) {
+      print('Error menyimpan poin: $e');
+    }
+  }
+
+  Future<void> updateUserPoints(String userId, int earnedPoints) async {
+    if (userId.isEmpty) return; // Pastikan userId tidak kosong
+
+    try {
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(userId);
+      final userDoc = await userRef.get();
+
+      if (userDoc.exists) {
+        int currentPoints = userDoc.data()?['points'] ?? 0;
+
+        // Update total poin di Firestore
+        await userRef.update({'points': currentPoints + earnedPoints});
+        print('Poin user berhasil diperbarui.');
+      } else {
+        print('User tidak ditemukan.');
+      }
+    } catch (e) {
+      print('Error updating user points: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -304,6 +346,16 @@ class _PaymentPageState extends State<PaymentPage> {
                                     transactionStatus == 'capture') {
                                   await updateBookingStatus(
                                       data['orderId'], 'Sudah Bayar');
+                                  int earnedPoints =
+                                      int.parse(cart.cart.first.quantity!) *
+                                          10; // 10 poin per jam
+                                  await updateUserPoints(
+                                      userProvider.userId, earnedPoints);
+                                  await saveUserPointsTransaction(
+                                      userProvider.userId,
+                                      earnedPoints,
+                                      data['orderId']);
+
                                   Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(

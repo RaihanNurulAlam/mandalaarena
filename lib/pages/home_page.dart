@@ -12,6 +12,7 @@ import 'package:mandalaarenaapp/pages/alamat_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
 // import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
+import 'package:mandalaarenaapp/pages/points_page.dart';
 import 'package:mandalaarenaapp/pages/profile_navigation.dart';
 // import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/search_page.dart';
@@ -246,6 +247,8 @@ class _HomePageState extends State<HomePage> {
                     return SparringTeamPage();
                   case NavigationState.profile:
                     return ProfilePageNavigation();
+                  case NavigationState.points:
+                    return PointsPage();
                   default:
                     return _buildHomeContent(context);
                 }
@@ -392,6 +395,10 @@ class _HomePageState extends State<HomePage> {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.person),
                   label: 'Profile',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.star),
+                  label: 'Points',
                 ),
               ],
             );
