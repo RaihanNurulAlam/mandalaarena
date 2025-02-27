@@ -19,10 +19,11 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final List<String> _availableDays = [];
-  final List<String> _availableHours = [];
+  final _costController = TextEditingController(); // Controller untuk cost
   File? _imageFile;
   String? _selectedCategory;
+  String? _selectedDay;
+  String? _selectedHour;
 
   final List<String> _daysOfWeek = [
     'Senin',
@@ -70,16 +71,15 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
 
   void _saveTeam() async {
     if (_formKey.currentState!.validate() && _imageFile != null) {
-      if (_availableDays.isEmpty) {
+      if (_selectedDay == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pilih setidaknya satu hari')),
+          SnackBar(content: Text('Pilih satu hari')),
         );
         return;
       }
-
-      if (_availableHours.isEmpty) {
+      if (_selectedHour == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pilih setidaknya satu jam')),
+          SnackBar(content: Text('Pilih satu jam')),
         );
         return;
       }
@@ -94,15 +94,26 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
       final imageUrl = _imageFile!.path;
       final user = FirebaseAuth.instance.currentUser;
 
+      // Validasi input cost
+      final cost = double.tryParse(_costController.text);
+      if (cost == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Biaya harus berupa angka')),
+        );
+        return;
+      }
+
       final newTeam = SparringTeam(
         id: DateTime.now().toString(),
         name: _nameController.text,
         imageUrl: imageUrl,
-        availableDays: _availableDays,
-        availableHours: _availableHours,
+        availableDays: [_selectedDay!],
+        availableHours: [_selectedHour!],
         contact: _contactController.text,
         category: _selectedCategory!,
         createdBy: user!.uid,
+        cost: cost, // Tambahkan cost
+        createdAt: DateTime.now(), // Tambahkan createdAt
       );
 
       await FirebaseFirestore.instance
@@ -111,18 +122,6 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
           .set(newTeam.toMap());
 
       Navigator.pop(context, newTeam);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.team != null) {
-      _nameController.text = widget.team!.name;
-      _contactController.text = widget.team!.contact;
-      _availableDays.addAll(widget.team!.availableDays);
-      _availableHours.addAll(widget.team!.availableHours);
-      _selectedCategory = widget.team!.category;
     }
   }
 
@@ -171,6 +170,17 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                       value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
                 ),
                 SizedBox(height: 20),
+                TextFormField(
+                  controller: _costController,
+                  decoration: InputDecoration(
+                    labelText: 'Biaya Sparring',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Biaya tidak boleh kosong' : null,
+                ),
+                SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   value: _selectedCategory,
                   onChanged: (value) {
@@ -191,8 +201,7 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start, // Menjaga semua elemen di kiri
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
@@ -205,16 +214,12 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                       child: Wrap(
                         spacing: 8,
                         children: _daysOfWeek.map((day) {
-                          return FilterChip(
+                          return ChoiceChip(
                             label: Text(day),
-                            selected: _availableDays.contains(day),
+                            selected: _selectedDay == day,
                             onSelected: (selected) {
                               setState(() {
-                                if (selected) {
-                                  _availableDays.add(day);
-                                } else {
-                                  _availableDays.remove(day);
-                                }
+                                _selectedDay = selected ? day : null;
                               });
                             },
                           );
@@ -225,8 +230,7 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start, // Semua elemen sejajar ke kiri
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
@@ -239,16 +243,12 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                       child: Wrap(
                         spacing: 8,
                         children: _timeSlots.map((time) {
-                          return FilterChip(
+                          return ChoiceChip(
                             label: Text(time),
-                            selected: _availableHours.contains(time),
+                            selected: _selectedHour == time,
                             onSelected: (selected) {
                               setState(() {
-                                if (selected) {
-                                  _availableHours.add(time);
-                                } else {
-                                  _availableHours.remove(time);
-                                }
+                                _selectedHour = selected ? time : null;
                               });
                             },
                           );

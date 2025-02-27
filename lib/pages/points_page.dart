@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, curly_braces_in_flow_control_structures, use_build_context_synchronously, deprecated_member_use
+// ignore_for_file: deprecated_member_use, avoid_print, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -172,16 +172,19 @@ class TransactionHistoryPage extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('points')
-            .where('userId', isEqualTo: userId)
-            .orderBy('timestamp', descending: true)
+            .where('userId', isEqualTo: userId) // Filter berdasarkan userId
+            .orderBy('timestamp',
+                descending: true) // Urutkan berdasarkan timestamp
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            print('Tidak ada data transaksi ditemukan untuk userId: $userId');
             return const Center(child: Text('Belum ada transaksi poin.'));
           }
+          print('Data transaksi ditemukan: ${snapshot.data!.docs.length}');
           var transactions = snapshot.data!.docs;
           return ListView.builder(
             itemCount: transactions.length,
@@ -189,9 +192,13 @@ class TransactionHistoryPage extends StatelessWidget {
               var data = transactions[index].data() as Map<String, dynamic>;
               return ListTile(
                 title: Text(data['description']),
-                subtitle: Text(data['timestamp'].toDate().toString()),
+                subtitle: Text(
+                  data['timestamp']
+                      .toDate()
+                      .toString(), // Tampilkan tanggal transaksi
+                ),
                 trailing: Text(
-                  '${data['points'] > 0 ? '+' : ''}${data['points']} Poin',
+                  '${data['points']} Poin', // Tampilkan jumlah poin
                   style: TextStyle(
                     color: data['points'] > 0 ? Colors.green : Colors.red,
                     fontWeight: FontWeight.bold,
@@ -214,24 +221,28 @@ Future<void> redeemPoints(BuildContext context, String userId, int cost,
     int currentPoints = userDoc.data()?['points'] ?? 0;
 
     if (currentPoints >= cost) {
+      // Kurangi poin pengguna
       await userRef.update({'points': currentPoints - cost});
+
+      // Simpan transaksi ke koleksi 'points'
       await FirebaseFirestore.instance.collection('points').add({
         'userId': userId,
-        'points': -cost,
+        'points': -cost, // Poin yang dikurangi (negatif)
         'description': 'Menukar $reward',
-        'timestamp': FieldValue.serverTimestamp(),
-        'imageUrl': imageUrl, // Tambahkan URL gambar
-        'rewardDetails': reward, // Tambahkan detail reward
-        'status': 'Berhasil', // Tambahkan status
+        'timestamp': FieldValue.serverTimestamp(), // Waktu transaksi
+        'imageUrl': imageUrl, // URL gambar reward
+        'rewardDetails': reward, // Detail reward
+        'status': 'Berhasil', // Status transaksi
       });
-      print('Transaksi berhasil disimpan ke Firestore'); // Logging
+
+      print('Transaksi berhasil disimpan ke Firestore');
       showSuccessDialog(context);
     } else {
-      print('Poin tidak cukup'); // Logging
+      print('Poin tidak cukup');
       showInsufficientPointsDialog(context);
     }
   } catch (e) {
-    print('Terjadi kesalahan saat menukarkan poin: $e'); // Logging
+    print('Terjadi kesalahan saat menukarkan poin: $e');
   }
 }
 

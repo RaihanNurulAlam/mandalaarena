@@ -11,6 +11,8 @@ class SparringTeam {
   final String contact;
   final String category;
   final String createdBy;
+  final double cost; // Tambahkan properti cost
+  final DateTime createdAt; // Tambahkan properti createdAt
 
   SparringTeam({
     required this.id,
@@ -21,6 +23,8 @@ class SparringTeam {
     required this.contact,
     required this.category,
     required this.createdBy,
+    required this.cost, // Tambahkan cost ke constructor
+    required this.createdAt, // Tambahkan createdAt ke constructor
   });
 
   // Convert SparringTeam to a Map
@@ -34,6 +38,8 @@ class SparringTeam {
       'contact': contact,
       'category': category,
       'createdBy': createdBy,
+      'cost': cost, // Tambahkan cost ke map
+      'createdAt': createdAt.toIso8601String(), // Tambahkan createdAt ke map
     };
   }
 
@@ -48,6 +54,10 @@ class SparringTeam {
       contact: map['contact'] ?? '', // Berikan nilai default jika null
       category: map['category'] ?? '', // Berikan nilai default jika null
       createdBy: map['createdBy'] ?? '', // Berikan nilai default jika null
+      cost: (map['cost'] ?? 0).toDouble(), // Berikan nilai default jika null
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt']) // Parse createdAt dari string
+          : DateTime.now(), // Berikan nilai default jika null
     );
   }
 }
@@ -80,6 +90,9 @@ class SparringTeamItem extends StatelessWidget {
             Text('Hari Tersedia: ${team.availableDays.join(", ")}'),
             Text('Jam Tersedia: ${team.availableHours.join(", ")}'),
             Text('Kontak: ${team.contact}'),
+            Text('Biaya: ${team.cost}'), // Tampilkan biaya
+            Text(
+                'Dibuat pada: ${team.createdAt.toString()}'), // Tampilkan createdAt
           ],
         ),
         trailing: currentUser == team.createdBy

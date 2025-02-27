@@ -19,10 +19,11 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final List<String> _availableDays = [];
-  final List<String> _availableHours = [];
+  final _costController = TextEditingController(); // Controller untuk cost
   File? _imageFile;
   String? _selectedCategory;
+  String? _selectedDay;
+  String? _selectedHour;
 
   final List<String> _daysOfWeek = [
     'Senin',
@@ -70,14 +71,14 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
 
   void _updateTeam() async {
     if (_formKey.currentState!.validate()) {
-      if (_availableDays.isEmpty) {
+      if (_selectedDay == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Pilih setidaknya satu hari')),
         );
         return;
       }
 
-      if (_availableHours.isEmpty) {
+      if (_selectedHour == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Pilih setidaknya satu jam')),
         );
@@ -91,21 +92,32 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         return;
       }
 
+      // Validasi input cost
+      final cost = double.tryParse(_costController.text);
+      if (cost == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Biaya harus berupa angka')),
+        );
+        return;
+      }
+
       final updatedTeam = SparringTeam(
         id: widget.team.id,
         name: _nameController.text,
         imageUrl: _imageFile != null ? _imageFile!.path : widget.team.imageUrl,
-        availableDays: _availableDays,
-        availableHours: _availableHours,
+        availableDays: [_selectedDay!], // Menggunakan hari yang dipilih
+        availableHours: [_selectedHour!], // Menggunakan jam yang dipilih
         contact: _contactController.text,
         category: _selectedCategory!,
         createdBy: widget.team.createdBy,
+        cost: cost, // Tambahkan cost
+        createdAt: widget.team.createdAt, // Tetapkan createdAt yang lama
       );
 
       await FirebaseFirestore.instance
           .collection('sparring_teams')
           .doc(updatedTeam.id)
-          .update(updatedTeam.toMap());
+          .set(updatedTeam.toMap(), SetOptions(merge: true));
 
       Navigator.pop(context, updatedTeam);
     }
@@ -116,9 +128,14 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
     super.initState();
     _nameController.text = widget.team.name;
     _contactController.text = widget.team.contact;
-    _availableDays.addAll(widget.team.availableDays);
-    _availableHours.addAll(widget.team.availableHours);
+    _costController.text = widget.team.cost.toString(); // Inisialisasi cost
     _selectedCategory = widget.team.category;
+    _selectedDay = widget.team.availableDays.isNotEmpty
+        ? widget.team.availableDays.first
+        : null;
+    _selectedHour = widget.team.availableHours.isNotEmpty
+        ? widget.team.availableHours.first
+        : null;
   }
 
   @override
@@ -152,8 +169,9 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                     labelText: 'Nama Tim',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Nama tim tidak boleh kosong' : null,
+                  validator: (value) => (value == null || value.isEmpty)
+                      ? 'Nama tim tidak boleh kosong'
+                      : null,
                 ),
                 SizedBox(height: 20),
                 TextFormField(
@@ -165,6 +183,17 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                   keyboardType: TextInputType.phone,
                   validator: (value) =>
                       value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
+                ),
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _costController,
+                  decoration: InputDecoration(
+                    labelText: 'Biaya Sparring',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) =>
+                      value!.isEmpty ? 'Biaya tidak boleh kosong' : null,
                 ),
                 SizedBox(height: 20),
                 DropdownButtonFormField<String>(
@@ -200,16 +229,12 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                       child: Wrap(
                         spacing: 8,
                         children: _daysOfWeek.map((day) {
-                          return FilterChip(
+                          return ChoiceChip(
                             label: Text(day),
-                            selected: _availableDays.contains(day),
+                            selected: _selectedDay == day,
                             onSelected: (selected) {
                               setState(() {
-                                if (selected) {
-                                  _availableDays.add(day);
-                                } else {
-                                  _availableDays.remove(day);
-                                }
+                                _selectedDay = selected ? day : null;
                               });
                             },
                           );
@@ -233,16 +258,12 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                       child: Wrap(
                         spacing: 8,
                         children: _timeSlots.map((time) {
-                          return FilterChip(
+                          return ChoiceChip(
                             label: Text(time),
-                            selected: _availableHours.contains(time),
+                            selected: _selectedHour == time,
                             onSelected: (selected) {
                               setState(() {
-                                if (selected) {
-                                  _availableHours.add(time);
-                                } else {
-                                  _availableHours.remove(time);
-                                }
+                                _selectedHour = selected ? time : null;
                               });
                             },
                           );
