@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, avoid_print, deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: unused_local_variable, avoid_print, deprecated_member_use, use_build_context_synchronously, use_super_parameters, prefer_final_fields
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -38,6 +38,7 @@ class _DetailPageState extends State<DetailPage> {
   @override
   void initState() {
     super.initState();
+    selectedDate = DateTime.now();
     SharedPreferences.getInstance().then((prefs) {
       print("SharedPreferences initialized"); // Debug log
       _loadLovedState();
@@ -311,6 +312,25 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
+  DateTime _currentStartOfWeek =
+      DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
+
+  Future<void> _showDatePicker() async {
+    // Batasi pemilihan tanggal hanya untuk minggu ini
+    DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: _currentStartOfWeek,
+      lastDate: _currentStartOfWeek.add(Duration(days: 6)),
+    );
+    if (date != null) {
+      setState(() {
+        selectedDate = date;
+      });
+      _fetchUnavailableTimes();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -448,7 +468,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -472,7 +492,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -497,7 +517,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -539,56 +559,81 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         const SizedBox(height: 20),
+        // Padding(
+        //   padding: EdgeInsets.symmetric(horizontal: 16.0),
+        //   child: Text(
+        //     "Pilih Tanggal Booking:",
+        //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        //   ),
+        // ),
+        // Padding(
+        //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        //   child: ChoiceChip(
+        //     label: Text(
+        //       selectedDate != null
+        //           ? DateFormat('dd MMM yyyy').format(selectedDate!)
+        //           : "Pilih Tanggal",
+        //     ),
+        //     selected: selectedDate != null,
+        //     onSelected: (bool selected) async {
+        //       // Selalu membuka date picker tanpa harus reset tanggal
+        //       DateTime? date = await showDatePicker(
+        //         context: context,
+        //         initialDate: selectedDate ??
+        //             DateTime
+        //                 .now(), // Gunakan tanggal yang sudah dipilih atau default ke hari ini
+        //         firstDate: DateTime.now(),
+        //         lastDate: DateTime.now().add(const Duration(days: 30)),
+        //       );
+        //       if (date != null) {
+        //         setState(() {
+        //           selectedDate = date;
+        //         });
+        //         _fetchUnavailableTimes();
+        //       }
+        //     },
+        //     selectedColor: Colors.grey.shade300,
+        //     backgroundColor: Colors.grey.shade100,
+        //     labelStyle: TextStyle(
+        //       color: selectedDate != null ? Colors.black : Colors.black,
+        //     ),
+        //   ),
+        // ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text(
-            "Pilih Tanggal Booking:",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          child: Row(
+            children: [
+              Text(
+                "Pilih Tanggal Booking:",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: ChoiceChip(
-            label: Text(
-              selectedDate != null
-                  ? DateFormat('dd MMM yyyy').format(selectedDate!)
-                  : "Pilih Tanggal",
-            ),
-            selected: selectedDate != null,
-            onSelected: (bool selected) async {
-              // Selalu membuka date picker tanpa harus reset tanggal
-              DateTime? date = await showDatePicker(
-                context: context,
-                initialDate: selectedDate ??
-                    DateTime
-                        .now(), // Gunakan tanggal yang sudah dipilih atau default ke hari ini
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 30)),
-              );
-              if (date != null) {
-                setState(() {
-                  selectedDate = date;
-                });
-                _fetchUnavailableTimes();
-              }
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          child: WeeklyCalendar(
+            currentStartOfWeek: _currentStartOfWeek,
+            onDateSelected: (date) {
+              setState(() {
+                selectedDate = date;
+              });
+              _fetchUnavailableTimes();
             },
-            selectedColor: Colors.grey.shade300,
-            backgroundColor: Colors.grey.shade100,
-            labelStyle: TextStyle(
-              color: selectedDate != null ? Colors.black : Colors.black,
-            ),
+            selectedDate: selectedDate,
+            onCalendarIconPressed: _showDatePicker,
           ),
         ),
         const SizedBox(height: 20),
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          padding: EdgeInsets.symmetric(horizontal: 30.0),
           child: Text(
             "Pilih Jam Booking:",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child: Wrap(
             spacing: 8.0,
             runSpacing: 8.0,
@@ -648,14 +693,14 @@ class _DetailPageState extends State<DetailPage> {
         ),
         const SizedBox(height: 20),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child: const Text(
             "Pilih Durasi Booking (jam):",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child: Wrap(
             spacing: 8.0,
             runSpacing: 8.0,
@@ -711,6 +756,108 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class WeeklyCalendar extends StatelessWidget {
+  final DateTime currentStartOfWeek;
+  final Function(DateTime) onDateSelected;
+  final DateTime? selectedDate;
+  final VoidCallback onCalendarIconPressed;
+
+  const WeeklyCalendar({
+    Key? key,
+    required this.currentStartOfWeek,
+    required this.onDateSelected,
+    this.selectedDate,
+    required this.onCalendarIconPressed,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isIconOnTop = constraints.maxWidth < 300;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isIconOnTop)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: IconButton(
+                  icon: Icon(Icons.calendar_today, size: 24),
+                  onPressed: onCalendarIconPressed,
+                ),
+              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: List.generate(7, (index) {
+                      final date =
+                          currentStartOfWeek.add(Duration(days: index));
+                      final isPast = date
+                          .isBefore(DateTime.now().subtract(Duration(days: 1)));
+                      final isSelected = selectedDate != null &&
+                          date.year == selectedDate!.year &&
+                          date.month == selectedDate!.month &&
+                          date.day == selectedDate!.day;
+
+                      return GestureDetector(
+                        onTap: isPast ? null : () => onDateSelected(date),
+                        child: Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.black
+                                : isPast
+                                    ? Colors.grey.shade300
+                                    : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                            border: isSelected
+                                ? null
+                                : Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                DateFormat('E').format(date),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color:
+                                      isSelected ? Colors.white : Colors.black,
+                                ),
+                              ),
+                              Text(
+                                DateFormat('d').format(date),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      isSelected ? Colors.white : Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                if (!isIconOnTop)
+                  IconButton(
+                    icon: Icon(Icons.calendar_today, size: 24),
+                    onPressed: onCalendarIconPressed,
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -341,7 +341,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           // bestSellerWidget(context),
           // SizedBox(height: 20),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -378,7 +378,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         childAspectRatio: 4 / 5,
       ),
       itemCount: lapangs.length,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 30),
       itemBuilder: (context, index) {
         return GestureDetector(
           onTap: () {
@@ -470,8 +470,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
     ];
 
     return Container(
-      height: 250,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      height: 200,
+      margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
       child: CarouselSlider.builder(
         itemCount: discountBanners.length,
         options: CarouselOptions(

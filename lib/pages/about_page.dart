@@ -147,13 +147,16 @@ class _AboutPageState extends State<AboutPage> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Ulasan Pengguna:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Ulasan Pengguna:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
               SizedBox(height: 8),
               _reviews.isEmpty
@@ -163,171 +166,197 @@ class _AboutPageState extends State<AboutPage> {
                         style: TextStyle(color: Colors.grey, fontSize: 14),
                       ),
                     )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: _reviews.length,
-                      itemBuilder: (context, index) {
-                        final review = _reviews[index];
-                        _replyControllers[index] ??= TextEditingController();
-                        return Card(
-                          margin: EdgeInsets.symmetric(vertical: 6),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      review['name'],
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    RatingBarIndicator(
-                                      rating: review['rating'],
-                                      itemBuilder: (context, index) => Icon(
-                                        Icons.star,
-                                        color: Colors.amber,
-                                      ),
-                                      itemCount: 5,
-                                      itemSize: 18.0,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 6),
-                                Text(
-                                  review['description'],
-                                  style: TextStyle(fontSize: 13),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Balasan:',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                ...review['replies']
-                                    .map<Widget>((reply) => Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 2.0),
-                                          child: Text('- $reply',
-                                              style: TextStyle(fontSize: 13)),
-                                        )),
-                                SizedBox(height: 8),
-                                TextField(
-                                  controller: _replyControllers[index],
-                                  decoration: InputDecoration(
-                                    labelText: 'Balas ulasan',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 8),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () => _addReply(
-                                        index,
-                                        _replyControllers[index]?.text ?? '',
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors
-                                            .black, // Atur warna latar belakang di sini
-                                      ),
-                                      child: Text(
-                                        'Kirim Balasan',
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: _reviews.length,
+                        itemBuilder: (context, index) {
+                          final review = _reviews[index];
+                          _replyControllers[index] ??= TextEditingController();
+                          return Card(
+                            margin: EdgeInsets.symmetric(vertical: 6),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        review['name'],
                                         style: TextStyle(
-                                            color: Colors
-                                                .white), // Atur warna teks di sini
-                                      ),
-                                    ),
-                                    if (_isAdmin)
-                                      IconButton(
-                                        icon: Icon(
-                                          CupertinoIcons.trash_circle,
-                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
                                         ),
-                                        onPressed: () => _deleteReview(index),
                                       ),
-                                  ],
-                                ),
-                              ],
+                                      RatingBarIndicator(
+                                        rating: review['rating'],
+                                        itemBuilder: (context, index) => Icon(
+                                          Icons.star,
+                                          color: Colors.amber,
+                                        ),
+                                        itemCount: 5,
+                                        itemSize: 18.0,
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    review['description'],
+                                    style: TextStyle(fontSize: 13),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Balasan:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  ...review['replies']
+                                      .map<Widget>((reply) => Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 2.0),
+                                            child: Text('- $reply',
+                                                style: TextStyle(fontSize: 13)),
+                                          )),
+                                  SizedBox(height: 8),
+                                  TextField(
+                                    controller: _replyControllers[index],
+                                    decoration: InputDecoration(
+                                      labelText: 'Balas ulasan',
+                                      border: OutlineInputBorder(),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 8),
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () => _addReply(
+                                          index,
+                                          _replyControllers[index]?.text ?? '',
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors
+                                              .black, // Atur warna latar belakang di sini
+                                        ),
+                                        child: Text(
+                                          'Kirim Balasan',
+                                          style: TextStyle(
+                                              color: Colors
+                                                  .white), // Atur warna teks di sini
+                                        ),
+                                      ),
+                                      if (_isAdmin)
+                                        IconButton(
+                                          icon: Icon(
+                                            CupertinoIcons.trash_circle,
+                                            color: Colors.black,
+                                          ),
+                                          onPressed: () => _deleteReview(index),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
               Divider(),
-              Text(
-                'Tambahkan Ulasan',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Tambahkan Ulasan',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
               SizedBox(height: 8),
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Nama',
-                  border: OutlineInputBorder(),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Nama',
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  ),
+                  style: TextStyle(fontSize: 14),
                 ),
-                style: TextStyle(fontSize: 14),
               ),
               SizedBox(height: 8),
-              Text(
-                'Rating:',
-                style: TextStyle(fontSize: 14),
-              ),
-              RatingBar(
-                initialRating: _currentRating,
-                minRating: 1,
-                direction: Axis.horizontal,
-                allowHalfRating: true,
-                itemCount: 5,
-                itemSize: 20,
-                ratingWidget: RatingWidget(
-                  full: Icon(Icons.star, color: Colors.amber),
-                  half: Icon(Icons.star_half, color: Colors.amber),
-                  empty: Icon(Icons.star_border, color: Colors.amber),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Rating:',
+                  style: TextStyle(fontSize: 14),
                 ),
-                onRatingUpdate: (rating) {
-                  setState(() {
-                    _currentRating = rating;
-                  });
-                },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: RatingBar(
+                  initialRating: _currentRating,
+                  minRating: 1,
+                  direction: Axis.horizontal,
+                  allowHalfRating: true,
+                  itemCount: 5,
+                  itemSize: 20,
+                  ratingWidget: RatingWidget(
+                    full: Icon(Icons.star, color: Colors.amber),
+                    half: Icon(Icons.star_half, color: Colors.amber),
+                    empty: Icon(Icons.star_border, color: Colors.amber),
+                  ),
+                  onRatingUpdate: (rating) {
+                    setState(() {
+                      _currentRating = rating;
+                    });
+                  },
+                ),
               ),
               SizedBox(height: 8),
-              TextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Deskripsi Ulasan',
-                  border: OutlineInputBorder(),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _descriptionController,
+                  decoration: InputDecoration(
+                    labelText: 'Deskripsi Ulasan',
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  ),
+                  style: TextStyle(fontSize: 14),
+                  maxLines: 2,
                 ),
-                style: TextStyle(fontSize: 14),
-                maxLines: 2,
               ),
               SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _addReview,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        Colors.black, // Set the background color to black
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: ElevatedButton(
+                      onPressed: _addReview,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.black, // Set the background color to black
+                      ),
+                      child: Text(
+                        'Tambah Ulasan',
+                        style: TextStyle(fontSize: 14, color: Colors.white),
+                      ),
+                    ),
                   ),
-                  child: Text('Tambah Ulasan',
-                      style: TextStyle(fontSize: 14, color: Colors.white)),
                 ),
               ),
             ],

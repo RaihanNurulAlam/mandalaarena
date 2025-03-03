@@ -85,7 +85,10 @@ class _CartPageState extends State<CartPage> {
                         }
                       }
                     },
-                    icon: const Text('Hapus Semua'),
+                    icon: Padding(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      child: const Text('Hapus Semua'),
+                    ),
                   ),
                 ),
             ],
@@ -124,102 +127,106 @@ class _CartPageState extends State<CartPage> {
                     ],
                   ),
                 )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: cart.cart.length,
-                        itemBuilder: (context, index) {
-                          final item = cart.cart[index];
-                          return ListTile(
-                            leading: ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: SizedBox(
-                                height: 50,
-                                width: 50,
-                                child: Image.asset(
-                                  item.imagePath.toString(),
-                                  fit: BoxFit.cover,
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: cart.cart.length,
+                          itemBuilder: (context, index) {
+                            final item = cart.cart[index];
+                            return ListTile(
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: SizedBox(
+                                  height: 50,
+                                  width: 50,
+                                  child: Image.asset(
+                                    item.imagePath.toString(),
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
-                            ),
-                            title: Text(
-                              item.name.toString(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                              title: Text(
+                                item.name.toString(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
-                            ),
-                            subtitle: Row(
-                              children: [
-                                Text(
-                                    'Rp. ${item.price} x ${item.quantity} Jam'),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              onPressed: () async {
-                                final shouldDelete = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Konfirmasi Hapus'),
-                                    content: const Text(
-                                        'Yakin ingin menghapus item ini dari keranjang?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(false),
-                                        child: const Text('Batal'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(true),
-                                        child: const Text('Hapus'),
-                                      ),
-                                    ],
-                                  ),
-                                );
+                              subtitle: Row(
+                                children: [
+                                  Text(
+                                      'Rp. ${item.price} x ${item.quantity} Jam'),
+                                ],
+                              ),
+                              trailing: IconButton(
+                                onPressed: () async {
+                                  final shouldDelete = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Konfirmasi Hapus'),
+                                      content: const Text(
+                                          'Yakin ingin menghapus item ini dari keranjang?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(false),
+                                          child: const Text('Batal'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(true),
+                                          child: const Text('Hapus'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
 
-                                if (shouldDelete == true) {
-                                  try {
-                                    await cart.deleteItemCart(item);
-                                    // Tidak perlu setState(), karena notifyListeners() akan rebuild widget
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Gagal menghapus item. Silakan coba lagi.')),
-                                    );
+                                  if (shouldDelete == true) {
+                                    try {
+                                      await cart.deleteItemCart(item);
+                                      // Tidak perlu setState(), karena notifyListeners() akan rebuild widget
+                                    } catch (e) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Gagal menghapus item. Silakan coba lagi.')),
+                                      );
+                                    }
                                   }
-                                }
-                              },
-                              icon: const Icon(
-                                CupertinoIcons.trash_circle,
-                                color: Colors.black,
+                                },
+                                icon: const Icon(
+                                  CupertinoIcons.trash_circle,
+                                  color: Colors.black,
+                                ),
                               ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 80),
+                      CupertinoButton(
+                        child: const Text(
+                          'Tambah Booking Lapang',
+                          style: TextStyle(
+                            color: Colors.black,
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => HomePage(),
                             ),
+                            (route) => false,
                           );
                         },
                       ),
-                    ),
-                    const SizedBox(height: 80),
-                    CupertinoButton(
-                      child: const Text(
-                        'Tambah Booking Lapang',
-                        style: TextStyle(
-                          color: Colors.black,
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HomePage(),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
           bottomNavigationBar: totalPrice == 0
               ? null
@@ -237,8 +244,10 @@ class _CartPageState extends State<CartPage> {
                             width: 1,
                           ),
                         ),
-                        padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 30, vertical: 16), // Dikurangi
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 30, vertical: 20), // Dikurangi
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -246,14 +255,14 @@ class _CartPageState extends State<CartPage> {
                               'Total Harga',
                               style: TextStyle(
                                 color: Colors.black,
-                                fontSize: 20,
+                                fontSize: 18, // Dikurangi
                               ),
                             ),
                             Text(
                               'Rp. $totalPrice',
                               style: const TextStyle(
                                 color: Colors.black,
-                                fontSize: 20,
+                                fontSize: 18, // Dikurangi
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -261,10 +270,14 @@ class _CartPageState extends State<CartPage> {
                         ),
                       ),
                       Container(
-                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        width: MediaQuery.of(context).size.width,
+                        margin: const EdgeInsets.fromLTRB(
+                            16, 0, 16, 14), // Dikurangi
+                        width: MediaQuery.of(context).size.width *
+                            0.8, // Lebarnya dikurangi
                         child: CupertinoButton(
                           color: Colors.black,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10), // Dikurangi
                           borderRadius: BorderRadius.circular(50),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -273,15 +286,16 @@ class _CartPageState extends State<CartPage> {
                                 'Bayar Sekarang',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 20,
+                                  fontSize: 18, // Dikurangi
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Urbanist',
                                 ),
                               ),
-                              SizedBox(width: 10),
+                              SizedBox(width: 8), // Dikurangi
                               Icon(
                                 CupertinoIcons.arrow_right,
                                 color: Colors.white,
+                                size: 20, // Ukuran ikon dikurangi
                               ),
                             ],
                           ),

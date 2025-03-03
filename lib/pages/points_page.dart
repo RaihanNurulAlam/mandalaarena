@@ -68,39 +68,42 @@ class PointsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     // Banner Penukaran 100 Poin
-                    Card(
-                      elevation: 4,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image: AssetImage(
-                                'assets/minisoccer.jpg'), // Gambar lapangan
-                            fit: BoxFit.cover,
-                            colorFilter: ColorFilter.mode(
-                              Colors.black.withOpacity(0.5),
-                              BlendMode.darken,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Card(
+                        elevation: 4,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(
+                                  'assets/minisoccer.jpg'), // Gambar lapangan
+                              fit: BoxFit.cover,
+                              colorFilter: ColorFilter.mode(
+                                Colors.black.withOpacity(0.5),
+                                BlendMode.darken,
+                              ),
                             ),
                           ),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            'Tukar 100 Poin - Gratis 1 Jam',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                          child: ListTile(
+                            title: Text(
+                              'Tukar 100 Poin - Gratis 1 Jam',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          trailing: ElevatedButton.icon(
-                            icon: const Icon(Icons.card_giftcard,
-                                color: Colors.white),
-                            label: const Text('Tukar',
-                                style: TextStyle(color: Colors.white)),
-                            onPressed: points >= 100
-                                ? () => redeemPoints(context, userId, 100,
-                                    'Gratis 1 Jam', 'assets/minisoccer.jpg')
-                                : () => showInsufficientPointsDialog(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.withOpacity(0.8),
+                            trailing: ElevatedButton.icon(
+                              icon: const Icon(Icons.card_giftcard,
+                                  color: Colors.white),
+                              label: const Text('Tukar',
+                                  style: TextStyle(color: Colors.white)),
+                              onPressed: points >= 100
+                                  ? () => redeemPoints(context, userId, 100,
+                                      'Gratis 1 Jam', 'assets/minisoccer.jpg')
+                                  : () => showInsufficientPointsDialog(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.withOpacity(0.8),
+                              ),
                             ),
                           ),
                         ),
@@ -108,39 +111,42 @@ class PointsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     // Banner Penukaran 30 Poin
-                    Card(
-                      elevation: 4,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          image: DecorationImage(
-                            image:
-                                AssetImage('assets/coffee.jpg'), // Gambar kopi
-                            fit: BoxFit.cover,
-                            colorFilter: ColorFilter.mode(
-                              Colors.black.withOpacity(0.5),
-                              BlendMode.darken,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Card(
+                        elevation: 4,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(
+                                  'assets/coffee.jpg'), // Gambar kopi
+                              fit: BoxFit.cover,
+                              colorFilter: ColorFilter.mode(
+                                Colors.black.withOpacity(0.5),
+                                BlendMode.darken,
+                              ),
                             ),
                           ),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            'Tukar 30 Poin - Voucher Kopi',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                          child: ListTile(
+                            title: Text(
+                              'Tukar 30 Poin - Voucher Kopi',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          trailing: ElevatedButton.icon(
-                            icon: const Icon(Icons.card_giftcard,
-                                color: Colors.white),
-                            label: const Text('Tukar',
-                                style: TextStyle(color: Colors.white)),
-                            onPressed: points >= 30
-                                ? () => redeemPoints(context, userId, 30,
-                                    'Voucher Kopi', 'assets/coffee.jpg')
-                                : () => showInsufficientPointsDialog(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange.withOpacity(0.8),
+                            trailing: ElevatedButton.icon(
+                              icon: const Icon(Icons.card_giftcard,
+                                  color: Colors.white),
+                              label: const Text('Tukar',
+                                  style: TextStyle(color: Colors.white)),
+                              onPressed: points >= 30
+                                  ? () => redeemPoints(context, userId, 30,
+                                      'Voucher Kopi', 'assets/coffee.jpg')
+                                  : () => showInsufficientPointsDialog(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange.withOpacity(0.8),
+                              ),
                             ),
                           ),
                         ),

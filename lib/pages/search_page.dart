@@ -58,7 +58,7 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           // Search Bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 30.0),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Mencari Lapang',
@@ -80,60 +80,63 @@ class _SearchPageState extends State<SearchPage> {
           // List Lapang
           _foundedLapangs.isEmpty
               ? Center(child: Text('Tidak ada lapang yang ditemukan'))
-              : ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _foundedLapangs.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DetailPage(
-                              lapang: lapangs[index],
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _foundedLapangs.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DetailPage(
+                                lapang: lapangs[index],
+                              ),
+                            ),
+                          );
+                        },
+                        leading: SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Image.asset(
+                              _foundedLapangs[index].imagePath.toString(),
+                              fit: BoxFit.cover,
                             ),
                           ),
-                        );
-                      },
-                      leading: SizedBox(
-                        width: 50,
-                        height: 50,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.asset(
-                            _foundedLapangs[index].imagePath.toString(),
-                            fit: BoxFit.cover,
+                        ),
+                        title: Text(
+                          _foundedLapangs[index].name.toString(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
                         ),
-                      ),
-                      title: Text(
-                        _foundedLapangs[index].name.toString(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      subtitle: Text('Rp. ${_foundedLapangs[index].price}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            CupertinoIcons.star_fill,
-                            size: 15,
-                            color: Colors.yellow,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            _foundedLapangs[index].rating.toString(),
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                        subtitle: Text('Rp. ${_foundedLapangs[index].price}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              CupertinoIcons.star_fill,
+                              size: 15,
+                              color: Colors.yellow,
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                            SizedBox(width: 4),
+                            Text(
+                              _foundedLapangs[index].rating.toString(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
         ],
       ),

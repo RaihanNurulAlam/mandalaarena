@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, unnecessary_to_list_in_spreads
+// ignore_for_file: unnecessary_to_list_in_spreads, use_build_context_synchronously
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -50,50 +50,46 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: DropdownButtonFormField<String>(
-              value: selectedLapangan,
-              hint: Text('Pilih Lapangan'),
-              items: lapanganList.map((String lapangan) {
-                return DropdownMenuItem<String>(
-                  value: lapangan == 'Semua Lapangan' ? null : lapangan,
-                  child: Text(lapangan),
-                );
-              }).toList(),
-              onChanged: (String? value) {
-                setState(() {
-                  selectedLapangan = value;
-                });
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: InkWell(
-              onTap: () async {
-                final DateTime? pickedDate = await showDatePicker(
-                  context: context,
-                  initialDate: selectedDate ?? DateTime.now(),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(Duration(days: 365)),
-                );
-                if (pickedDate != null) {
-                  setState(() {
-                    selectedDate = pickedDate;
-                  });
-                }
-              },
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Pilih Tanggal',
-                  border: OutlineInputBorder(),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 30.0, vertical: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedLapangan,
+                    hint: Text('Pilih Lapangan'),
+                    items: lapanganList.map((String lapangan) {
+                      return DropdownMenuItem<String>(
+                        value: lapangan == 'Semua Lapangan' ? null : lapangan,
+                        child: Text(lapangan),
+                      );
+                    }).toList(),
+                    onChanged: (String? value) {
+                      setState(() {
+                        selectedLapangan = value;
+                      });
+                    },
+                  ),
                 ),
-                child: Text(
-                  selectedDate != null
-                      ? DateFormat('dd MMMM yyyy').format(selectedDate!)
-                      : 'Pilih Tanggal',
+                SizedBox(width: 8.0), // Spacer antara dropdown dan ikon
+                IconButton(
+                  icon: Icon(Icons.calendar_today),
+                  onPressed: () async {
+                    final DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate ?? DateTime.now(),
+                      firstDate: DateTime(1900), // Tanggal jauh di masa lalu
+                      lastDate: DateTime.now()
+                          .add(Duration(days: 365)), // Tanggal di masa depan
+                    );
+                    if (pickedDate != null) {
+                      setState(() {
+                        selectedDate = pickedDate;
+                      });
+                    }
+                  },
                 ),
-              ),
+              ],
             ),
           ),
           Expanded(
@@ -139,84 +135,87 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                         booking['namaPengguna'] as String? ?? 'Tidak Diketahui';
                     final noWhatsapp = booking['noWhatsapp'] as String? ?? '-';
                     final imagePath = booking['imagePath'] as String? ?? '';
-                    return Card(
-                      margin: EdgeInsets.all(8),
-                      child: ListTile(
-                        leading: imagePath.isNotEmpty
-                            ? Image.network(imagePath,
-                                width: 50, height: 50, fit: BoxFit.cover)
-                            : Icon(Icons.image_not_supported, size: 50),
-                        title: Text('Lapangan: $lapangan'),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                'Tanggal: ${DateFormat('dd MMMM yyyy').format(tanggal)}'),
-                            Text('Jam: $jamMulai - $jamSelesai'),
-                            Text('Status: $status'),
-                            Text('Nama: $namaPengguna'),
-                            Text('No WhatsApp: $noWhatsapp'),
-                          ],
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(
-                            CupertinoIcons.trash_circle,
-                            color: Colors.black,
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                      child: Card(
+                        margin: EdgeInsets.all(8),
+                        child: ListTile(
+                          leading: imagePath.isNotEmpty
+                              ? Image.network(imagePath,
+                                  width: 50, height: 50, fit: BoxFit.cover)
+                              : Icon(Icons.image_not_supported, size: 50),
+                          title: Text('Lapangan: $lapangan'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  'Tanggal: ${DateFormat('dd MMMM yyyy').format(tanggal)}'),
+                              Text('Jam: $jamMulai - $jamSelesai'),
+                              Text('Status: $status'),
+                              Text('Nama: $namaPengguna'),
+                              Text('No WhatsApp: $noWhatsapp'),
+                            ],
                           ),
-                          onPressed: () async {
-                            final shouldDelete = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text('Konfirmasi Hapus'),
-                                content:
-                                    Text('Yakin ingin menghapus booking ini?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                    child: Text('Batal'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(true),
-                                    child: Text('Hapus'),
-                                  ),
-                                ],
-                              ),
-                            );
+                          trailing: IconButton(
+                            icon: Icon(
+                              CupertinoIcons.trash_circle,
+                              color: Colors.black,
+                            ),
+                            onPressed: () async {
+                              final shouldDelete = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text('Konfirmasi Hapus'),
+                                  content: Text(
+                                      'Yakin ingin menghapus booking ini?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                      child: Text('Batal'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                      child: Text('Hapus'),
+                                    ),
+                                  ],
+                                ),
+                              );
 
-                            if (shouldDelete == true) {
-                              try {
-                                await FirebaseFirestore.instance
-                                    .collection('bookings')
-                                    .doc(bookingId)
-                                    .delete();
+                              if (shouldDelete == true) {
+                                try {
+                                  await FirebaseFirestore.instance
+                                      .collection('bookings')
+                                      .doc(bookingId)
+                                      .delete();
 
-                                final cart =
-                                    Provider.of<Cart>(context, listen: false);
-                                cart.removeItemByDocId(bookingId);
+                                  final cart =
+                                      Provider.of<Cart>(context, listen: false);
+                                  cart.removeItemByDocId(bookingId);
 
-                                final User? user =
-                                    FirebaseAuth.instance.currentUser;
-                                if (user != null) {
-                                  await cart.loadCart(
-                                      user.uid); // Pastikan cart diperbarui
+                                  final User? user =
+                                      FirebaseAuth.instance.currentUser;
+                                  if (user != null) {
+                                    await cart.loadCart(
+                                        user.uid); // Pastikan cart diperbarui
+                                  }
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text('Booking berhasil dihapus.')),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text('Gagal menghapus booking.')),
+                                  );
                                 }
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text('Booking berhasil dihapus.')),
-                                );
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text('Gagal menghapus booking.')),
-                                );
                               }
-                            }
-                          },
+                            },
+                          ),
                         ),
                       ),
                     );

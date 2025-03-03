@@ -149,113 +149,131 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                   ),
                 ),
                 SizedBox(height: 20),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Nama Tim',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Nama tim tidak boleh kosong' : null,
-                ),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: _contactController,
-                  decoration: InputDecoration(
-                    labelText: 'Kontak (No. Telepon)',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
-                ),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: _costController,
-                  decoration: InputDecoration(
-                    labelText: 'Biaya Sparring',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Biaya tidak boleh kosong' : null,
-                ),
-                SizedBox(height: 20),
-                DropdownButtonFormField<String>(
-                  value: _selectedCategory,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  },
-                  items: _categories.map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  decoration: InputDecoration(
-                    labelText: 'Kategori Tim',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Pilih Hari Tersedia:',
-                          style: TextStyle(fontSize: 16)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Nama Tim',
+                      border: OutlineInputBorder(),
                     ),
-                    SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Wrap(
-                        spacing: 8,
-                        children: _daysOfWeek.map((day) {
-                          return ChoiceChip(
-                            label: Text(day),
-                            selected: _selectedDay == day,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedDay = selected ? day : null;
-                              });
-                            },
-                          );
-                        }).toList(),
+                    validator: (value) =>
+                        value!.isEmpty ? 'Nama tim tidak boleh kosong' : null,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextFormField(
+                    controller: _contactController,
+                    decoration: InputDecoration(
+                      labelText: 'Kontak (No. Telepon)',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) =>
+                        value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextFormField(
+                    controller: _costController,
+                    decoration: InputDecoration(
+                      labelText: 'Biaya Sparring',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) =>
+                        value!.isEmpty ? 'Biaya tidak boleh kosong' : null,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCategory = value;
+                      });
+                    },
+                    items: _categories.map((category) {
+                      return DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: 'Kategori Tim',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Pilih Hari Tersedia:',
+                            style: TextStyle(fontSize: 16)),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 8,
+                          children: _daysOfWeek.map((day) {
+                            return ChoiceChip(
+                              label: Text(day),
+                              selected: _selectedDay == day,
+                              onSelected: (selected) {
+                                setState(() {
+                                  _selectedDay = selected ? day : null;
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(height: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Pilih Jam Tersedia:',
-                          style: TextStyle(fontSize: 16)),
-                    ),
-                    SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Wrap(
-                        spacing: 8,
-                        children: _timeSlots.map((time) {
-                          return ChoiceChip(
-                            label: Text(time),
-                            selected: _selectedHour == time,
-                            onSelected: (selected) {
-                              setState(() {
-                                _selectedHour = selected ? time : null;
-                              });
-                            },
-                          );
-                        }).toList(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Pilih Jam Tersedia:',
+                            style: TextStyle(fontSize: 16)),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 8,
+                          children: _timeSlots.map((time) {
+                            return ChoiceChip(
+                              label: Text(time),
+                              selected: _selectedHour == time,
+                              onSelected: (selected) {
+                                setState(() {
+                                  _selectedHour = selected ? time : null;
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
