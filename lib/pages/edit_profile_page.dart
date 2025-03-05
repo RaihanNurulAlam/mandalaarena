@@ -39,6 +39,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       TextEditingController();
   File? _imageFile;
   bool isLoading = false;
+  bool _isOldPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
@@ -105,8 +108,45 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
         if (user == null) throw Exception('Pengguna tidak ditemukan');
 
-        String? newProfileUrl = widget.profileImageUrl;
+        // Validasi password lama sebelum mengganti password
+        if (_oldPasswordController.text.isNotEmpty ||
+            _newPasswordController.text.isNotEmpty ||
+            _confirmPasswordController.text.isNotEmpty) {
+          final cred = EmailAuthProvider.credential(
+            email: user.email!,
+            password: _oldPasswordController.text,
+          );
 
+          try {
+            await user.reauthenticateWithCredential(cred);
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      'Password lama anda salah, sehingga ganti password tidak bisa dilakukan')),
+            );
+            setState(() {
+              isLoading = false;
+            });
+            return;
+          }
+
+          if (_newPasswordController.text != _confirmPasswordController.text) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      'Password baru dan konfirmasi password tidak sinkron, sehingga tidak bisa melakukan perubahan')),
+            );
+            setState(() {
+              isLoading = false;
+            });
+            return;
+          }
+
+          await user.updatePassword(_newPasswordController.text);
+        }
+
+        String? newProfileUrl = widget.profileImageUrl;
         if (_imageFile != null && !kIsWeb) {
           newProfileUrl = await _uploadImageToCloudinary(_imageFile!);
           if (newProfileUrl == null) throw Exception('Gagal mengunggah gambar');
@@ -121,10 +161,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
           'phone': _phoneController.text,
           'profileImageUrl': newProfileUrl,
         });
-
-        if (newProfileUrl != null) {
-          await user.updatePhotoURL(newProfileUrl);
-        }
 
         await user.updateDisplayName(_nameController.text);
         await user.reload();
@@ -177,11 +213,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               as ImageProvider?,
                       child:
                           _imageBytes == null && widget.profileImageUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: 70,
-                                  color: Colors.grey.shade700,
-                                )
+                              ? Icon(Icons.person,
+                                  size: 70, color: Colors.grey.shade700)
                               : null,
                     ),
                     Positioned(
@@ -192,10 +225,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         child: CircleAvatar(
                           radius: 20,
                           backgroundColor: Colors.blue,
-                          child: Icon(
-                            Icons.edit,
-                            color: Colors.white,
-                          ),
+                          child: Icon(Icons.edit, color: Colors.white),
                         ),
                       ),
                     ),
@@ -203,99 +233,104 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
               ),
               SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TextFormField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Nama',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
+              _buildTextField(_nameController, 'Nama'),
               SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TextFormField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
+              _buildTextField(_emailController, 'Email'),
               SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TextFormField(
-                  controller: _phoneController,
-                  decoration: InputDecoration(
-                    labelText: 'Nomor Telepon',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                ),
-              ),
+              _buildTextField(
+                  _phoneController, 'Nomor Telepon', TextInputType.phone),
               SizedBox(height: 20),
               Divider(),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  'Ganti Password',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                child: Text('Ganti Password',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TextFormField(
-                  controller: _oldPasswordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password Lama',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                ),
-              ),
+              _buildPasswordField(_oldPasswordController, 'Password Lama',
+                  _isOldPasswordVisible, () {
+                setState(() {
+                  _isOldPasswordVisible = !_isOldPasswordVisible;
+                });
+              }),
               SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TextFormField(
-                  controller: _newPasswordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password Baru',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                ),
-              ),
+              _buildPasswordField(_newPasswordController, 'Password Baru',
+                  _isNewPasswordVisible, () {
+                setState(() {
+                  _isNewPasswordVisible = !_isNewPasswordVisible;
+                });
+              }),
               SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: TextFormField(
-                  controller: _confirmPasswordController,
-                  decoration: InputDecoration(
-                    labelText: 'Konfirmasi Password Baru',
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                ),
-              ),
+              _buildPasswordField(_confirmPasswordController,
+                  'Konfirmasi Password Baru', _isConfirmPasswordVisible, () {
+                setState(() {
+                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                });
+              }),
               SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _updateProfile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
+              Row(
+                mainAxisAlignment:
+                    MainAxisAlignment.center, // Pusatkan tombol di tengah
+                children: [
+                  IntrinsicWidth(
+                    // Buat tombol menyesuaikan teksnya
+                    child: ElevatedButton(
+                      onPressed: _updateProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        padding: EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 20), // Sesuaikan padding
+                        // shape: RoundedRectangleBorder(
+                        //   borderRadius: BorderRadius.circular(
+                        //       8), // Tambahkan sedikit border radius agar lebih rapi
+                        // ),
+                      ),
+                      child: Text(
+                        'Simpan Perubahan',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16), // Font lebih jelas
+                      ),
+                    ),
                   ),
-                  child: Text(
-                    'Simpan Perubahan',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
+                ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label,
+      [TextInputType? keyboardType]) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField(TextEditingController controller, String labelText,
+      bool isVisible, VoidCallback toggleVisibility) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: TextFormField(
+        controller: controller,
+        obscureText: !isVisible,
+        decoration: InputDecoration(
+          labelText: labelText,
+          border: OutlineInputBorder(),
+          suffixIcon: IconButton(
+            icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off),
+            onPressed: toggleVisibility,
           ),
         ),
       ),
