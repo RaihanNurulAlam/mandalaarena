@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously, curly_braces_in_flow_control_structures
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -144,12 +144,17 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                       ),
                       IconButton(
                         icon: Icon(Icons.add),
-                        onPressed: () {
-                          Navigator.push(
+                        onPressed: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => AddSparringTeamPage()),
                           );
+
+                          if (result == true) {
+                            // Refresh data di SparringTeamPage
+                            setState(() {});
+                          }
                         },
                       ),
                     ],
@@ -171,11 +176,22 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                 }
 
                 final teams = snapshot.data!.docs.map((doc) {
-                  return SparringTeam.fromMap(
-                      doc.data() as Map<String, dynamic>);
+                  var data = doc.data() as Map<String, dynamic>;
+
+                  return SparringTeam.fromMap({
+                    'id': doc.id,
+                    'name': data['name'] ?? '',
+                    'category': data['category'] ?? '',
+                    'imageUrl': data['imageUrl'] ?? '',
+                    'contact': data['contact'] ?? '',
+                    'cost': data['cost'] ?? 0.0,
+                    'availableDays': data['availableDays'] ?? [],
+                    'availableHours': data['availableHours'] ?? [],
+                    'createdAt': data['createdAt'] ?? Timestamp.now(),
+                  });
                 }).toList();
 
-                // Filter teams based on selected category, cost, time, and search query
+                // Filter dan sort teams (sesuai kebutuhan)
                 final filteredTeams = teams.where((team) {
                   final categoryMatch = _selectedCategory == null ||
                       _selectedCategory == 'Semua' ||
@@ -186,7 +202,6 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                   return categoryMatch && searchMatch;
                 }).toList();
 
-                // Sort teams based on selected sort option
                 if (_selectedSort == 'Biaya Terendah') {
                   filteredTeams.sort((a, b) => a.cost.compareTo(b.cost));
                 } else if (_selectedSort == 'Biaya Tertinggi') {
@@ -232,13 +247,13 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
-                                childAspectRatio: 2.2, // Sesuaikan aspek rasio
+                                childAspectRatio: 2.2,
                               ),
                               itemCount: filteredTeams.length,
                               itemBuilder: (context, index) {
                                 final team = filteredTeams[index];
                                 final isAdmin = user?.email ==
-                                    'raihannurulalam14@gmail.com'; // Ganti dengan email admin yang valid
+                                    'raihannurulalam14@gmail.com';
                                 final isCreator = team.createdBy == user?.uid;
 
                                 return Card(
@@ -250,10 +265,42 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                         SizedBox(
                                           width: 80,
                                           height: 80,
-                                          child: Image.network(
-                                            team.imageUrl,
-                                            fit: BoxFit.cover,
-                                          ),
+                                          child: team.imageUrl.isNotEmpty
+                                              ? Image.network(
+                                                  team.imageUrl,
+                                                  fit: BoxFit.cover,
+                                                  loadingBuilder: (context,
+                                                      child, loadingProgress) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return Center(
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        value: loadingProgress
+                                                                    .expectedTotalBytes !=
+                                                                null
+                                                            ? loadingProgress
+                                                                    .cumulativeBytesLoaded /
+                                                                loadingProgress
+                                                                    .expectedTotalBytes!
+                                                            : null,
+                                                      ),
+                                                    );
+                                                  },
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Icon(
+                                                      Icons.image_not_supported,
+                                                      size: 50,
+                                                      color: Colors.grey,
+                                                    );
+                                                  },
+                                                )
+                                              : Icon(
+                                                  Icons.image,
+                                                  size: 50,
+                                                  color: Colors.grey,
+                                                ),
                                         ),
                                         SizedBox(width: 12),
                                         Expanded(
@@ -266,9 +313,9 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                               Text(
                                                 team.name,
                                                 style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight:
-                                                        FontWeight.bold),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                               SizedBox(height: 4),
                                               Text(
@@ -278,7 +325,8 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                               Text(
                                                   'Kategori: ${team.category}'),
                                               Text('Kontak: ${team.contact}'),
-                                              Text('Biaya: ${team.cost}'),
+                                              Text(
+                                                  'Biaya: ${team.cost.toString()}'),
                                             ],
                                           ),
                                         ),
@@ -296,9 +344,8 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                             if (isAdmin)
                                               IconButton(
                                                 icon: Icon(
-                                                  CupertinoIcons.trash_circle,
-                                                  color: Colors.black,
-                                                ),
+                                                    CupertinoIcons.trash_circle,
+                                                    color: Colors.black),
                                                 onPressed: () =>
                                                     _deleteTeam(team.id),
                                               ),

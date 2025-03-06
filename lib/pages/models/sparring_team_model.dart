@@ -12,7 +12,7 @@ class SparringTeam {
   final String category;
   final String createdBy;
   final double cost; // Tambahkan properti cost
-  final DateTime createdAt; // Tambahkan properti createdAt
+  final Timestamp createdAt; // Tambahkan properti createdAt
 
   SparringTeam({
     required this.id,
@@ -27,6 +27,22 @@ class SparringTeam {
     required this.createdAt, // Tambahkan createdAt ke constructor
   });
 
+  // Create SparringTeam from a Map
+  factory SparringTeam.fromMap(Map<String, dynamic> data) {
+    return SparringTeam(
+      id: data['id'] ?? '',
+      name: data['name'] ?? '',
+      category: data['category'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
+      contact: data['contact'] ?? '',
+      cost: data['cost'] != null ? double.parse(data['cost'].toString()) : 0.0,
+      availableDays: List<String>.from(data['availableDays'] ?? []),
+      availableHours: List<String>.from(data['availableHours'] ?? []),
+      createdAt: data['createdAt'] ?? Timestamp.now(),
+      createdBy: data['createdBy'] ?? '',
+    );
+  }
+
   // Convert SparringTeam to a Map
   Map<String, dynamic> toMap() {
     return {
@@ -39,25 +55,33 @@ class SparringTeam {
       'category': category,
       'createdBy': createdBy,
       'cost': cost, // Tambahkan cost ke map
-      'createdAt': createdAt.toIso8601String(), // Tambahkan createdAt ke map
+      'createdAt': createdAt, // Tambahkan createdAt ke map
     };
   }
 
-  // Create SparringTeam from a Map
-  factory SparringTeam.fromMap(Map<String, dynamic> map) {
+  SparringTeam copyWith({
+    String? id,
+    String? name,
+    String? category,
+    String? imageUrl,
+    String? contact,
+    cost,
+    List<String>? availableDays,
+    List<String>? availableHours,
+    Timestamp? createdAt,
+    String? createdBy,
+  }) {
     return SparringTeam(
-      id: map['id'] ?? '', // Berikan nilai default jika null
-      name: map['name'] ?? '', // Berikan nilai default jika null
-      imageUrl: map['imageUrl'] ?? '', // Berikan nilai default jika null
-      availableDays: List<String>.from(map['availableDays'] ?? []),
-      availableHours: List<String>.from(map['availableHours'] ?? []),
-      contact: map['contact'] ?? '', // Berikan nilai default jika null
-      category: map['category'] ?? '', // Berikan nilai default jika null
-      createdBy: map['createdBy'] ?? '', // Berikan nilai default jika null
-      cost: (map['cost'] ?? 0).toDouble(), // Berikan nilai default jika null
-      createdAt: map['createdAt'] != null
-          ? DateTime.parse(map['createdAt']) // Parse createdAt dari string
-          : DateTime.now(), // Berikan nilai default jika null
+      id: id ?? this.id,
+      name: name ?? this.name,
+      category: category ?? this.category,
+      imageUrl: imageUrl ?? this.imageUrl,
+      contact: contact ?? this.contact,
+      cost: cost,
+      availableDays: availableDays ?? this.availableDays,
+      availableHours: availableHours ?? this.availableHours,
+      createdAt: createdAt ?? this.createdAt,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 }

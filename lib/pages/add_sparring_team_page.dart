@@ -1,12 +1,11 @@
-// ignore_for_file: use_build_context_synchronously, sort_child_properties_last, avoid_print
+// ignore_for_file: use_build_context_synchronously, avoid_print, sort_child_properties_last, prefer_interpolation_to_compose_strings
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-
+import 'package:flutter/foundation.dart'; // Untuk kIsWeb
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 
 class AddSparringTeamPage extends StatefulWidget {
@@ -20,8 +19,9 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final _costController = TextEditingController(); // Controller untuk cost
-  File? _imageFile;
+  final _costController = TextEditingController();
+  Uint8List? _webImage; // Untuk menyimpan gambar di Web
+  File? _imageFile; // Untuk Android/iOS
   String? _selectedCategory;
   String? _selectedDay;
   String? _selectedHour;
@@ -65,9 +65,14 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
       if (pickedFile != null) {
-        setState(() {
+        if (kIsWeb) {
+          // Web: Simpan sebagai Uint8List
+          _webImage = await pickedFile.readAsBytes();
+        } else {
+          // Mobile/Desktop: Simpan sebagai File
           _imageFile = File(pickedFile.path);
-        });
+        }
+        setState(() {});
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,97 +81,128 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
     }
   }
 
-  Future<String?> _uploadImage(File imageFile) async {
+  Future<String?> _uploadImage() async {
     try {
-      // Pastikan file gambar valid
-      if (!imageFile.existsSync()) {
-        throw Exception('File gambar tidak valid atau tidak ditemukan');
+      if (_imageFile == null && _webImage == null) {
+        return null; // Jika tidak ada gambar, biarkan kosong
       }
 
-      // Generate nama file unik
-      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      Reference storageReference =
+      // Ambil nama tim dari input pengguna
+      String teamName = _nameController.text.trim();
+
+      // Format nama file: hapus spasi dan karakter khusus, lalu tambahkan .jpg
+      String fileName =
+          teamName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase() +
+              '.jpg';
+
+      // Referensi ke Firebase Storage dengan nama file yang sesuai
+      Reference storageRef =
           FirebaseStorage.instance.ref().child('team_images/$fileName');
 
-      // Upload file ke Firebase Storage
-      UploadTask uploadTask = storageReference.putFile(imageFile);
-      TaskSnapshot taskSnapshot = await uploadTask;
+      UploadTask uploadTask;
+      if (kIsWeb && _webImage != null) {
+        uploadTask = storageRef.putData(_webImage!);
+      } else if (_imageFile != null) {
+        uploadTask = storageRef.putFile(_imageFile!);
+      } else {
+        throw Exception("Gambar tidak ditemukan");
+      }
 
-      // Dapatkan URL download
-      String downloadURL = await taskSnapshot.ref.getDownloadURL();
-      return downloadURL;
+      TaskSnapshot taskSnapshot = await uploadTask;
+      return await taskSnapshot.ref.getDownloadURL();
     } catch (e) {
       print('Error uploading image: $e');
       return null;
     }
   }
 
-  void _saveTeam() async {
-    if (_formKey.currentState!.validate()) {
-      // Validasi input lainnya
-      if (_imageFile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pilih gambar terlebih dahulu')),
-        );
-        return;
-      }
+  Future<void> _saveTeam() async {
+    if (_imageFile == null && _webImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Edit gambar terlebih dahulu!')),
+      );
+      return;
+    }
 
-      // Pastikan file gambar valid
-      if (!_imageFile!.existsSync()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('File gambar tidak valid atau tidak ditemukan')),
-        );
-        return;
-      }
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Nama tim harus diisi!')),
+      );
+      return;
+    }
 
-      try {
-        // Upload gambar ke Firebase Storage
-        final imageUrl = await _uploadImage(_imageFile!);
-        if (imageUrl == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal mengupload gambar')),
-          );
-          return;
-        }
+    if (_contactController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kontak harus diisi!')),
+      );
+      return;
+    }
 
-        // Lanjutkan dengan menyimpan data ke Firestore
-        final user = FirebaseAuth.instance.currentUser;
+    if (_costController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Biaya sparring harus diisi!')),
+      );
+      return;
+    }
 
-        // Validasi input cost
-        final cost = double.tryParse(_costController.text);
-        if (cost == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Biaya harus berupa angka')),
-          );
-          return;
-        }
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pilih kategori terlebih dahulu!')),
+      );
+      return;
+    }
 
-        final newTeam = SparringTeam(
-          id: DateTime.now().toString(),
-          name: _nameController.text,
-          imageUrl: imageUrl,
-          availableDays: [_selectedDay!],
-          availableHours: [_selectedHour!],
-          contact: _contactController.text,
-          category: _selectedCategory!,
-          createdBy: user!.uid,
-          cost: cost,
-          createdAt: DateTime.now(),
-        );
+    if (_selectedDay == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pilih hari terlebih dahulu!')),
+      );
+      return;
+    }
 
-        await FirebaseFirestore.instance
-            .collection('sparring_teams')
-            .doc(newTeam.id)
-            .set(newTeam.toMap());
+    if (_selectedHour == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pilih jam terlebih dahulu!')),
+      );
+      return;
+    }
 
-        Navigator.pop(context, newTeam);
-      } catch (e) {
-        // Tangani error yang terjadi selama proses upload
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
-        );
-      }
+    setState(() {
+      // Menampilkan indikator loading
+    });
+
+    try {
+      // 1️⃣ **Upload gambar ke Firebase Storage**
+      String? imageUrl = await _uploadImage();
+
+      // 2️⃣ **Konversi biaya ke double**
+      double cost = double.tryParse(_costController.text.trim()) ?? 0.0;
+
+      // 3️⃣ **Simpan data tim ke Firestore**
+      await FirebaseFirestore.instance.collection('sparring_teams').add({
+        'name': _nameController.text.trim(),
+        'category': _selectedCategory,
+        'imageUrl': imageUrl, // Simpan URL gambar di sini
+        'contact': _contactController.text.trim(),
+        'cost': cost, // Simpan sebagai double
+        'availableDays': _selectedDay != null ? [_selectedDay!] : [],
+        'availableHours': _selectedHour != null ? [_selectedHour!] : [],
+        'createdAt': Timestamp.now(),
+      });
+
+      // 4️⃣ **Kembali ke halaman sebelumnya**
+      Navigator.pop(context, true); // Kembali dengan membawa data
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tim berhasil ditambahkan!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan tim: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        // Sembunyikan indikator loading
+      });
     }
   }
 
@@ -188,9 +224,14 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                     radius: 40,
                     backgroundImage:
                         _imageFile != null ? FileImage(_imageFile!) : null,
-                    child: _imageFile == null
-                        ? Icon(Icons.add_a_photo, size: 20)
-                        : null,
+                    child: _imageFile != null
+                        ? ClipOval(
+                            child: Image.file(_imageFile!, fit: BoxFit.cover))
+                        : _webImage != null
+                            ? ClipOval(
+                                child:
+                                    Image.memory(_webImage!, fit: BoxFit.cover))
+                            : Icon(Icons.add_a_photo, size: 20),
                   ),
                 ),
                 SizedBox(height: 20),
@@ -230,8 +271,15 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (value) =>
-                        value!.isEmpty ? 'Biaya tidak boleh kosong' : null,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Biaya tidak boleh kosong';
+                      }
+                      if (double.tryParse(value) == null) {
+                        return 'Masukkan angka yang valid';
+                      }
+                      return null;
+                    },
                   ),
                 ),
                 SizedBox(height: 20),
@@ -254,6 +302,8 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                       labelText: 'Kategori Tim',
                       border: OutlineInputBorder(),
                     ),
+                    validator: (value) =>
+                        value == null ? 'Pilih kategori terlebih dahulu' : null,
                   ),
                 ),
                 SizedBox(height: 20),
@@ -322,7 +372,11 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _saveTeam,
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      _saveTeam();
+                    }
+                  },
                   child: Text('Simpan', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
