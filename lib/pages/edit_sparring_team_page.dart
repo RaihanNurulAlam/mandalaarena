@@ -1,10 +1,12 @@
-// ignore_for_file: use_build_context_synchronously, sort_child_properties_last
+// ignore_for_file: use_build_context_synchronously, sort_child_properties_last, avoid_print, prefer_interpolation_to_compose_strings
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-
+// import 'dart:typed_data'; // Untuk Uint8List
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart'; // Untuk kIsWeb
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 
 class EditSparringTeamPage extends StatefulWidget {
@@ -19,8 +21,9 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final _costController = TextEditingController(); // Controller untuk cost
-  File? _imageFile;
+  final _costController = TextEditingController();
+  File? _imageFile; // Untuk Android/iOS
+  Uint8List? _webImage; // Untuk Web
   String? _selectedCategory;
   String? _selectedDay;
   String? _selectedHour;
@@ -60,12 +63,65 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    try {
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+      if (pickedFile != null) {
+        if (kIsWeb) {
+          // Web: Simpan sebagai Uint8List
+          _webImage = await pickedFile.readAsBytes();
+        } else {
+          // Mobile/Desktop: Simpan sebagai File
+          _imageFile = File(pickedFile.path);
+        }
+        setState(() {});
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memilih gambar: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _deleteOldImage(String imageUrl) async {
+    try {
+      // Dapatkan referensi ke file gambar lama di Firebase Storage
+      Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
+      await storageRef.delete();
+    } catch (e) {
+      print('Error deleting old image: $e');
+    }
+  }
+
+  Future<String?> _uploadImage(String teamName) async {
+    try {
+      if (_imageFile == null && _webImage == null) {
+        return null; // Jika tidak ada gambar baru, kembalikan null
+      }
+
+      // Format nama file: hapus spasi dan karakter khusus, lalu tambahkan .jpg
+      String fileName =
+          teamName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase() +
+              '.jpg';
+
+      // Referensi ke Firebase Storage dengan nama file yang sesuai
+      Reference storageRef =
+          FirebaseStorage.instance.ref().child('team_images/$fileName');
+
+      UploadTask uploadTask;
+      if (kIsWeb && _webImage != null) {
+        uploadTask = storageRef.putData(_webImage!);
+      } else if (_imageFile != null) {
+        uploadTask = storageRef.putFile(_imageFile!);
+      } else {
+        throw Exception("Gambar tidak ditemukan");
+      }
+
+      TaskSnapshot taskSnapshot = await uploadTask;
+      return await taskSnapshot.ref.getDownloadURL();
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
     }
   }
 
@@ -101,10 +157,23 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         return;
       }
 
+      String? newImageUrl;
+
+      // Jika ada gambar baru, hapus gambar lama dan upload gambar baru
+      if (_imageFile != null || _webImage != null) {
+        // Hapus gambar lama dari Firebase Storage
+        await _deleteOldImage(widget.team.imageUrl);
+
+        // Upload gambar baru ke Firebase Storage dengan nama tim yang baru
+        newImageUrl = await _uploadImage(_nameController.text.trim());
+      }
+
       final updatedTeam = SparringTeam(
         id: widget.team.id,
         name: _nameController.text,
-        imageUrl: _imageFile != null ? _imageFile!.path : widget.team.imageUrl,
+        imageUrl: newImageUrl ??
+            widget.team
+                .imageUrl, // Gunakan URL baru jika ada, jika tidak, gunakan yang lama
         availableDays: [_selectedDay!], // Menggunakan hari yang dipilih
         availableHours: [_selectedHour!], // Menggunakan jam yang dipilih
         contact: _contactController.text,
@@ -114,6 +183,7 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         createdAt: widget.team.createdAt, // Tetapkan createdAt yang lama
       );
 
+      // Update data tim di Firestore
       await FirebaseFirestore.instance
           .collection('sparring_teams')
           .doc(updatedTeam.id)
@@ -156,8 +226,11 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                     radius: 40,
                     backgroundImage: _imageFile != null
                         ? FileImage(_imageFile!)
-                        : NetworkImage(widget.team.imageUrl) as ImageProvider,
-                    child: _imageFile == null
+                        : _webImage != null
+                            ? MemoryImage(_webImage!)
+                            : NetworkImage(widget.team.imageUrl)
+                                as ImageProvider,
+                    child: _imageFile == null && _webImage == null
                         ? Icon(Icons.add_a_photo, size: 20)
                         : null,
                   ),

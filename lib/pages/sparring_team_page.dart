@@ -28,6 +28,26 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminStatus();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        setState(() {
+          _isAdmin = userDoc.get('isAdmin') as bool;
+        });
+      }
+    }
+  }
 
   void _launchWhatsApp(String phoneNumber) async {
     final url = 'https://wa.me/$phoneNumber';
@@ -41,7 +61,27 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
   }
 
   Future<void> _deleteTeam(String teamId) async {
-    await _firestore.collection('sparring_teams').doc(teamId).delete();
+    final confirmed = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Konfirmasi'),
+        content: Text('Apakah Anda yakin ingin menghapus tim ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _firestore.collection('sparring_teams').doc(teamId).delete();
+    }
   }
 
   void _editTeam(SparringTeam team) async {
@@ -77,9 +117,6 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text('Mandala Arena'),
-      // ),
       body: Column(
         children: [
           Padding(
@@ -188,6 +225,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                     'availableDays': data['availableDays'] ?? [],
                     'availableHours': data['availableHours'] ?? [],
                     'createdAt': data['createdAt'] ?? Timestamp.now(),
+                    'createdBy': data['createdBy'] ?? '',
                   });
                 }).toList();
 
@@ -252,8 +290,6 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                               itemCount: filteredTeams.length,
                               itemBuilder: (context, index) {
                                 final team = filteredTeams[index];
-                                final isAdmin = user?.email ==
-                                    'raihannurulalam14@gmail.com';
                                 final isCreator = team.createdBy == user?.uid;
 
                                 return Card(
@@ -334,14 +370,14 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
                                           children: [
-                                            if (isCreator || isAdmin)
+                                            if (isCreator || _isAdmin)
                                               IconButton(
                                                 icon: Icon(Icons.edit,
                                                     color: Colors.blue),
                                                 onPressed: () =>
                                                     _editTeam(team),
                                               ),
-                                            if (isAdmin)
+                                            if (_isAdmin)
                                               IconButton(
                                                 icon: Icon(
                                                     CupertinoIcons.trash_circle,

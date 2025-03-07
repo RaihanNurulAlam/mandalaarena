@@ -320,9 +320,10 @@ class _DetailPageState extends State<DetailPage> {
     DateTime? date = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? DateTime.now(),
-      firstDate: _currentStartOfWeek,
-      lastDate: _currentStartOfWeek.add(Duration(days: 6)),
+      firstDate: DateTime.now(), // Tidak bisa memilih tanggal sebelum hari ini
+      lastDate: DateTime(2100), // Dibuka seterusnya
     );
+
     if (date != null) {
       setState(() {
         selectedDate = date;
@@ -468,7 +469,8 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 16),
+          padding:
+              const EdgeInsets.only(left: 30, right: 30, top: 10, bottom: 5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

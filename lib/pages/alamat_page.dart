@@ -164,17 +164,24 @@ class _AlamatPageState extends State<AlamatPage> {
       appBar: AppBar(
         title: const Text('Lokasi Lapang'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.public, color: Colors.black),
-            onPressed: () => _openVirtualTour(context),
-            tooltip: 'Lihat Virtual Tour',
+          Padding(
+            padding: const EdgeInsets.only(
+                right: 16.0), // Tambahkan padding right sebesar 16
+            child: IconButton(
+              icon: const Icon(Icons.public, color: Colors.black),
+              onPressed: () => _openVirtualTour(context),
+              tooltip: 'Lihat Virtual Tour',
+            ),
           ),
         ],
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            padding: const EdgeInsets.only(
+                left: 20.0,
+                right: 20.0,
+                bottom: 16.0), // Tambahkan padding bottom sebesar 16
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -213,97 +220,6 @@ class _AlamatPageState extends State<AlamatPage> {
               },
             ),
           ),
-          // Padding(
-          //   padding:
-          //       const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-          //   child: Column(
-          //     crossAxisAlignment: CrossAxisAlignment.stretch,
-          //     children: [
-          //       ElevatedButton.icon(
-          //         style: ElevatedButton.styleFrom(
-          //           backgroundColor: Colors.black,
-          //           foregroundColor: Colors.white,
-          //           padding: const EdgeInsets.symmetric(
-          //               vertical: 12.0), // Padding responsif
-          //           shape: RoundedRectangleBorder(
-          //             borderRadius:
-          //                 BorderRadius.circular(50.0), // Sudut lebih lembut
-          //           ),
-          //         ),
-          //         onPressed: () => _determinePosition(context),
-          //         icon: const Icon(Icons.directions, color: Colors.white),
-          //         label: const Text('Navigasi ke Lokasi (Aplikasi)',
-          //             style: TextStyle(color: Colors.white)),
-          //       ),
-          //       const SizedBox(height: 10),
-          //       ElevatedButton.icon(
-          //         style: ElevatedButton.styleFrom(
-          //           backgroundColor: Colors.black,
-          //           foregroundColor: Colors.white,
-          //           padding: const EdgeInsets.symmetric(
-          //               vertical: 12.0), // Padding responsif
-          //           shape: RoundedRectangleBorder(
-          //             borderRadius: BorderRadius.circular(50.0),
-          //           ),
-          //         ),
-          //         onPressed: _openWebNavigation,
-          //         icon: const Icon(Icons.open_in_browser, color: Colors.white),
-          //         label: const Text('Navigasi ke Lokasi (Web)',
-          //             style: TextStyle(color: Colors.white)),
-          //       ),
-          //     ],
-          //   ),
-          // )
-          //   Padding(
-          //     padding:
-          //         const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-          //     child: Column(
-          //       children: [
-          //         Align(
-          //           alignment:
-          //               Alignment.center, // Pusatkan tombol jika diperlukan
-          //           child: ElevatedButton.icon(
-          //             style: ElevatedButton.styleFrom(
-          //               backgroundColor: Colors.black,
-          //               foregroundColor: Colors.white,
-          //               padding: const EdgeInsets.symmetric(
-          //                   vertical: 12.0,
-          //                   horizontal: 16.0), // Padding untuk isi tombol
-          //               shape: RoundedRectangleBorder(
-          //                 borderRadius: BorderRadius.circular(50.0),
-          //               ),
-          //             ),
-          //             onPressed: () => _determinePosition(context),
-          //             icon: const Icon(Icons.directions, color: Colors.white),
-          //             label: const Text('Navigasi ke Lokasi (Aplikasi)',
-          //                 style: TextStyle(color: Colors.white)),
-          //           ),
-          //         ),
-          //         const SizedBox(height: 10),
-          //         Align(
-          //           alignment: Alignment.center,
-          //           child: ElevatedButton.icon(
-          //             style: ElevatedButton.styleFrom(
-          //               backgroundColor: Colors.black,
-          //               foregroundColor: Colors.white,
-          //               padding: const EdgeInsets.symmetric(
-          //                   vertical: 12.0,
-          //                   horizontal: 16.0), // Sesuaikan padding
-          //               shape: RoundedRectangleBorder(
-          //                 borderRadius: BorderRadius.circular(50.0),
-          //               ),
-          //             ),
-          //             onPressed: _openWebNavigation,
-          //             icon:
-          //                 const Icon(Icons.open_in_browser, color: Colors.white),
-          //             label: const Text('Navigasi ke Lokasi (Web)',
-          //                 style: TextStyle(color: Colors.white)),
-          //           ),
-          //         ),
-          //       ],
-          //     ),
-          //   )
-          // ],
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),

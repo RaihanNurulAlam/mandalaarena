@@ -1,13 +1,13 @@
-// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print, unused_field
+// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print, unused_field, prefer_interpolation_to_compose_strings
 
-import 'dart:convert';
+// import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class EditProfilePage extends StatefulWidget {
@@ -64,34 +64,44 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<String?> _uploadImageToCloudinary(File imageFile) async {
-    if (kIsWeb) {
-      print('Upload gambar tidak didukung di web dengan MultipartFile');
-      return null;
-    }
-
+  Future<void> _deleteOldImage(String imageUrl) async {
     try {
-      final cloudinaryUrl =
-          Uri.parse('https://api.cloudinary.com/v1_1/dru7n46a5/image/upload');
-      final request = http.MultipartRequest('POST', cloudinaryUrl);
-
-      request.fields['upload_preset'] = 'mandala';
-      request.files
-          .add(await http.MultipartFile.fromPath('file', imageFile.path));
-
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
-
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(responseData);
-        return jsonResponse['secure_url'];
-      } else {
-        print('Gagal mengunggah gambar: ${response.statusCode}');
-        print('Respon: $responseData');
-        return null;
-      }
+      // Dapatkan referensi ke file gambar lama di Firebase Storage
+      Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
+      await storageRef.delete();
     } catch (e) {
-      print('Error saat mengunggah gambar: $e');
+      print('Error deleting old image: $e');
+    }
+  }
+
+  Future<String?> _uploadImage(String userName) async {
+    try {
+      if (_imageFile == null && _imageBytes == null) {
+        return null; // Jika tidak ada gambar baru, kembalikan null
+      }
+
+      // Format nama file: hapus spasi dan karakter khusus, lalu tambahkan .jpg
+      String fileName =
+          userName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase() +
+              '.jpg';
+
+      // Referensi ke Firebase Storage dengan nama file yang sesuai
+      Reference storageRef =
+          FirebaseStorage.instance.ref().child('profile/$fileName');
+
+      UploadTask uploadTask;
+      if (kIsWeb && _imageBytes != null) {
+        uploadTask = storageRef.putData(_imageBytes!);
+      } else if (_imageFile != null) {
+        uploadTask = storageRef.putFile(_imageFile!);
+      } else {
+        throw Exception("Gambar tidak ditemukan");
+      }
+
+      TaskSnapshot taskSnapshot = await uploadTask;
+      return await taskSnapshot.ref.getDownloadURL();
+    } catch (e) {
+      print('Error uploading image: $e');
       return null;
     }
   }
@@ -147,11 +157,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
         }
 
         String? newProfileUrl = widget.profileImageUrl;
-        if (_imageFile != null && !kIsWeb) {
-          newProfileUrl = await _uploadImageToCloudinary(_imageFile!);
+
+        // Jika ada gambar baru, hapus gambar lama dan upload gambar baru
+        if (_imageFile != null || _imageBytes != null) {
+          // Hapus gambar lama dari Firebase Storage
+          if (widget.profileImageUrl.isNotEmpty) {
+            await _deleteOldImage(widget.profileImageUrl);
+          }
+
+          // Upload gambar baru ke Firebase Storage dengan nama pengguna yang baru
+          newProfileUrl = await _uploadImage(_nameController.text.trim());
           if (newProfileUrl == null) throw Exception('Gagal mengunggah gambar');
         }
 
+        // Update data profil di Firestore
         await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
@@ -162,6 +181,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           'profileImageUrl': newProfileUrl,
         });
 
+        // Update display name di Firebase Auth
         await user.updateDisplayName(_nameController.text);
         await user.reload();
 
@@ -270,27 +290,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
               }),
               SizedBox(height: 20),
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.center, // Pusatkan tombol di tengah
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IntrinsicWidth(
-                    // Buat tombol menyesuaikan teksnya
                     child: ElevatedButton(
                       onPressed: _updateProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
-                        padding: EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 20), // Sesuaikan padding
-                        // shape: RoundedRectangleBorder(
-                        //   borderRadius: BorderRadius.circular(
-                        //       8), // Tambahkan sedikit border radius agar lebih rapi
-                        // ),
+                        padding:
+                            EdgeInsets.symmetric(vertical: 12, horizontal: 20),
                       ),
                       child: Text(
                         'Simpan Perubahan',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16), // Font lebih jelas
+                        style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ),
                   ),

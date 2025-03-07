@@ -43,6 +43,18 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount;
+
+    // Pengkondisian jumlah kolom berdasarkan lebar layar
+    if (screenWidth > 1200) {
+      crossAxisCount = 3;
+    } else if (screenWidth > 750) {
+      crossAxisCount = 2;
+    } else {
+      crossAxisCount = 1;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Kelola Booking'),
@@ -113,7 +125,14 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                   return Center(child: Text('Tidak ada booking.'));
                 }
                 final bookings = snapshot.data!.docs;
-                return ListView.builder(
+                return GridView.builder(
+                  padding: EdgeInsets.all(20), // Padding untuk semua sisi
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                    childAspectRatio: 1.5, // Ukuran landscape dan portrait sama
+                  ),
                   itemCount: bookings.length,
                   itemBuilder: (context, index) {
                     final bookingData =
@@ -135,88 +154,118 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                         booking['namaPengguna'] as String? ?? 'Tidak Diketahui';
                     final noWhatsapp = booking['noWhatsapp'] as String? ?? '-';
                     final imagePath = booking['imagePath'] as String? ?? '';
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                      child: Card(
-                        margin: EdgeInsets.all(8),
-                        child: ListTile(
-                          leading: imagePath.isNotEmpty
-                              ? Image.network(imagePath,
-                                  width: 50, height: 50, fit: BoxFit.cover)
-                              : Icon(Icons.image_not_supported, size: 50),
-                          title: Text('Lapangan: $lapangan'),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                  'Tanggal: ${DateFormat('dd MMMM yyyy').format(tanggal)}'),
-                              Text('Jam: $jamMulai - $jamSelesai'),
-                              Text('Status: $status'),
-                              Text('Nama: $namaPengguna'),
-                              Text('No WhatsApp: $noWhatsapp'),
-                            ],
+                    return Card(
+                      margin: EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: imagePath.isNotEmpty
+                                ? Image.network(imagePath,
+                                    width: double.infinity,
+                                    height: 150,
+                                    fit: BoxFit.cover)
+                                : Icon(Icons.image_not_supported, size: 50),
                           ),
-                          trailing: IconButton(
-                            icon: Icon(
-                              CupertinoIcons.trash_circle,
-                              color: Colors.black,
-                            ),
-                            onPressed: () async {
-                              final shouldDelete = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: Text('Konfirmasi Hapus'),
-                                  content: Text(
-                                      'Yakin ingin menghapus booking ini?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(false),
-                                      child: Text('Batal'),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                left: 20, top: 10, bottom: 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Lapangan: $lapangan',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                          Text(
+                                              'Tanggal: ${DateFormat('dd MMMM yyyy').format(tanggal)}'),
+                                          Text('Jam: $jamMulai - $jamSelesai'),
+                                          Text('Status: $status'),
+                                          Text('Nama: $namaPengguna'),
+                                          Text('No WhatsApp: $noWhatsapp'),
+                                        ],
+                                      ),
                                     ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.of(context).pop(true),
-                                      child: Text('Hapus'),
+                                    IconButton(
+                                      icon: Icon(
+                                        CupertinoIcons.trash_circle,
+                                        color: Colors.black,
+                                      ),
+                                      onPressed: () async {
+                                        final shouldDelete =
+                                            await showDialog<bool>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text('Konfirmasi Hapus'),
+                                            content: Text(
+                                                'Yakin ingin menghapus booking ini?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(false),
+                                                child: Text('Batal'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(true),
+                                                child: Text('Hapus'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+
+                                        if (shouldDelete == true) {
+                                          try {
+                                            await FirebaseFirestore.instance
+                                                .collection('bookings')
+                                                .doc(bookingId)
+                                                .delete();
+
+                                            final cart = Provider.of<Cart>(
+                                                context,
+                                                listen: false);
+                                            cart.removeItemByDocId(bookingId);
+
+                                            final User? user = FirebaseAuth
+                                                .instance.currentUser;
+                                            if (user != null) {
+                                              await cart.loadCart(user
+                                                  .uid); // Pastikan cart diperbarui
+                                            }
+
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      'Booking berhasil dihapus.')),
+                                            );
+                                          } catch (e) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      'Gagal menghapus booking.')),
+                                            );
+                                          }
+                                        }
+                                      },
                                     ),
                                   ],
                                 ),
-                              );
-
-                              if (shouldDelete == true) {
-                                try {
-                                  await FirebaseFirestore.instance
-                                      .collection('bookings')
-                                      .doc(bookingId)
-                                      .delete();
-
-                                  final cart =
-                                      Provider.of<Cart>(context, listen: false);
-                                  cart.removeItemByDocId(bookingId);
-
-                                  final User? user =
-                                      FirebaseAuth.instance.currentUser;
-                                  if (user != null) {
-                                    await cart.loadCart(
-                                        user.uid); // Pastikan cart diperbarui
-                                  }
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content:
-                                            Text('Booking berhasil dihapus.')),
-                                  );
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content:
-                                            Text('Gagal menghapus booking.')),
-                                  );
-                                }
-                              }
-                            },
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     );
                   },
