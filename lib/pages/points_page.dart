@@ -15,12 +15,14 @@ class PointsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: const Text('Poin Anda')),
+        title: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20), // Padding untuk judul
+          child: Text('Poin Anda'),
+        ),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 20), // Padding untuk ikon
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
@@ -45,9 +47,7 @@ class PointsPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData ||
-              snapshot.data == null ||
-              !snapshot.data!.exists) {
+          if (!snapshot.hasData || !snapshot.data!.exists) {
             return const Center(child: Text('Data tidak ditemukan.'));
           }
 
@@ -75,8 +75,7 @@ class PointsPage extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                             image: DecorationImage(
-                              image: AssetImage(
-                                  'assets/minisoccer.jpg'), // Gambar lapangan
+                              image: AssetImage('assets/minisoccer.jpg'),
                               fit: BoxFit.cover,
                               colorFilter: ColorFilter.mode(
                                 Colors.black.withOpacity(0.5),
@@ -118,8 +117,7 @@ class PointsPage extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                             image: DecorationImage(
-                              image: AssetImage(
-                                  'assets/coffee.jpg'), // Gambar kopi
+                              image: AssetImage('assets/coffee.jpg'),
                               fit: BoxFit.cover,
                               colorFilter: ColorFilter.mode(
                                 Colors.black.withOpacity(0.5),
@@ -178,33 +176,37 @@ class TransactionHistoryPage extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('points')
-            .where('userId', isEqualTo: userId) // Filter berdasarkan userId
-            .orderBy('timestamp',
-                descending: true) // Urutkan berdasarkan timestamp
+            .where('userId', isEqualTo: userId)
+            .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            print('Tidak ada data transaksi ditemukan untuk userId: $userId');
             return const Center(child: Text('Belum ada transaksi poin.'));
           }
-          print('Data transaksi ditemukan: ${snapshot.data!.docs.length}');
+
           var transactions = snapshot.data!.docs;
           return ListView.builder(
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               var data = transactions[index].data() as Map<String, dynamic>;
               return ListTile(
+                leading: data['imageUrl'] != null
+                    ? Image.asset(
+                        data['imageUrl'],
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      )
+                    : null,
                 title: Text(data['description']),
                 subtitle: Text(
-                  data['timestamp']
-                      .toDate()
-                      .toString(), // Tampilkan tanggal transaksi
+                  data['timestamp'].toDate().toString(),
                 ),
                 trailing: Text(
-                  '${data['points']} Poin', // Tampilkan jumlah poin
+                  '${data['points']} Poin',
                   style: TextStyle(
                     color: data['points'] > 0 ? Colors.green : Colors.red,
                     fontWeight: FontWeight.bold,
@@ -227,18 +229,17 @@ Future<void> redeemPoints(BuildContext context, String userId, int cost,
     int currentPoints = userDoc.data()?['points'] ?? 0;
 
     if (currentPoints >= cost) {
-      // Kurangi poin pengguna
       await userRef.update({'points': currentPoints - cost});
 
-      // Simpan transaksi ke koleksi 'points'
       await FirebaseFirestore.instance.collection('points').add({
         'userId': userId,
-        'points': -cost, // Poin yang dikurangi (negatif)
+        'points': -cost,
         'description': 'Menukar $reward',
-        'timestamp': FieldValue.serverTimestamp(), // Waktu transaksi
-        'imageUrl': imageUrl, // URL gambar reward
-        'rewardDetails': reward, // Detail reward
-        'status': 'Berhasil', // Status transaksi
+        'timestamp': FieldValue.serverTimestamp(),
+        'imageUrl': imageUrl,
+        'rewardDetails': reward,
+        'status': 'Berhasil',
+        'type': 'redeemed',
       });
 
       print('Transaksi berhasil disimpan ke Firestore');

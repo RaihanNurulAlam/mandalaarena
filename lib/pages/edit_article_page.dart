@@ -1,24 +1,48 @@
-// ignore_for_file: use_build_context_synchronously, prefer_interpolation_to_compose_strings, avoid_print
+// ignore_for_file: use_build_context_synchronously, duplicate_ignore, prefer_interpolation_to_compose_strings, avoid_print
 
-import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
-class AddArtikelPage extends StatefulWidget {
+class EditArticlePage extends StatefulWidget {
+  final String documentId;
+  final String initialTitle;
+  final String initialSubtitle;
+  final String initialContent;
+  final String initialImageUrl;
+
+  const EditArticlePage({
+    required this.documentId,
+    required this.initialTitle,
+    required this.initialSubtitle,
+    required this.initialContent,
+    required this.initialImageUrl,
+  });
+
   @override
-  _AddArtikelPageState createState() => _AddArtikelPageState();
+  _EditArticlePageState createState() => _EditArticlePageState();
 }
 
-class _AddArtikelPageState extends State<AddArtikelPage> {
+class _EditArticlePageState extends State<EditArticlePage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _subtitleController = TextEditingController();
   final _contentController = TextEditingController();
-  Uint8List? _webImage; // Untuk menyimpan gambar di Web
-  File? _imageFile; // Untuk Android/iOS
+  Uint8List? _webImage;
+  File? _imageFile;
+  String? _imageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.initialTitle;
+    _subtitleController.text = widget.initialSubtitle;
+    _contentController.text = widget.initialContent;
+    _imageUrl = widget.initialImageUrl;
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -27,10 +51,8 @@ class _AddArtikelPageState extends State<AddArtikelPage> {
 
       if (pickedFile != null) {
         if (kIsWeb) {
-          // Web: Simpan sebagai Uint8List
           _webImage = await pickedFile.readAsBytes();
         } else {
-          // Mobile/Desktop: Simpan sebagai File
           _imageFile = File(pickedFile.path);
         }
         setState(() {});
@@ -45,14 +67,11 @@ class _AddArtikelPageState extends State<AddArtikelPage> {
   Future<String?> _uploadImage() async {
     try {
       if (_imageFile == null && _webImage == null) {
-        return null; // Jika tidak ada gambar, biarkan kosong
+        return _imageUrl; // Jika tidak ada gambar baru, gunakan URL lama
       }
 
-      // Generate nama file unik
       String fileName =
           DateTime.now().millisecondsSinceEpoch.toString() + '.jpg';
-
-      // Referensi ke Firebase Storage dengan folder 'articles'
       Reference storageRef =
           FirebaseStorage.instance.ref().child('articles/$fileName');
 
@@ -73,42 +92,37 @@ class _AddArtikelPageState extends State<AddArtikelPage> {
     }
   }
 
-  Future<void> _addArtikel() async {
+  Future<void> _updateArticle() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         // Menampilkan indikator loading
       });
 
       try {
-        // 1️⃣ **Upload gambar ke Firebase Storage**
+        // 1️⃣ **Upload gambar ke Firebase Storage (jika ada gambar baru)**
         String? imageUrl = await _uploadImage();
 
-        // 2️⃣ **Simpan artikel ke Firestore**
-        await FirebaseFirestore.instance.collection('articles').add({
+        // 2️⃣ **Update artikel di Firestore**
+        await FirebaseFirestore.instance
+            .collection('articles')
+            .doc(widget.documentId)
+            .update({
           'title': _titleController.text,
           'subtitle': _subtitleController.text,
           'content': _contentController.text,
-          'imageUrl': imageUrl,
+          'imageUrl': imageUrl ?? _imageUrl,
           'timestamp': Timestamp.now(),
         });
 
-        // 3️⃣ **Reset form**
-        _titleController.clear();
-        _subtitleController.clear();
-        _contentController.clear();
-        setState(() {
-          _imageFile = null;
-          _webImage = null;
-        });
-
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Artikel berhasil ditambahkan!')),
+          SnackBar(content: Text('Artikel berhasil diperbarui!')),
         );
 
+        // ignore: use_build_context_synchronously
         Navigator.pop(context); // Kembali ke halaman artikel
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menambahkan artikel: ${e.toString()}')),
+          SnackBar(content: Text('Gagal memperbarui artikel: ${e.toString()}')),
         );
       } finally {
         setState(() {
@@ -122,7 +136,7 @@ class _AddArtikelPageState extends State<AddArtikelPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tambah Artikel'),
+        title: Text('Edit Artikel'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -143,7 +157,9 @@ class _AddArtikelPageState extends State<AddArtikelPage> {
                       ? Image.file(_imageFile!, fit: BoxFit.cover)
                       : _webImage != null
                           ? Image.memory(_webImage!, fit: BoxFit.cover)
-                          : Icon(Icons.add_a_photo, size: 40),
+                          : _imageUrl != null
+                              ? Image.network(_imageUrl!, fit: BoxFit.cover)
+                              : Icon(Icons.add_a_photo, size: 40),
                 ),
               ),
               SizedBox(height: 20),
@@ -182,8 +198,8 @@ class _AddArtikelPageState extends State<AddArtikelPage> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _addArtikel,
-                child: Text('Tambah Artikel'),
+                onPressed: _updateArticle,
+                child: Text('Perbarui Artikel'),
               ),
             ],
           ),

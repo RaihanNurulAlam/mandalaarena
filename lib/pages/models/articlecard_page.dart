@@ -1,16 +1,17 @@
-// ignore_for_file: unnecessary_import, use_key_in_widget_constructors, prefer_const_constructors_in_immutables
+// ignore_for_file: unnecessary_to_list_in_spreads
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class ArticleDetailPage extends StatelessWidget {
   final String title;
-  final String imagePath;
+  final String subtitle;
+  final String imageUrl;
   final List<Widget> content;
 
-  ArticleDetailPage({
+  const ArticleDetailPage({
     required this.title,
-    required this.imagePath,
+    required this.subtitle,
+    required this.imageUrl,
     required this.content,
   });
 
@@ -21,21 +22,97 @@ class ArticleDetailPage extends StatelessWidget {
         title: Text(title),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset(imagePath, fit: BoxFit.cover),
+            imageUrl.isNotEmpty
+                ? Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 200,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 200,
+                        color: Colors.grey[200],
+                        child: Icon(Icons.broken_image,
+                            size: 50, color: Colors.grey),
+                      );
+                    },
+                  )
+                : Container(
+                    height: 200,
+                    color: Colors.grey[200],
+                    child: Icon(Icons.image, size: 50, color: Colors.grey),
+                  ),
             const SizedBox(height: 16),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            // Judul artikel dengan alignment justify
+            RichText(
+              textAlign: TextAlign.justify,
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+                children: [
+                  TextSpan(
+                    text: title,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Subjudul artikel dengan alignment justify
+            RichText(
+              textAlign: TextAlign.justify,
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey,
+                ),
+                children: [
+                  TextSpan(
+                    text: subtitle,
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
-            ...content,
+            // Konten artikel dengan teks justify
+            ...content.map((widget) {
+              if (widget is Text) {
+                return RichText(
+                  textAlign: TextAlign.justify,
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                      color: Colors.black,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: widget.data,
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return widget;
+            }).toList(),
           ],
         ),
       ),

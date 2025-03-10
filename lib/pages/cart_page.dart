@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable, use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -155,10 +155,13 @@ class _CartPageState extends State<CartPage> {
                                   fontSize: 16,
                                 ),
                               ),
-                              subtitle: Row(
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                       'Rp. ${item.price} x ${item.quantity} Jam'),
+                                  Text(
+                                      'Tanggal: ${item.bookingDate} - Jam: ${item.time}'),
                                 ],
                               ),
                               trailing: IconButton(

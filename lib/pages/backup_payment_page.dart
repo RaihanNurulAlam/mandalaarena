@@ -1,12 +1,10 @@
-// ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: avoid_print, use_build_context_synchronously, deprecated_member_use
 
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:http/http.dart' as http;
-import 'package:mandalaarenaapp/pages/home_page.dart'; // Import halaman home
+import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/pages/points_page.dart'; // Halaman poin
 import 'package:mandalaarenaapp/pages/riwayat_pembayaran.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
@@ -128,20 +126,20 @@ class _PaymentPageState extends State<PaymentPage> {
         title: const Text('Transaksi', style: TextStyle(color: Colors.black)),
         actions: [
           // Icon untuk navigasi ke halaman poin
-          // IconButton(
-          //   icon: const Icon(Icons.star, color: Colors.black), // Warna hitam
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(
-          //         builder: (context) => const PointsPage(),
-          //       ),
-          //     );
-          //   },
-          // ),
+          IconButton(
+            icon: const Icon(Icons.credit_card, color: Colors.black),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PointsPage(),
+                ),
+              );
+            },
+          ),
           // Icon untuk navigasi ke halaman riwayat pembayaran
           Padding(
-            padding: const EdgeInsets.only(right: 20), // Padding right 20
+            padding: const EdgeInsets.only(right: 20),
             child: IconButton(
               icon: const Icon(Icons.history, color: Colors.black),
               onPressed: () {
@@ -240,8 +238,7 @@ class _PaymentPageState extends State<PaymentPage> {
                             ),
                           );
                         },
-                        child: const Text('Lakukan Booking',
-                            style: TextStyle(color: Colors.black)),
+                        child: const Text('Lakukan Booking'),
                       ),
                   ],
                 ),
@@ -370,100 +367,11 @@ class _PaymentPageState extends State<PaymentPage> {
                         ),
                       ),
                       onPressed: () async {
-                        try {
-                          final fullName = userProvider.userName.split(' ');
-                          final firstName =
-                              fullName.isNotEmpty ? fullName[0] : '';
-                          final lastName = fullName.length > 1
-                              ? fullName.sublist(1).join(' ')
-                              : '';
-
-                          final baseUrl = getBaseUrl();
-
-                          final response = await http.post(
-                            Uri.parse('$baseUrl/pay'),
-                            headers: {'Content-Type': 'application/json'},
-                            body: json.encode({
-                              'orderId':
-                                  'order-${DateTime.now().millisecondsSinceEpoch}',
-                              'grossAmount': totalPrice.toString(),
-                              'firstName': firstName,
-                              'lastName': lastName,
-                              'email': userProvider.userEmail,
-                              'phone': userProvider.userPhone,
-                            }),
-                          );
-
-                          if (response.statusCode == 200) {
-                            final data = json.decode(response.body);
-                            final transactionToken = data['transactionToken'];
-
-                            if (transactionToken != null) {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PaymentWebView(
-                                    transactionToken: transactionToken,
-                                    orderId: data['orderId'],
-                                  ),
-                                ),
-                              );
-
-                              if (result == true) {
-                                final statusResponse = await http.get(
-                                  Uri.parse(
-                                      '$baseUrl/transaction-status?orderId=${data['orderId']}'),
-                                );
-
-                                if (statusResponse.statusCode == 200) {
-                                  final statusData =
-                                      json.decode(statusResponse.body);
-                                  setState(() {
-                                    transactionStatus =
-                                        statusData['transaction_status'];
-                                  });
-                                  // Jika transaksi berhasil, update status booking dan navigasi ke histori pembayaran
-                                  if (transactionStatus == 'settlement' ||
-                                      transactionStatus == 'capture') {
-                                    await updateBookingStatus(
-                                        data['orderId'], 'Sudah Bayar');
-                                    int earnedPoints =
-                                        int.parse(cart.cart.first.quantity!) *
-                                            10; // 10 poin per jam
-                                    await updateUserPoints(
-                                        userProvider.userId, earnedPoints);
-                                    await saveUserPointsTransaction(
-                                        userProvider.userId,
-                                        earnedPoints,
-                                        data['orderId']);
-
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const TransactionHistoryPage(),
-                                      ),
-                                    );
-                                  } else {
-                                    // Jika transaksi gagal, arahkan kembali ke payment page
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const PaymentPage(),
-                                      ),
-                                    );
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        } catch (e) {
-                          print('Error: $e');
-                        }
+                        // Simulasi penambahan poin
+                        await simulateAddPoints(context);
                       },
                       child: const Text(
-                        'Lakukan Pembayaran',
+                        'Simulasikan Pembayaran dan Tambah Poin',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
