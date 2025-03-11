@@ -561,46 +561,6 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         const SizedBox(height: 20),
-        // Padding(
-        //   padding: EdgeInsets.symmetric(horizontal: 16.0),
-        //   child: Text(
-        //     "Pilih Tanggal Booking:",
-        //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        //   ),
-        // ),
-        // Padding(
-        //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        //   child: ChoiceChip(
-        //     label: Text(
-        //       selectedDate != null
-        //           ? DateFormat('dd MMM yyyy').format(selectedDate!)
-        //           : "Pilih Tanggal",
-        //     ),
-        //     selected: selectedDate != null,
-        //     onSelected: (bool selected) async {
-        //       // Selalu membuka date picker tanpa harus reset tanggal
-        //       DateTime? date = await showDatePicker(
-        //         context: context,
-        //         initialDate: selectedDate ??
-        //             DateTime
-        //                 .now(), // Gunakan tanggal yang sudah dipilih atau default ke hari ini
-        //         firstDate: DateTime.now(),
-        //         lastDate: DateTime.now().add(const Duration(days: 30)),
-        //       );
-        //       if (date != null) {
-        //         setState(() {
-        //           selectedDate = date;
-        //         });
-        //         _fetchUnavailableTimes();
-        //       }
-        //     },
-        //     selectedColor: Colors.grey.shade300,
-        //     backgroundColor: Colors.grey.shade100,
-        //     labelStyle: TextStyle(
-        //       color: selectedDate != null ? Colors.black : Colors.black,
-        //     ),
-        //   ),
-        // ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child: Row(

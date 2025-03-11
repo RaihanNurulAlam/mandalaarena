@@ -1,6 +1,9 @@
 // ignore_for_file: prefer_typing_uninitialized_variables
 
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/widgets.dart';
 
 class Lapang {
   List<String>? bookings;
@@ -44,7 +47,8 @@ class Lapang {
     imagePath = json['image_path'];
     rating = json['rating'];
     bookings = List<String>.from(json['bookings'] ?? []);
-    facilities = List<String>.from(json['facilities'] ?? []); // Parsing data fasilitas
+    facilities =
+        List<String>.from(json['facilities'] ?? []); // Parsing data fasilitas
   }
 
   get bookingDuration => null;
@@ -60,5 +64,17 @@ class Lapang {
     data['bookings'] = bookings;
     data['facilities'] = facilities; // Tambahkan data fasilitas ke JSON
     return data;
+  }
+
+  // Metode untuk memuat data lapang dari lapang.json
+  static Future<List<Lapang>> getLapangFromJson(BuildContext context) async {
+    try {
+      final String jsonString =
+          await DefaultAssetBundle.of(context).loadString('assets/lapang.json');
+      final List<dynamic> jsonList = json.decode(jsonString);
+      return jsonList.map((json) => Lapang.fromJson(json)).toList();
+    } catch (e) {
+      throw Exception('Gagal memuat data lapang: $e');
+    }
   }
 }

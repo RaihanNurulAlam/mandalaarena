@@ -8,6 +8,7 @@ import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/edit_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:mandalaarenaapp/pages/sparring_booking_page.dart';
 
 class SparringTeamPage extends StatefulWidget {
   @override
@@ -110,6 +111,65 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     'Sabtu': 6,
     'Minggu': 7,
   };
+
+  void _navigateToBookingPage(SparringTeam team) {
+    String lapangCategory = '';
+    if (team.category == 'Tim Minisoccer') {
+      lapangCategory = 'Lapang Minisoccer';
+    } else if (team.category == 'Tim Basket 3x3') {
+      lapangCategory = 'Lapang Basket 3x3';
+    } else if (team.category == 'Tim Basket') {
+      // Tampilkan dialog untuk memilih jenis lapangan basket
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Pilih Jenis Lapangan Basket'),
+          content: Text(
+              'Silakan pilih jenis lapangan basket yang ingin Anda booking.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                lapangCategory = 'Lapang Basket Vynil';
+                _openBookingPage(team, lapangCategory);
+              },
+              child: Text('Vynil'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                lapangCategory = 'Lapang Basket Karet';
+                _openBookingPage(team, lapangCategory);
+              },
+              child: Text('Karet'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Kategori tim tidak valid untuk booking lapangan.')),
+      );
+      return;
+    }
+
+    if (lapangCategory.isNotEmpty) {
+      _openBookingPage(team, lapangCategory);
+    }
+  }
+
+  void _openBookingPage(SparringTeam team, String lapangCategory) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SparringBookingPage(
+          team: team,
+          lapangCategory: lapangCategory,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -270,9 +330,9 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           int crossAxisCount;
-                          if (screenWidth > 1200) {
+                          if (screenWidth > 1300) {
                             crossAxisCount = 3;
-                          } else if (screenWidth > 750) {
+                          } else if (screenWidth > 900) {
                             crossAxisCount = 2;
                           } else {
                             crossAxisCount = 1;
@@ -390,6 +450,12 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                                   color: Colors.green),
                                               onPressed: () =>
                                                   _launchWhatsApp(team.contact),
+                                            ),
+                                            IconButton(
+                                              icon: Icon(Icons.book_online,
+                                                  color: Colors.orange),
+                                              onPressed: () =>
+                                                  _navigateToBookingPage(team),
                                             ),
                                           ],
                                         ),
