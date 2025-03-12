@@ -22,12 +22,14 @@ class DrawerWidget extends StatelessWidget {
             .get();
         final userData = userDoc.data();
         if (userData != null) {
+          bool isMember = userData['member'] ?? false;
           Provider.of<UserProvider>(context, listen: false).setUserData(
             userId: user.uid, // Tambahkan userId dari Firebase Authentication
             userName: userData['name'] ?? '',
             userEmail: user.email ?? '',
             profileImageUrl: userData['profileImageUrl'] ?? '',
             userPhone: userData['phone'] ?? '',
+            isMember: isMember,
           );
         }
       }

@@ -9,6 +9,7 @@ import 'package:mandalaarenaapp/pages/cart_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,6 +37,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   bool isLoved = false;
   final DateTime _currentStartOfWeek =
       DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
+  bool isMember = false;
 
   @override
   void initState() {
@@ -45,6 +47,10 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     _fetchUnavailableTimes();
     _setInitialBookingTime();
     _loadLovedState();
+
+    // Ambil status member dari UserProvider
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    isMember = userProvider.isMember;
   }
 
   Future<void> _fetchLapangData() async {
@@ -346,6 +352,20 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    isMember = userProvider.isMember;
+
+    // Hitung harga dengan diskon jika member
+    int pricePerHour = int.parse(selectedLapang!.price.toString());
+    if (isMember) {
+      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60%
+    }
+
+    // Hitung totalPrice berdasarkan durasi booking
+    if (bookingDuration > 0) {
+      totalPrice = bookingDuration * pricePerHour;
+    }
+
     if (selectedLapang == null || selectedLapang!.name == null) {
       return Scaffold(
         appBar: AppBar(
@@ -465,7 +485,9 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      "Harga: Rp ${selectedLapang!.price}",
+                      isMember
+                          ? "Harga (Diskon 60%): Rp $pricePerHour / jam"
+                          : "Harga: Rp ${selectedLapang!.price} / jam",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,

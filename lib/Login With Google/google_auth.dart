@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, use_build_context_synchronously
+// ignore_for_file: avoid_print
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -67,19 +67,30 @@ class FirebaseServices {
           'name': name,
           'phone': phone,
           'points': 0,
+          'member': false, // Tambahkan field member dengan nilai false
         }).catchError((e) {
           print("Error menyimpan data ke Firestore: $e");
         });
       } else {
-        // Jika pengguna sudah ada, pastikan field points ada
+        // Jika pengguna sudah ada, pastikan field points dan member ada
         Map<String, dynamic>? data = userDoc.data() as Map<String, dynamic>?;
 
-        if (data != null && !data.containsKey('points')) {
-          await _firestore.collection('users').doc(uid).update({
-            'points': 0, // Jika field points belum ada, tambahkan
-          }).catchError((e) {
-            print("Error menambahkan field points: $e");
-          });
+        if (data != null) {
+          if (!data.containsKey('points')) {
+            await _firestore.collection('users').doc(uid).update({
+              'points': 0, // Jika field points belum ada, tambahkan
+            }).catchError((e) {
+              print("Error menambahkan field points: $e");
+            });
+          }
+
+          if (!data.containsKey('member')) {
+            await _firestore.collection('users').doc(uid).update({
+              'member': false, // Jika field member belum ada, tambahkan
+            }).catchError((e) {
+              print("Error menambahkan field member: $e");
+            });
+          }
         }
       }
     }

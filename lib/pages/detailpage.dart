@@ -34,6 +34,7 @@ class _DetailPageState extends State<DetailPage> {
   String? userName;
   String? userPhone;
   User? user;
+  bool isMember = false;
 
   @override
   void initState() {
@@ -47,6 +48,10 @@ class _DetailPageState extends State<DetailPage> {
     });
     _fetchUnavailableTimes();
     user = FirebaseAuth.instance.currentUser; // Get current user in initState
+
+    // Ambil status member dari UserProvider
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    isMember = userProvider.isMember;
   }
 
   Future<void> _loadLovedState() async {
@@ -335,6 +340,19 @@ class _DetailPageState extends State<DetailPage> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
+    isMember = userProvider.isMember;
+
+    // Hitung harga dengan diskon jika member
+    int pricePerHour = int.parse(widget.lapang.price.toString());
+    if (isMember) {
+      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60%
+    }
+
+    // Hitung totalPrice berdasarkan durasi booking
+    if (bookingDuration > 0) {
+      totalPrice = bookingDuration * pricePerHour;
+    }
+
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
@@ -447,6 +465,14 @@ class _DetailPageState extends State<DetailPage> {
 
   Widget lapangDetailWidget(BuildContext context) {
     final currentTime = DateTime.now();
+    final userProvider = Provider.of<UserProvider>(context);
+    isMember = userProvider.isMember; // Perbarui status member
+
+    // Hitung harga dengan diskon jika member
+    int pricePerHour = int.parse(widget.lapang.price.toString());
+    if (isMember) {
+      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60%
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,7 +525,9 @@ class _DetailPageState extends State<DetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Harga: Rp ${widget.lapang.price}",
+                isMember
+                    ? "Harga (Diskon 60%): Rp $pricePerHour / jam"
+                    : "Harga: Rp ${widget.lapang.price} / jam",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,

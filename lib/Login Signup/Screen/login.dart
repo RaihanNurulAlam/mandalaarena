@@ -70,15 +70,21 @@ class _LoginScreenState extends State<LoginScreen> {
           DocumentSnapshot userDoc = await userRef.get();
 
           if (userDoc.exists) {
+            if (!userDoc.data().toString().contains('member')) {
+              await userRef.update({'member': false});
+              print("Field `member` berhasil ditambahkan ke Firestore.");
+            }
             if (!userDoc.data().toString().contains('points')) {
               await userRef.update({'points': 0});
               print("Field `points` berhasil ditambahkan ke Firestore.");
             }
             bool isAdmin = userDoc.get('isAdmin') ??
                 false; // Default to false if isAdmin is null
+            bool isMember = userDoc.get('member') ?? false;
             Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
 
             print("User is admin: $isAdmin");
+            print("User is member: $isMember");
             print("Navigating to: ${targetPage.runtimeType}");
 
             // 🚀 **Tambahkan pemanggilan `loadCart()` di sini**
@@ -107,6 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 userEmail: userEmail,
                 profileImageUrl: profileImageUrl,
                 userPhone: userPhone,
+                isMember: isMember,
               );
             }
           } else {
@@ -261,6 +268,33 @@ class _LoginScreenState extends State<LoginScreen> {
                                     final String userPhone = user.phoneNumber ??
                                         "Nomor telepon tidak ditemukan";
 
+                                    // Ambil atau buat data pengguna di Firestore
+                                    DocumentReference userRef =
+                                        FirebaseFirestore.instance
+                                            .collection('users')
+                                            .doc(user.uid);
+                                    DocumentSnapshot userDoc =
+                                        await userRef.get();
+
+                                    if (!userDoc.exists) {
+                                      // Jika pengguna baru, buat dokumen dengan isMember = false
+                                      await userRef.set({
+                                        'name': userName,
+                                        'email': userEmail,
+                                        'profileImageUrl': profileImageUrl,
+                                        'phone': userPhone,
+                                        'uid': user.uid,
+                                        'points': 0,
+                                        'isAdmin': false,
+                                        'member':
+                                            false, // Default isMember = false
+                                      });
+                                    }
+
+                                    // Ambil nilai isMember dari Firestore
+                                    bool isMember =
+                                        userDoc.get('member') ?? false;
+
                                     // Set user data in UserProvider
                                     if (mounted) {
                                       Provider.of<UserProvider>(context,
@@ -271,6 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         userEmail: userEmail,
                                         profileImageUrl: profileImageUrl,
                                         userPhone: userPhone,
+                                        isMember: isMember,
                                       );
 
                                       Navigator.pushReplacement(

@@ -58,38 +58,11 @@ class _SignupScreenState extends State<SignupScreen> {
         isLoading = false;
       });
 
-      // // Ambil data pengguna setelah signup
-      // final String userName = nameController.text;
-      // final String userEmail = emailController.text;
-      // final String phoneNumber = phoneController.text; // Ambil nomor telepon
-      // final String profileImageUrl = "https://via.placeholder.com/150";
-
-      // // Ambil userId setelah signup
-      // final String userId = AuthMethod()
-      //     .getUserId(); // Ambil userId dari Firebase Auth (gunakan cred.user!.uid)
-      // if (userId.isEmpty) {
-      //   setState(() {
-      //     isLoading = false;
-      //   });
-      //   showSnackBar(context, 'ID User kosong');
-      //   return;
-      // }
-
-      // // Menyimpan data pengguna ke Firebase Firestore
-      // try {
-      //   await FirebaseFirestore.instance.collection('users').doc(userId).set({
-      //     'name': userName,
-      //     'email': userEmail,
-      //     'phone': phoneNumber,
-      //     'profileImageUrl': profileImageUrl,
-      //     'uid': userId,
-      //   });
-
       try {
         // Get the current user's UID after signup
         String userId = FirebaseAuth.instance.currentUser!.uid;
 
-        // Create a new user document in Firestore with additional points field
+        // Create a new user document in Firestore with additional fields
         await FirebaseFirestore.instance.collection('users').doc(userId).set({
           'name': nameController.text,
           'email': emailController.text,
@@ -97,9 +70,11 @@ class _SignupScreenState extends State<SignupScreen> {
           'profileImageUrl': 'https://via.placeholder.com/150', // Default image
           'uid': userId,
           'points': 0, // Add the points field with default value 0
+          'isAdmin': false, // Set isAdmin to false by default
+          'member': false, // Set member to false by default
         });
 
-        // Navigate to the next screen
+        // Navigate to the HomePage after successful signup
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => HomePage(),

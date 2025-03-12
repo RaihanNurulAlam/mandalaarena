@@ -188,6 +188,7 @@ class _OTPScreenState extends State<OTPScreen> {
         'phone': phone,
         'isAdmin': false, // Default pengguna bukan admin
         'points': 0, // Menambahkan field points dengan nilai awal 0
+        'member': false,
       }).catchError((e) {
         print("Error menyimpan data ke Firestore: $e");
       });
@@ -200,6 +201,14 @@ class _OTPScreenState extends State<OTPScreen> {
           'points': 0, // Jika field points belum ada, tambahkan
         }).catchError((e) {
           print("Error menambahkan field points: $e");
+        });
+      }
+
+      if (data!.containsKey('member')) {
+        await _firestore.collection('users').doc(uid).update({
+          'member': false, // Jika field member belum ada, tambahkan
+        }).catchError((e) {
+          print("Error menambahkan field member: $e");
         });
       }
     }
