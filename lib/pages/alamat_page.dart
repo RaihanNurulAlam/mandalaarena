@@ -120,7 +120,7 @@ class _AlamatPageState extends State<AlamatPage> {
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                      vertical: 12.0, horizontal: 16.0),
+                      vertical: 12.0, horizontal: 20.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50.0),
                   ),
@@ -139,7 +139,7 @@ class _AlamatPageState extends State<AlamatPage> {
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                      vertical: 12.0, horizontal: 16.0),
+                      vertical: 12.0, horizontal: 20.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50.0),
                   ),
@@ -222,7 +222,7 @@ class _AlamatPageState extends State<AlamatPage> {
           ),
           Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
             child: Align(
               alignment: Alignment.center,
               child: ElevatedButton.icon(
@@ -230,7 +230,7 @@ class _AlamatPageState extends State<AlamatPage> {
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                      vertical: 12.0, horizontal: 16.0),
+                      vertical: 12.0, horizontal: 20.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(50.0),
                   ),

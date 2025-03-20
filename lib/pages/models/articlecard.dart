@@ -40,7 +40,7 @@ class ArticleCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         child: Text(
                           title,
                           style: TextStyle(
@@ -51,7 +51,7 @@ class ArticleCard extends StatelessWidget {
                       ),
                       SizedBox(height: 4),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         child: Text(
                           subtitle,
                           style: TextStyle(

@@ -3,7 +3,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/signup.dart';
 import 'package:mandalaarenaapp/firebase_options.dart';
@@ -43,55 +42,55 @@ void main() async {
   );
 }
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+// final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+//     FlutterLocalNotificationsPlugin();
 
-void setupNotifications() async {
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-  const InitializationSettings initializationSettings =
-      InitializationSettings(android: initializationSettingsAndroid);
+// void setupNotifications() async {
+//   const AndroidInitializationSettings initializationSettingsAndroid =
+//       AndroidInitializationSettings('@mipmap/ic_launcher');
+//   const InitializationSettings initializationSettings =
+//       InitializationSettings(android: initializationSettingsAndroid);
 
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+//   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
+//   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-  // Minta izin untuk menerima notifikasi
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+//   // Minta izin untuk menerima notifikasi
+//   NotificationSettings settings = await messaging.requestPermission(
+//     alert: true,
+//     badge: true,
+//     sound: true,
+//   );
 
-  // Token FCM (untuk debug)
-  String? token = await messaging.getToken();
-  print('FCM Token: $token');
+//   // Token FCM (untuk debug)
+//   String? token = await messaging.getToken();
+//   print('FCM Token: $token');
 
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
+//   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+//     RemoteNotification? notification = message.notification;
+//     AndroidNotification? android = message.notification?.android;
 
-    if (notification != null && android != null) {
-      flutterLocalNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            importance: Importance.high,
-          ),
-        ),
-      );
-    }
-  });
-}
+//     if (notification != null && android != null) {
+//       flutterLocalNotificationsPlugin.show(
+//         notification.hashCode,
+//         notification.title,
+//         notification.body,
+//         const NotificationDetails(
+//           android: AndroidNotificationDetails(
+//             'high_importance_channel',
+//             'High Importance Notifications',
+//             importance: Importance.high,
+//           ),
+//         ),
+//       );
+//     }
+//   });
+// }
 
 class MandalaArenaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    setupNotifications();
+    // setupNotifications();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Mandala Arena',

@@ -201,7 +201,7 @@ class _PaymentPageState extends State<PaymentPage> {
               Container(
                 margin: const EdgeInsets.only(bottom: 24),
                 padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -247,7 +247,7 @@ class _PaymentPageState extends State<PaymentPage> {
               // Tampilkan daftar item dalam keranjang
               if (cart.cart.isNotEmpty) ...[
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: const Text(
                     'Item di keranjang:',
                     style: TextStyle(
@@ -328,7 +328,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
                 // Tampilkan total harga
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

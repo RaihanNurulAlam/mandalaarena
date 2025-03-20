@@ -58,7 +58,7 @@ class PointsPage extends StatelessWidget {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
                     Text(
@@ -69,7 +69,7 @@ class PointsPage extends StatelessWidget {
                     const SizedBox(height: 20),
                     // Banner Penukaran 100 Poin
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: Card(
                         elevation: 4,
                         child: Container(
@@ -111,7 +111,7 @@ class PointsPage extends StatelessWidget {
                     const SizedBox(height: 16),
                     // Banner Penukaran 30 Poin
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: Card(
                         elevation: 4,
                         child: Container(

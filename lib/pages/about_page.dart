@@ -152,7 +152,7 @@ class _AboutPageState extends State<AboutPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'Ulasan Pengguna:',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -167,7 +167,7 @@ class _AboutPageState extends State<AboutPage> {
                       ),
                     )
                   : Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: ListView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
@@ -274,7 +274,7 @@ class _AboutPageState extends State<AboutPage> {
                     ),
               Divider(),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'Tambahkan Ulasan',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -282,7 +282,7 @@ class _AboutPageState extends State<AboutPage> {
               ),
               SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: TextField(
                   controller: _nameController,
                   decoration: InputDecoration(
@@ -296,14 +296,14 @@ class _AboutPageState extends State<AboutPage> {
               ),
               SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'Rating:',
                   style: TextStyle(fontSize: 14),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: RatingBar(
                   initialRating: _currentRating,
                   minRating: 1,
@@ -325,7 +325,7 @@ class _AboutPageState extends State<AboutPage> {
               ),
               SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: TextField(
                   controller: _descriptionController,
                   decoration: InputDecoration(

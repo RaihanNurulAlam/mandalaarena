@@ -101,7 +101,7 @@ class SparringTeamItem extends StatelessWidget {
     final currentUser = FirebaseAuth.instance.currentUser?.uid;
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
       child: ListTile(
         leading: CircleAvatar(
           backgroundImage: NetworkImage(team.imageUrl),

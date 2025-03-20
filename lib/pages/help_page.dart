@@ -24,7 +24,7 @@ class HelpPage extends StatelessWidget {
             // ),
             // const SizedBox(height: 16),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: const Text(
                 "Di bawah ini adalah beberapa topik yang mungkin membantu Anda:",
                 style: TextStyle(fontSize: 16),
@@ -32,7 +32,7 @@ class HelpPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: ListTile(
                 leading: const Icon(Icons.account_circle),
                 title: const Text("Masalah Login"),
@@ -55,7 +55,7 @@ class HelpPage extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: ListTile(
                 leading: const Icon(Icons.help_outline),
                 title: const Text("Cara Menggunakan Aplikasi"),
@@ -78,7 +78,7 @@ class HelpPage extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: ListTile(
                 leading: const Icon(Icons.contact_support),
                 title: const Text("Hubungi Dukungan"),

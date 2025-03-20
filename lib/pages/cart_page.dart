@@ -128,7 +128,7 @@ class _CartPageState extends State<CartPage> {
                   ),
                 )
               : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
                       Expanded(
@@ -248,9 +248,9 @@ class _CartPageState extends State<CartPage> {
                           ),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 16), // Dikurangi
+                            horizontal: 20, vertical: 16), // Dikurangi
                         margin: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 20), // Dikurangi
+                            horizontal: 20, vertical: 20), // Dikurangi
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

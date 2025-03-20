@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, avoid_print
+// ignore_for_file: avoid_print
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -59,10 +59,6 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         User? currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
-          // DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          //     .collection('users')
-          //     .doc(currentUser.uid)
-          //     .get();
           DocumentReference userRef = FirebaseFirestore.instance
               .collection('users')
               .doc(currentUser.uid);
@@ -78,8 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
               await userRef.update({'points': 0});
               print("Field `points` berhasil ditambahkan ke Firestore.");
             }
-            bool isAdmin = userDoc.get('isAdmin') ??
-                false; // Default to false if isAdmin is null
+            bool isAdmin = userDoc.get('isAdmin') ?? false;
             bool isMember = userDoc.get('member') ?? false;
             Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
 
@@ -87,23 +82,18 @@ class _LoginScreenState extends State<LoginScreen> {
             print("User is member: $isMember");
             print("Navigating to: ${targetPage.runtimeType}");
 
-            // 🚀 **Tambahkan pemanggilan `loadCart()` di sini**
             final cartProvider = Provider.of<Cart>(context, listen: false);
             await cartProvider.loadCart(currentUser.uid);
 
-            // Navigasi setelah `loadCart` selesai
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => targetPage),
             );
 
-            // Set data user setelah navigasi
             final userData = userDoc.data() as Map<String, dynamic>;
             final String userName = userData['name'] ?? "Nama User";
-            final String userEmail =
-                userData['email'] ?? "Email tidak ditemukan";
-            final String profileImageUrl = userData['profileImageUrl'] ??
-                "https://via.placeholder.com/150";
+            final String userEmail = userData['email'] ?? "Email tidak ditemukan";
+            final String profileImageUrl = userData['profileImageUrl'] ?? "https://via.placeholder.com/150";
             final String userPhone = userData['phone'] ?? "";
 
             if (mounted) {
@@ -138,20 +128,18 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              child: Center(
+            Center(
+              child: SingleChildScrollView(
                 child: SizedBox(
-                  width: MediaQuery.of(context).size.width > 500
-                      ? 500
-                      : double.infinity,
+                  width: MediaQuery.of(context).size.width > 500 ? 500 : double.infinity,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center, // Konten berada di tengah secara vertikal
+                    crossAxisAlignment: CrossAxisAlignment.center, // Konten berada di tengah secara horizontal
                     children: [
                       SizedBox(
-                        height: height / 2.7,
+                        height: height / 4, // Sesuaikan tinggi gambar
                         child: Image.asset('images/login.jpg'),
                       ),
-                      // Tambahkan padding horizontal untuk email dan password
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
                         child: Column(
@@ -162,8 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               hintText: 'Masukan email anda',
                               textInputType: TextInputType.emailAddress,
                             ),
-                            const SizedBox(
-                                height: 3), // Jarak antara email dan password
+                            const SizedBox(height: 10),
                             TextFieldInput(
                               icon: Icons.lock,
                               textEditingController: passwordController,
@@ -174,14 +161,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                       ),
-                      // Tambahkan padding horizontal untuk "Lupa Password" dan "Tampilkan Password"
                       Padding(
                         padding: const EdgeInsets.only(right: 55.0, left: 25.0),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment
-                              .spaceBetween, // Atur jarak antara dua teks
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const ForgotPassword(), // Teks "Lupa Password"
+                            const ForgotPassword(),
                             TextButton(
                               onPressed: () {
                                 setState(() {
@@ -189,9 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                               child: Text(
-                                isPasswordVisible
-                                    ? "Sembunyikan Password"
-                                    : "Tampilkan Password",
+                                isPasswordVisible ? "Sembunyikan Password" : "Tampilkan Password",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blue,
@@ -201,83 +184,59 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(
-                          height:
-                              5), // Jarak antara "Tampilkan Password" dan tombol "Masuk"
-                      // Tambahkan padding horizontal untuk tombol "Masuk"
+                      const SizedBox(height: 10),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
                         child: MyButtons(onTap: loginUser, text: "Masuk"),
                       ),
-                      const SizedBox(
-                          height:
-                              5), // Jarak antara tombol "Masuk" dan garis pemisah
-                      // Garis pemisah "atau"
+                      const SizedBox(height: 10),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
                         child: Row(
                           children: [
                             Expanded(
-                              child:
-                                  Container(height: 1, color: Colors.black26),
+                              child: Container(height: 1, color: Colors.black26),
                             ),
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 10),
                               child: Text("atau"),
                             ),
                             Expanded(
-                              child:
-                                  Container(height: 1, color: Colors.black26),
+                              child: Container(height: 1, color: Colors.black26),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(
-                          height:
-                              5), // Jarak antara garis pemisah dan tombol Google/Phone
-                      // Tombol Google dan Phone
+                      const SizedBox(height: 10),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Tombol Google
                             Expanded(
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 10),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    side:
-                                        BorderSide(color: Colors.grey.shade300),
+                                    side: BorderSide(color: Colors.grey.shade300),
                                   ),
                                 ),
                                 onPressed: () async {
-                                  final user = await FirebaseServices()
-                                      .signInWithGoogle(context);
+                                  final user = await FirebaseServices().signInWithGoogle(context);
                                   if (user != null) {
-                                    final String userName =
-                                        user.displayName ?? "Nama User";
-                                    final String userEmail =
-                                        user.email ?? "Email tidak ditemukan";
-                                    final String profileImageUrl =
-                                        user.photoURL ??
-                                            "https://via.placeholder.com/150";
-                                    final String userPhone = user.phoneNumber ??
-                                        "Nomor telepon tidak ditemukan";
+                                    final String userName = user.displayName ?? "Nama User";
+                                    final String userEmail = user.email ?? "Email tidak ditemukan";
+                                    final String profileImageUrl = user.photoURL ?? "https://via.placeholder.com/150";
+                                    final String userPhone = user.phoneNumber ?? "Nomor telepon tidak ditemukan";
 
-                                    // Ambil atau buat data pengguna di Firestore
-                                    DocumentReference userRef =
-                                        FirebaseFirestore.instance
-                                            .collection('users')
-                                            .doc(user.uid);
-                                    DocumentSnapshot userDoc =
-                                        await userRef.get();
+                                    DocumentReference userRef = FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(user.uid);
+                                    DocumentSnapshot userDoc = await userRef.get();
 
                                     if (!userDoc.exists) {
-                                      // Jika pengguna baru, buat dokumen dengan isMember = false
                                       await userRef.set({
                                         'name': userName,
                                         'email': userEmail,
@@ -286,20 +245,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                         'uid': user.uid,
                                         'points': 0,
                                         'isAdmin': false,
-                                        'member':
-                                            false, // Default isMember = false
+                                        'member': false,
                                       });
                                     }
 
-                                    // Ambil nilai isMember dari Firestore
-                                    bool isMember =
-                                        userDoc.get('member') ?? false;
+                                    bool isMember = userDoc.get('member') ?? false;
 
-                                    // Set user data in UserProvider
                                     if (mounted) {
-                                      Provider.of<UserProvider>(context,
-                                              listen: false)
-                                          .setUserData(
+                                      Provider.of<UserProvider>(context, listen: false).setUserData(
                                         userId: user.uid,
                                         userName: userName,
                                         userEmail: userEmail,
@@ -323,20 +276,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                                width:
-                                    8), // Jarak kecil antara tombol Google dan telepon
-                            // Tombol Telepon
+                            const SizedBox(width: 8),
                             Expanded(
                               child: const PhoneAuthentication(),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(
-                          height:
-                              20), // Jarak antara tombol Google/Phone dan teks "Tidak punya akun?"
-                      // Teks "Tidak punya akun?"
+                      const SizedBox(height: 20),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
                         child: Row(
@@ -364,7 +311,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            // Tombol kembali dan bantuan
+            // Tombol kembali ke WelcomePage
             Positioned(
               top: 10,
               left: 10,
@@ -380,6 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
               ),
             ),
+            // Tombol bantuan (HelpPage)
             Positioned(
               top: 10,
               right: 10,

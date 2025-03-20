@@ -77,30 +77,38 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   Future<void> _fetchUnavailableTimes() async {
-    if (selectedDate != null) {
-      final formattedDate =
-          selectedDate!.toIso8601String().split('T')[0]; // "yyyy-MM-dd"
-      final bookings = await FirebaseFirestore.instance
-          .collection('bookings')
-          .where('lapangId', isEqualTo: widget.lapang.id)
-          .where('tanggal', isEqualTo: formattedDate)
-          .get();
+  if (selectedDate != null) {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
+    final dayOfWeek = DateFormat('EEEE').format(selectedDate!); // Ambil hari dari tanggal yang dipilih (misal: Sabtu)
 
-      List<String> times = [];
-      for (var doc in bookings.docs) {
-        // Konversi field 'duration' ke integer (jika disimpan sebagai string)
-        final duration = int.tryParse(doc['duration'].toString()) ?? 1;
-        // Ambil jam mulai (misal "16:00" -> 16)
-        final startHour = int.parse(doc['jamMulai'].split(":")[0]);
-        for (int i = 0; i < duration; i++) {
-          times.add("${startHour + i}:00");
-        }
+    // Ambil booking reguler untuk tanggal yang dipilih
+    final bookings = await FirebaseFirestore.instance
+        .collection('bookings')
+        .where('lapangId', isEqualTo: widget.lapang.id)
+        .where('tanggal', isEqualTo: formattedDate)
+        .get();
+
+    // Ambil booking langganan untuk hari yang sama dengan hari yang dipilih
+    final recurringBookings = await FirebaseFirestore.instance
+        .collection('bookings')
+        .where('lapangId', isEqualTo: widget.lapang.id)
+        .where('hari', isEqualTo: dayOfWeek) // Filter berdasarkan hari yang dipilih
+        .where('isRecurring', isEqualTo: true) // Hanya booking langganan
+        .get();
+
+    List<String> times = [];
+    for (var doc in [...bookings.docs, ...recurringBookings.docs]) {
+      final duration = int.tryParse(doc['duration'].toString()) ?? 1;
+      final startHour = int.parse(doc['jamMulai'].split(":")[0]);
+      for (int i = 0; i < duration; i++) {
+        times.add("${startHour + i}:00");
       }
-      setState(() {
-        unavailableTimes = times;
-      });
     }
+    setState(() {
+      unavailableTimes = times;
+    });
   }
+}
 
   Future<void> addToCart() async {
     if (selectedHour.isNotEmpty &&
@@ -496,7 +504,7 @@ class _DetailPageState extends State<DetailPage> {
         ),
         Padding(
           padding:
-              const EdgeInsets.only(left: 30, right: 30, top: 10, bottom: 5),
+              const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -520,7 +528,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -547,7 +555,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -590,7 +598,7 @@ class _DetailPageState extends State<DetailPage> {
         ),
         const SizedBox(height: 20),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Row(
             children: [
               Text(
@@ -601,7 +609,7 @@ class _DetailPageState extends State<DetailPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: WeeklyCalendar(
             currentStartOfWeek: _currentStartOfWeek,
             onDateSelected: (date) {
@@ -616,14 +624,14 @@ class _DetailPageState extends State<DetailPage> {
         ),
         const SizedBox(height: 20),
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 30.0),
+          padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
             "Pilih Jam Booking:",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Wrap(
             spacing: 8.0,
             runSpacing: 8.0,
@@ -683,14 +691,14 @@ class _DetailPageState extends State<DetailPage> {
         ),
         const SizedBox(height: 20),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: const Text(
             "Pilih Durasi Booking (jam):",
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Wrap(
             spacing: 8.0,
             runSpacing: 8.0,

@@ -236,7 +236,7 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: TextFormField(
                     controller: _nameController,
                     decoration: InputDecoration(
@@ -249,7 +249,7 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: TextFormField(
                     controller: _contactController,
                     decoration: InputDecoration(
@@ -263,7 +263,7 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: TextFormField(
                     controller: _costController,
                     decoration: InputDecoration(
@@ -284,7 +284,7 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: DropdownButtonFormField<String>(
                     value: _selectedCategory,
                     onChanged: (value) {
@@ -308,7 +308,7 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -340,7 +340,7 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                 ),
                 SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

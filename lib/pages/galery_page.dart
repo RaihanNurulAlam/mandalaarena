@@ -185,12 +185,17 @@ class _GalleryPageState extends State<GalleryPage> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Tutup popup
-                  _addImage(); // Upload gambar
-                },
-                child: Text('Upload'),
-              ),
+  onPressed: () {
+    Navigator.pop(context); // Tutup popup
+    _addImage(); // Upload gambar
+  },
+  style: ElevatedButton.styleFrom(
+    foregroundColor: Colors.white, // Warna teks putih
+    backgroundColor: Colors.black, // Warna background hitam
+  ),
+  child: Text('Upload'),
+),
+
             ],
           ),
         );

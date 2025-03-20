@@ -262,7 +262,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               SizedBox(height: 20),
               Divider(),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Text('Ganti Password',
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -318,7 +318,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _buildTextField(TextEditingController controller, String label,
       [TextInputType? keyboardType]) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
@@ -333,7 +333,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _buildPasswordField(TextEditingController controller, String labelText,
       bool isVisible, VoidCallback toggleVisibility) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: TextFormField(
         controller: controller,
         obscureText: !isVisible,

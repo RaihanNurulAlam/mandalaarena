@@ -58,7 +58,7 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           // Search Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Mencari Lapang',

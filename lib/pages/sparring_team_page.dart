@@ -327,148 +327,118 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                       ),
                     ),
                     Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          int crossAxisCount;
-                          if (screenWidth > 1300) {
-                            crossAxisCount = 3;
-                          } else if (screenWidth > 900) {
-                            crossAxisCount = 2;
-                          } else {
-                            crossAxisCount = 1;
-                          }
+  child: Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        int crossAxisCount = (constraints.maxWidth / 480).floor().clamp(1, 10);
 
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: GridView.builder(
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                childAspectRatio: 2.2,
-                              ),
-                              itemCount: filteredTeams.length,
-                              itemBuilder: (context, index) {
-                                final team = filteredTeams[index];
-                                final isCreator = team.createdBy == user?.uid;
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: 2.4, // Menjaga tinggi tetap proporsional
+          ),
+          itemCount: filteredTeams.length,
+          itemBuilder: (context, index) {
+            final team = filteredTeams[index];
+            final isCreator = team.createdBy == user?.uid;
 
-                                return Card(
-                                  margin: EdgeInsets.all(8),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: Row(
-                                      children: [
-                                        SizedBox(
-                                          width: 80,
-                                          height: 80,
-                                          child: team.imageUrl.isNotEmpty
-                                              ? Image.network(
-                                                  team.imageUrl,
-                                                  fit: BoxFit.cover,
-                                                  loadingBuilder: (context,
-                                                      child, loadingProgress) {
-                                                    if (loadingProgress == null)
-                                                      return child;
-                                                    return Center(
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        value: loadingProgress
-                                                                    .expectedTotalBytes !=
-                                                                null
-                                                            ? loadingProgress
-                                                                    .cumulativeBytesLoaded /
-                                                                loadingProgress
-                                                                    .expectedTotalBytes!
-                                                            : null,
-                                                      ),
-                                                    );
-                                                  },
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Icon(
-                                                      Icons.image_not_supported,
-                                                      size: 50,
-                                                      color: Colors.grey,
-                                                    );
-                                                  },
-                                                )
-                                              : Icon(
-                                                  Icons.image,
-                                                  size: 50,
-                                                  color: Colors.grey,
-                                                ),
-                                        ),
-                                        SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                team.name,
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
-                                                  'Hari: ${team.availableDays.join(', ')}'),
-                                              Text(
-                                                  'Jam: ${team.availableHours.join(', ')}'),
-                                              Text(
-                                                  'Kategori: ${team.category}'),
-                                              Text('Kontak: ${team.contact}'),
-                                              Text(
-                                                  'Biaya: ${team.cost.toString()}'),
-                                            ],
-                                          ),
-                                        ),
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            if (isCreator || _isAdmin)
-                                              IconButton(
-                                                icon: Icon(Icons.edit,
-                                                    color: Colors.blue),
-                                                onPressed: () =>
-                                                    _editTeam(team),
-                                              ),
-                                            if (_isAdmin)
-                                              IconButton(
-                                                icon: Icon(
-                                                    CupertinoIcons.trash_circle,
-                                                    color: Colors.black),
-                                                onPressed: () =>
-                                                    _deleteTeam(team.id),
-                                              ),
-                                            IconButton(
-                                              icon: Icon(Icons.chat,
-                                                  color: Colors.green),
-                                              onPressed: () =>
-                                                  _launchWhatsApp(team.contact),
-                                            ),
-                                            IconButton(
-                                              icon: Icon(Icons.book_online,
-                                                  color: Colors.orange),
-                                              onPressed: () =>
-                                                  _navigateToBookingPage(team),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+            return Card(
+              margin: EdgeInsets.all(8),
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    // Gambar tim
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: team.imageUrl.isNotEmpty
+                          ? Image.network(
+                              team.imageUrl,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (context, child, loadingProgress) {
+                                if (loadingProgress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
                                   ),
                                 );
                               },
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.image_not_supported,
+                                  size: 50,
+                                  color: Colors.grey,
+                                );
+                              },
+                            )
+                          : Icon(
+                              Icons.image,
+                              size: 50,
+                              color: Colors.grey,
                             ),
-                          );
-                        },
+                    ),
+                    SizedBox(width: 12),
+                    // Informasi tim
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            team.name,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text('Hari: ${team.availableDays.join(', ')}'),
+                          Text('Jam: ${team.availableHours.join(', ')}'),
+                          Text('Kategori: ${team.category}'),
+                          Text('Kontak: ${team.contact}'),
+                          Text('Biaya: ${team.cost.toString()}'),
+                        ],
                       ),
                     ),
+                    // Tombol aksi
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (isCreator || _isAdmin)
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () => _editTeam(team),
+                          ),
+                        if (_isAdmin)
+                          IconButton(
+                            icon: Icon(CupertinoIcons.trash_circle, color: Colors.black),
+                            onPressed: () => _deleteTeam(team.id),
+                          ),
+                        IconButton(
+                          icon: Icon(Icons.chat, color: Colors.green),
+                          onPressed: () => _launchWhatsApp(team.contact),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.book_online, color: Colors.orange),
+                          onPressed: () => _navigateToBookingPage(team),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ),
+  ),
+),
                   ],
                 );
               },

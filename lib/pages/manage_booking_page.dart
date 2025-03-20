@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mandalaarenaapp/pages/booking_schedule_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:provider/provider.dart';
 
@@ -56,14 +57,31 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
+     appBar: AppBar(
         title: Text('Kelola Booking'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20.0), // Padding kanan 20
+            child: IconButton(
+              icon: Icon(Icons.calendar_today), // Ikon untuk melihat jadwal
+              onPressed: () {
+                // Navigasi ke halaman jadwal booking
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BookingSchedulePage(),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
           Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 30.0, vertical: 8.0),
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
             child: Row(
               children: [
                 Expanded(
@@ -83,16 +101,15 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                     },
                   ),
                 ),
-                SizedBox(width: 8.0), // Spacer antara dropdown dan ikon
+                SizedBox(width: 8.0),
                 IconButton(
                   icon: Icon(Icons.calendar_today),
                   onPressed: () async {
                     final DateTime? pickedDate = await showDatePicker(
                       context: context,
                       initialDate: selectedDate ?? DateTime.now(),
-                      firstDate: DateTime(1900), // Tanggal jauh di masa lalu
-                      lastDate: DateTime.now()
-                          .add(Duration(days: 365)), // Tanggal di masa depan
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now().add(Duration(days: 365)),
                     );
                     if (pickedDate != null) {
                       setState(() {
@@ -126,12 +143,12 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                 }
                 final bookings = snapshot.data!.docs;
                 return GridView.builder(
-                  padding: EdgeInsets.all(20), // Padding untuk semua sisi
+                  padding: EdgeInsets.all(20),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 20,
                     mainAxisSpacing: 20,
-                    childAspectRatio: 1.5, // Ukuran landscape dan portrait sama
+                    childAspectRatio: 1.5,
                   ),
                   itemCount: bookings.length,
                   itemBuilder: (context, index) {

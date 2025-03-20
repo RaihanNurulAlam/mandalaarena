@@ -416,7 +416,7 @@ class _HomePageState extends State<HomePage> {
           // bestSellerWidget(context),
           // SizedBox(height: 20),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -499,7 +499,9 @@ class _HomePageState extends State<HomePage> {
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 1200
+        crossAxisCount: MediaQuery.of(context).size.width > 1650
+            ? 5 // Jika lebar layar lebih dari 1650px, tampilkan 5 kolom
+            : MediaQuery.of(context).size.width > 1200
             ? 4 // Jika lebar layar lebih dari 1200px, tampilkan 4 kolom
             : MediaQuery.of(context).size.width > 750
                 ? 3 // Jika layar lebih dari 750px, tampilkan 3 kolom (tablet)
@@ -509,7 +511,7 @@ class _HomePageState extends State<HomePage> {
         childAspectRatio: 4 / 5,
       ),
       itemCount: lapangs.length,
-      padding: const EdgeInsets.symmetric(horizontal: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       itemBuilder: (context, index) {
         return GestureDetector(
           onTap: () {
@@ -601,12 +603,12 @@ class _HomePageState extends State<HomePage> {
     ];
 
     return Container(
-      height: 200,
-      margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+      height: 250,
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: CarouselSlider.builder(
         itemCount: discountBanners.length,
         options: CarouselOptions(
-          height: 250,
+          height: 300,
           autoPlay: true,
           autoPlayInterval: const Duration(seconds: 20),
           autoPlayAnimationDuration: const Duration(milliseconds: 800),

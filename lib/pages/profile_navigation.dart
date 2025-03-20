@@ -1,5 +1,3 @@
-// ignore_for_file: unnecessary_import, use_super_parameters, use_build_context_synchronously, unused_element
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,7 +12,7 @@ import '../pages/payment_page.dart';
 import '../provider/user_provider.dart';
 
 class ProfilePageNavigation extends StatefulWidget {
-  const ProfilePageNavigation({Key? key}) : super(key: key);
+  const ProfilePageNavigation({super.key});
 
   @override
   State<ProfilePageNavigation> createState() => _ProfilePageNavigationState();
@@ -56,84 +54,88 @@ class _ProfilePageNavigationState extends State<ProfilePageNavigation> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final userName = userProvider.userName;
-    final userEmail = userProvider.userEmail;
-    final profileImageUrl = userProvider.profileImageUrl;
+Widget build(BuildContext context) {
+  final userProvider = Provider.of<UserProvider>(context);
+  final userName = userProvider.userName;
+  final userEmail = userProvider.userEmail;
+  final profileImageUrl = userProvider.profileImageUrl;
 
-    return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text(''),
-      //   backgroundColor: const Color.fromRGBO(0, 0, 0, 0),
-      //   elevation: 0,
-      // ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              const SizedBox(height: 5),
-              CircleAvatar(
-                backgroundImage: NetworkImage(profileImageUrl.isNotEmpty
-                    ? profileImageUrl
-                    : "https://via.placeholder.com/150"),
-                radius: 50,
+  // Mendapatkan ukuran layar
+  final screenWidth = MediaQuery.of(context).size.width;
+  final screenHeight = MediaQuery.of(context).size.height;
+
+  return Scaffold(
+    body: Center( // Pastikan semua elemen berada di tengah
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center, // Pusatkan elemen vertikal
+          children: [
+            const SizedBox(height: 10),
+            CircleAvatar(
+              backgroundImage: NetworkImage(profileImageUrl.isNotEmpty
+                  ? profileImageUrl
+                  : "https://via.placeholder.com/150"),
+              radius: screenWidth * 0.12, // Perkecil ukuran avatar
+            ),
+            const SizedBox(height: 8),
+            Text(
+              userName.isNotEmpty ? userName : "Tamu",
+              style: TextStyle(
+                fontSize: screenWidth * 0.05, // Perkecil ukuran font
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 10),
-              Text(
-                userName.isNotEmpty ? userName : "Tamu",
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center, // Pastikan teks tetap di tengah
+            ),
+            const SizedBox(height: 3),
+            Text(
+              userEmail.isNotEmpty ? userEmail : "Email tidak ditemukan",
+              style: TextStyle(
+                fontSize: screenWidth * 0.035, // Perkecil ukuran font
+                color: Colors.grey,
               ),
-              const SizedBox(height: 5),
-              Text(
-                userEmail.isNotEmpty ? userEmail : "Email tidak ditemukan",
-                style: const TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 10),
-              _buildButton(context, 'Ubah Profil', Icons.edit, Colors.black,
-                  () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditProfilePage(
-                      userName: userProvider.userName,
-                      userEmail: userProvider.userEmail,
-                      profileImageUrl: userProvider.profileImageUrl,
-                      phoneNumber: userProvider.userPhone,
-                    ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 15),
+            _buildButton(context, 'Ubah Profil', Icons.edit, Colors.black, () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfilePage(
+                    userName: userProvider.userName,
+                    userEmail: userProvider.userEmail,
+                    profileImageUrl: userProvider.profileImageUrl,
+                    phoneNumber: userProvider.userPhone,
                   ),
-                );
-                if (result != null) {
-                  _syncUserData(context);
-                }
-              }),
-              _buildButton(context, 'Galeri', Icons.photo_library, Colors.black,
-                  () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => GalleryPage()),
-                );
-              }),
-              _buildButton(context, 'Artikel', Icons.info, Colors.black, () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => InformationPage()),
-                );
-              }),
-              _buildButton(context, 'Tentang', Icons.help, Colors.black, () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AboutPage()),
-                );
-              }),
-              _buildButton(context, 'Transaksi', Icons.payment, Colors.black,
-                  () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => PaymentPage()),
-                );
-              }),
+                ),
+              );
+              if (result != null) {
+                _syncUserData(context);
+              }
+            }),
+            _buildButton(context, 'Galeri', Icons.photo_library, Colors.black, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => GalleryPage()),
+              );
+            }),
+            _buildButton(context, 'Artikel', Icons.info, Colors.black, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => InformationPage()),
+              );
+            }),
+            _buildButton(context, 'Tentang', Icons.help, Colors.black, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AboutPage()),
+              );
+            }),
+            _buildButton(context, 'Transaksi', Icons.payment, Colors.black, () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PaymentPage()),
+              );
+            }),
               FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
                     .collection('users')
@@ -154,8 +156,7 @@ class _ProfilePageNavigationState extends State<ProfilePageNavigation> {
                     return const Text('Data pengguna tidak ditemukan');
                   }
 
-                  final userData =
-                      snapshot.data!.data() as Map<String, dynamic>;
+                  final userData = snapshot.data!.data() as Map<String, dynamic>;
                   final isAdmin = userData['isAdmin'] ?? false;
 
                   if (isAdmin) {
@@ -178,8 +179,7 @@ class _ProfilePageNavigationState extends State<ProfilePageNavigation> {
                   }
                 },
               ),
-              _buildButton(context, 'Keluar', Icons.logout, Colors.black,
-                  () async {
+              _buildButton(context, 'Keluar', Icons.logout, Colors.black, () async {
                 await FirebaseAuth.instance.signOut();
                 Navigator.pushReplacement(
                   context,
@@ -193,27 +193,34 @@ class _ProfilePageNavigationState extends State<ProfilePageNavigation> {
     );
   }
 
-  Widget _buildButton(BuildContext context, String title, IconData icon,
-      Color color, VoidCallback onPressed) {
-    return Container(
-      // width: MediaQuery.of(context).size.width * 0.3, // Lebar tombol diperkecil
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      child: SizedBox(
-        width: 180,
-        child: ElevatedButton.icon(
-          icon: Icon(icon, color: Colors.white),
-          label: Text(title, style: const TextStyle(color: Colors.white)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor:
-                color, // Warna background tombol diubah menjadi hitam
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+  /// Fungsi untuk membuat tombol dengan ukuran lebih kecil
+Widget _buildButton(BuildContext context, String title, IconData icon, Color color, VoidCallback onPressed) {
+  final screenWidth = MediaQuery.of(context).size.width;
+  final screenHeight = MediaQuery.of(context).size.height;
+
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 3), // Kurangi jarak antar tombol
+    child: SizedBox(
+      width: screenWidth * 0.4, // Perkecil lebar tombol
+      child: ElevatedButton.icon(
+        icon: Icon(icon, color: Colors.white, size: screenWidth * 0.05), // Perkecil ikon
+        label: Text(
+          title,
+          style: TextStyle(
+            fontSize: screenWidth * 0.035, // Perkecil ukuran teks tombol
+            color: Colors.white,
           ),
-          onPressed: onPressed,
         ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          padding: EdgeInsets.symmetric(vertical: screenHeight * 0.015), // Sesuaikan padding agar lebih kecil
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        onPressed: onPressed,
       ),
-    );
-  }
+    ),
+  );
+}
 }

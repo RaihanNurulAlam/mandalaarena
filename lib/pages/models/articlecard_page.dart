@@ -59,55 +59,64 @@ class ArticleDetailPage extends StatelessWidget {
                   ),
             const SizedBox(height: 16),
             // Judul artikel dengan alignment justify
-            RichText(
-              textAlign: TextAlign.justify,
-              text: TextSpan(
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-                children: [
-                  TextSpan(
-                    text: title,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: RichText(
+                textAlign: TextAlign.justify,
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
-                ],
+                  children: [
+                    TextSpan(
+                      text: title,
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 8),
             // Subjudul artikel dengan alignment justify
-            RichText(
-              textAlign: TextAlign.justify,
-              text: TextSpan(
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey,
-                ),
-                children: [
-                  TextSpan(
-                    text: subtitle,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: RichText(
+                textAlign: TextAlign.justify,
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey,
                   ),
-                ],
+                  children: [
+                    TextSpan(
+                      text: subtitle,
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
             // Konten artikel dengan teks justify
             ...content.map((widget) {
               if (widget is Text) {
-                return RichText(
-                  textAlign: TextAlign.justify,
-                  text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: Colors.black,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: widget.data,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: RichText(
+                    textAlign: TextAlign.justify,
+                    text: TextSpan(
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.5,
+                        color: Colors.black,
                       ),
-                    ],
+                      children: [
+                        TextSpan(
+                          text: widget.data,
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }

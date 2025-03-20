@@ -163,44 +163,57 @@ class _EditArticlePageState extends State<EditArticlePage> {
                 ),
               ),
               SizedBox(height: 20),
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: 'Judul Artikel'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Judul artikel tidak boleh kosong';
-                  }
-                  return null;
-                },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: _titleController,
+                  decoration: InputDecoration(labelText: 'Judul Artikel'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Judul artikel tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
               ),
               SizedBox(height: 20),
-              TextFormField(
-                controller: _subtitleController,
-                decoration: InputDecoration(labelText: 'Subjudul Artikel'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Subjudul artikel tidak boleh kosong';
-                  }
-                  return null;
-                },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: _subtitleController,
+                  decoration: InputDecoration(labelText: 'Subjudul Artikel'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Subjudul artikel tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
               ),
               SizedBox(height: 20),
-              TextFormField(
-                controller: _contentController,
-                decoration: InputDecoration(labelText: 'Isi Artikel'),
-                maxLines: 10,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Isi artikel tidak boleh kosong';
-                  }
-                  return null;
-                },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: _contentController,
+                  decoration: InputDecoration(labelText: 'Isi Artikel'),
+                  maxLines: 10,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Isi artikel tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
               ),
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _updateArticle,
-                child: Text('Perbarui Artikel'),
-              ),
+                style: ElevatedButton.styleFrom(
+    foregroundColor: Colors.white, // Warna teks putih
+    backgroundColor: Colors.black, // Warna background hitam
+  ),
+  child: Text('Perbarui Artikel'),
+),
             ],
           ),
         ),
