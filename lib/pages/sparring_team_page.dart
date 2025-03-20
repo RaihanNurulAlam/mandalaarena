@@ -70,10 +70,18 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(
+      backgroundColor: Colors.black, // Warna hitam
+      foregroundColor: Colors.white, // Font warna putih
+    ),
             child: Text('Batal'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+      backgroundColor: Colors.black, // Warna hitam
+      foregroundColor: Colors.white, // Font warna putih
+    ),
             child: Text('Hapus'),
           ),
         ],

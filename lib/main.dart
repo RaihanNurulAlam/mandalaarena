@@ -3,6 +3,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/date_symbol_data_local.dart'; // Tambahkan ini
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/signup.dart';
 import 'package:mandalaarenaapp/firebase_options.dart';
@@ -24,9 +25,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inisialisasi Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Inisialisasi format tanggal untuk Indonesia
+  await initializeDateFormatting('id_ID', null);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(
@@ -90,7 +96,6 @@ void main() async {
 class MandalaArenaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // setupNotifications();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Mandala Arena',

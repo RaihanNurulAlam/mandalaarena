@@ -225,19 +225,24 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                             content: Text(
                                                 'Yakin ingin menghapus booking ini?'),
                                             actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context)
-                                                        .pop(false),
-                                                child: Text('Batal'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context)
-                                                        .pop(true),
-                                                child: Text('Hapus'),
-                                              ),
-                                            ],
+  TextButton(
+    onPressed: () => Navigator.of(context).pop(false),
+    style: TextButton.styleFrom(
+      backgroundColor: Colors.black, // Warna hitam
+      foregroundColor: Colors.white, // Font warna putih
+    ),
+    child: Text('Batal'),
+  ),
+  TextButton(
+    onPressed: () => Navigator.of(context).pop(true),
+    style: TextButton.styleFrom(
+      backgroundColor: Colors.black, // Warna hitam
+      foregroundColor: Colors.white, // Font warna putih
+    ),
+    child: Text('Hapus'),
+  ),
+],
+
                                           ),
                                         );
 

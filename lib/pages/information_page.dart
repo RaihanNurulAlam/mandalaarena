@@ -118,6 +118,10 @@ class _InformationPageState extends State<InformationPage> {
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
+                                  style: TextButton.styleFrom(
+      backgroundColor: Colors.black, // Warna hitam
+      foregroundColor: Colors.white, // Font warna putih
+    ),
                                   child: Text('Batal'),
                                 ),
                                 TextButton(
@@ -128,6 +132,10 @@ class _InformationPageState extends State<InformationPage> {
                                         .delete();
                                     Navigator.pop(context);
                                   },
+                                  style: TextButton.styleFrom(
+      backgroundColor: Colors.black, // Warna hitam
+      foregroundColor: Colors.white, // Font warna putih
+    ),
                                   child: Text('Hapus'),
                                 ),
                               ],
