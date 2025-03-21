@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: avoid_print, deprecated_member_use
 
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,9 +25,9 @@ class _PaymentPageState extends State<PaymentPage> {
 
   String getBaseUrl() {
     if (kIsWeb) {
-      return 'http://localhost:3000'; // Browser
+      return 'http://localhost:5001/mandalaarenaapp-95d0d/us-central1/api'; // Emulator
     } else {
-      return 'http://10.0.2.2:3000'; // Emulator Android/Desktop
+      return 'https://us-central1-mandalaarenaapp-95d0d.cloudfunctions.net/api'; // Production
     }
   }
 
@@ -83,65 +83,29 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
-  // Fungsi untuk simulasi penambahan poin
-  Future<void> simulateAddPoints(BuildContext context) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final cart = Provider.of<Cart>(context, listen: false);
-
-    // Hitung poin berdasarkan durasi booking
-    int earnedPoints = 0;
-    for (var item in cart.cart) {
-      earnedPoints += int.parse(item.quantity!) * 10; // 10 poin per jam
-    }
-
-    // Update poin pengguna
-    await updateUserPoints(userProvider.userId, earnedPoints);
-
-    // Simpan riwayat poin
-    await saveUserPointsTransaction(
-        userProvider.userId, earnedPoints, 'simulated-order-id');
-
-    // Tampilkan pesan sukses
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Poin berhasil ditambahkan (Simulasi)'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final cart = Provider.of<Cart>(context);
 
-    // Hitung total harga dari keranjang
+    // Hitung total harga dari keranjang dengan diskon jika member
     double totalPrice = cart.cart.fold(
       0,
-      (previousValue, cartModel) =>
-          previousValue +
-          int.parse(cartModel.price!) * int.parse(cartModel.quantity!),
+      (previousValue, cartModel) {
+        double price = double.tryParse(cartModel.price ?? '0') ?? 0;
+        if (userProvider.isMember) {
+          price = price * 0.4; // Diskon 60% untuk member
+        }
+        return previousValue + (price * int.parse(cartModel.quantity!));
+      },
     );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transaksi', style: TextStyle(color: Colors.black)),
         actions: [
-          // Icon untuk navigasi ke halaman poin
-          // IconButton(
-          //   icon: const Icon(Icons.star, color: Colors.black), // Warna hitam
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(
-          //         builder: (context) => const PointsPage(),
-          //       ),
-          //     );
-          //   },
-          // ),
-          // Icon untuk navigasi ke halaman riwayat pembayaran
           Padding(
-            padding: const EdgeInsets.only(right: 20), // Padding right 20
+            padding: const EdgeInsets.only(right: 20),
             child: IconButton(
               icon: const Icon(Icons.history, color: Colors.black),
               onPressed: () {
@@ -266,6 +230,10 @@ class _PaymentPageState extends State<PaymentPage> {
                   itemCount: cart.cart.length,
                   itemBuilder: (context, index) {
                     final item = cart.cart[index];
+                    double price = double.tryParse(item.price ?? '0') ?? 0;
+                    if (userProvider.isMember) {
+                      price = price * 0.4; // Diskon 60% untuk member
+                    }
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.all(16),
@@ -305,7 +273,7 @@ class _PaymentPageState extends State<PaymentPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Harga: Rp. ${item.price} x ${item.quantity} Jam',
+                                  'Harga: Rp. ${price.toString()} x ${item.quantity} Jam',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     color: Colors.black54,
@@ -343,7 +311,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         ),
                       ),
                       Text(
-                        'Rp. $totalPrice',
+                        'Rp. ${totalPrice.toString()}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

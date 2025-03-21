@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +36,10 @@ class _CartPageState extends State<CartPage> {
       builder: (context, cart, child) {
         // Menghitung total harga berdasarkan data dari cart provider
         double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
-          final double price = double.tryParse(cartModel.price ?? '0') ?? 0;
+          double price = double.tryParse(cartModel.price ?? '0') ?? 0;
+          if (userProvider.isMember) {
+            price = price * 0.4; // Diskon 60% untuk member
+          }
           final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
           return previousValue + (price * quantity);
         });
@@ -62,10 +63,18 @@ class _CartPageState extends State<CartPage> {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(false),
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('Batal'),
                             ),
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(true),
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text('Hapus Semua'),
                             ),
                           ],
@@ -136,6 +145,11 @@ class _CartPageState extends State<CartPage> {
                           itemCount: cart.cart.length,
                           itemBuilder: (context, index) {
                             final item = cart.cart[index];
+                            double price =
+                                double.tryParse(item.price ?? '0') ?? 0;
+                            if (userProvider.isMember) {
+                              price = price * 0.4; // Diskon 60% untuk member
+                            }
                             return ListTile(
                               leading: ClipRRect(
                                 borderRadius: BorderRadius.circular(6),
@@ -159,7 +173,7 @@ class _CartPageState extends State<CartPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                      'Rp. ${item.price} x ${item.quantity} Jam'),
+                                      'Rp. ${price.toString()} x ${item.quantity} Jam'),
                                   Text(
                                       'Tanggal: ${item.bookingDate} - Jam: ${item.time}'),
                                 ],
@@ -176,11 +190,19 @@ class _CartPageState extends State<CartPage> {
                                         TextButton(
                                           onPressed: () =>
                                               Navigator.of(context).pop(false),
+                                          style: TextButton.styleFrom(
+                                            backgroundColor: Colors.black,
+                                            foregroundColor: Colors.white,
+                                          ),
                                           child: const Text('Batal'),
                                         ),
                                         TextButton(
                                           onPressed: () =>
                                               Navigator.of(context).pop(true),
+                                          style: TextButton.styleFrom(
+                                            backgroundColor: Colors.black,
+                                            foregroundColor: Colors.white,
+                                          ),
                                           child: const Text('Hapus'),
                                         ),
                                       ],
@@ -262,7 +284,7 @@ class _CartPageState extends State<CartPage> {
                               ),
                             ),
                             Text(
-                              'Rp. $totalPrice',
+                              'Rp. ${totalPrice.toString()}',
                               style: const TextStyle(
                                 color: Colors.black,
                                 fontSize: 18, // Dikurangi

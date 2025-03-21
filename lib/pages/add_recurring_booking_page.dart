@@ -7,7 +7,8 @@ import 'package:intl/intl.dart';
 
 class AddRecurringBookingPage extends StatefulWidget {
   @override
-  _AddRecurringBookingPageState createState() => _AddRecurringBookingPageState();
+  _AddRecurringBookingPageState createState() =>
+      _AddRecurringBookingPageState();
 }
 
 class _AddRecurringBookingPageState extends State<AddRecurringBookingPage> {
@@ -303,30 +304,41 @@ class _AddRecurringBookingPageState extends State<AddRecurringBookingPage> {
   }
 
   DateTime _getNearestDate(String selectedDay) {
-  final now = DateTime.now();
-  final formatter = DateFormat('EEEE', 'id_ID'); // Pastikan menggunakan format bahasa Indonesia
-  final currentDay = formatter.format(now);
+    final now = DateTime.now();
+    final formatter = DateFormat(
+        'EEEE', 'id_ID'); // Pastikan menggunakan format bahasa Indonesia
+    final currentDay = formatter.format(now);
 
-  final daysToAdd = _getDaysToAdd(currentDay, selectedDay);
-  return now.add(Duration(days: daysToAdd));
-}
-
-int _getDaysToAdd(String currentDay, String selectedDay) {
-  final daysOfWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
-
-  final currentIndex = daysOfWeek.indexOf(currentDay);
-  final selectedIndex = daysOfWeek.indexOf(selectedDay);
-
-  if (currentIndex == -1 || selectedIndex == -1) {
-    throw Exception('Nama hari tidak valid');
+    final daysToAdd = _getDaysToAdd(currentDay, selectedDay);
+    return now.add(Duration(days: daysToAdd));
   }
 
-  if (selectedIndex >= currentIndex) {
-    return selectedIndex - currentIndex; // Jika hari yang dipilih setelah atau sama dengan hari ini
-  } else {
-    return (7 - currentIndex) + selectedIndex; // Jika hari yang dipilih sebelum hari ini, cari minggu berikutnya
+  int _getDaysToAdd(String currentDay, String selectedDay) {
+    final daysOfWeek = [
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+      'Minggu'
+    ];
+
+    final currentIndex = daysOfWeek.indexOf(currentDay);
+    final selectedIndex = daysOfWeek.indexOf(selectedDay);
+
+    if (currentIndex == -1 || selectedIndex == -1) {
+      throw Exception('Nama hari tidak valid');
+    }
+
+    if (selectedIndex >= currentIndex) {
+      return selectedIndex -
+          currentIndex; // Jika hari yang dipilih setelah atau sama dengan hari ini
+    } else {
+      return (7 - currentIndex) +
+          selectedIndex; // Jika hari yang dipilih sebelum hari ini, cari minggu berikutnya
+    }
   }
-}
 
   String _calculateEndTime(String startTime, int duration) {
     final startHour = int.parse(startTime.split(':')[0]);

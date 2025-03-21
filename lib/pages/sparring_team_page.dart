@@ -71,16 +71,16 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             style: TextButton.styleFrom(
-      backgroundColor: Colors.black, // Warna hitam
-      foregroundColor: Colors.white, // Font warna putih
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
     ),
             child: Text('Batal'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(
-      backgroundColor: Colors.black, // Warna hitam
-      foregroundColor: Colors.white, // Font warna putih
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
     ),
             child: Text('Hapus'),
           ),
@@ -140,7 +140,10 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                 Navigator.pop(context);
                 lapangCategory = 'Lapang Basket Vynil';
                 _openBookingPage(team, lapangCategory);
-              },
+              },style: TextButton.styleFrom(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+    ),
               child: Text('Vynil'),
             ),
             TextButton(
@@ -148,7 +151,10 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                 Navigator.pop(context);
                 lapangCategory = 'Lapang Basket Karet';
                 _openBookingPage(team, lapangCategory);
-              },
+              },style: TextButton.styleFrom(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+    ),
               child: Text('Karet'),
             ),
           ],

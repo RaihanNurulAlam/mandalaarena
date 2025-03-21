@@ -23,9 +23,9 @@ class _PaymentPageState extends State<PaymentPage> {
 
   String getBaseUrl() {
     if (kIsWeb) {
-      return 'http://localhost:3000'; // Browser
+      return 'http://localhost:5001/mandalaarenaapp-95d0d/us-central1/api'; // Emulator
     } else {
-      return 'http://10.0.2.2:3000'; // Emulator Android/Desktop
+      return 'https://us-central1-mandalaarenaapp-95d0d.cloudfunctions.net/api'; // Production
     }
   }
 

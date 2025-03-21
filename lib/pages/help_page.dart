@@ -46,6 +46,10 @@ class HelpPage extends StatelessWidget {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                          ),
                           child: const Text("OK"),
                         ),
                       ],
@@ -69,6 +73,10 @@ class HelpPage extends StatelessWidget {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                          ),
                           child: const Text("OK"),
                         ),
                       ],
@@ -92,6 +100,10 @@ class HelpPage extends StatelessWidget {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                          ),
                           child: const Text("OK"),
                         ),
                       ],
