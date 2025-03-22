@@ -38,7 +38,7 @@ app.post("/pay", async (req, res) => {
         last_name: lastName || "",
         email,
         phone,
-      }, // Tambahkan trailing comma di sini
+      }, // Trailing comma sudah ditambahkan
     };
 
     // Membuat transaksi di Midtrans
@@ -63,14 +63,14 @@ app.get("/transaction-status", async (req, res) => {
     }
 
     const response = await axios.get(
-      `https://api.sandbox.midtrans.com/v2/${orderId}/status`,
-      {
-        headers: {
-          Authorization: `Basic ${Buffer.from(
-            `${snap.apiConfig.serverKey}:`
-          ).toString("base64")}`,
+        `https://api.sandbox.midtrans.com/v2/${orderId}/status`,
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+                `${snap.apiConfig.serverKey}:`,
+            ).toString("base64")}`,
+          },
         },
-      }
     );
 
     res.status(200).json(response.data);
@@ -78,6 +78,12 @@ app.get("/transaction-status", async (req, res) => {
     console.error("Error fetching transaction status:", error);
     res.status(500).json({ error: "Failed to fetch transaction status" });
   }
+});
+
+// Dengarkan port yang disediakan oleh Firebase
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
 // Ekspor ke Firebase Cloud Functions
