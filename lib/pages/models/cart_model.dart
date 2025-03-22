@@ -11,6 +11,9 @@ class CartModel {
   int? duration; // Durasi booking
   String? namaPengguna; // Nama pengguna
   String? noWhatsapp; // Nomor WhatsApp
+  bool? usePhotographer; // Apakah menggunakan photographer
+  bool? useReferee; // Apakah menggunakan wasit
+  int? totalPrice; // Total harga termasuk biaya tambahan
 
   CartModel({
     this.userId,
@@ -25,6 +28,9 @@ class CartModel {
     this.duration,
     this.namaPengguna,
     this.noWhatsapp,
+    this.usePhotographer,
+    this.useReferee,
+    this.totalPrice,
   });
 
   // Konversi dari JSON Firebase ke CartModel
@@ -41,6 +47,9 @@ class CartModel {
     duration = json['duration'];
     namaPengguna = json['namaPengguna'];
     noWhatsapp = json['noWhatsapp'];
+    usePhotographer = json['usePhotographer'];
+    useReferee = json['useReferee'];
+    totalPrice = json['totalPrice'];
   }
 
   // Konversi dari CartModel ke JSON Firebase
@@ -57,6 +66,9 @@ class CartModel {
       'duration': duration,
       'namaPengguna': namaPengguna,
       'noWhatsapp': noWhatsapp,
+      'usePhotographer': usePhotographer,
+      'useReferee': useReferee,
+      'totalPrice': totalPrice,
     };
   }
 }

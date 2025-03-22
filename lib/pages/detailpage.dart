@@ -26,6 +26,8 @@ class DetailPage extends StatefulWidget {
 
 class _DetailPageState extends State<DetailPage> {
   int totalPrice = 0;
+  int photographerPrice = 200000;
+  int refereePrice = 70000;
   String selectedHour = "";
   int bookingDuration = 0;
   DateTime? selectedDate;
@@ -35,6 +37,32 @@ class _DetailPageState extends State<DetailPage> {
   String? userPhone;
   User? user;
   bool isMember = false;
+  bool usePhotographer = false;
+  bool useReferee = false;
+  String teamName = "";
+  final _formKey = GlobalKey<FormState>();
+  bool isFormValid = false;
+
+  void _updateTotalPrice() {
+    int pricePerHour = int.parse(widget.lapang.price.toString());
+    if (isMember) {
+      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60% untuk member
+    }
+
+    totalPrice = bookingDuration * pricePerHour;
+
+    // Tambahkan biaya photographer jika dipilih dan bukan lapang Gokart
+    if (usePhotographer && widget.lapang.name != "Gokart") {
+      totalPrice += 200000; // Tambahkan harga photographer
+    }
+
+    // Tambahkan biaya wasit jika dipilih dan bukan lapang Gokart
+    if (useReferee && widget.lapang.name != "Gokart") {
+      totalPrice += 70000; // Tambahkan harga wasit
+    }
+
+    setState(() {}); // Perbarui UI
+  }
 
   @override
   void initState() {
@@ -77,44 +105,74 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   Future<void> _fetchUnavailableTimes() async {
-  if (selectedDate != null) {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
-    final dayOfWeek = DateFormat('EEEE').format(selectedDate!); // Ambil hari dari tanggal yang dipilih (misal: Sabtu)
+    if (selectedDate != null) {
+      final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
+      final dayOfWeek = DateFormat('EEEE').format(
+          selectedDate!); // Ambil hari dari tanggal yang dipilih (misal: Sabtu)
 
-    // Ambil booking reguler untuk tanggal yang dipilih
-    final bookings = await FirebaseFirestore.instance
-        .collection('bookings')
-        .where('lapangId', isEqualTo: widget.lapang.id)
-        .where('tanggal', isEqualTo: formattedDate)
-        .get();
+      // Ambil booking reguler untuk tanggal yang dipilih
+      final bookings = await FirebaseFirestore.instance
+          .collection('bookings')
+          .where('lapangId', isEqualTo: widget.lapang.id)
+          .where('tanggal', isEqualTo: formattedDate)
+          .get();
 
-    // Ambil booking langganan untuk hari yang sama dengan hari yang dipilih
-    final recurringBookings = await FirebaseFirestore.instance
-        .collection('bookings')
-        .where('lapangId', isEqualTo: widget.lapang.id)
-        .where('hari', isEqualTo: dayOfWeek) // Filter berdasarkan hari yang dipilih
-        .where('isRecurring', isEqualTo: true) // Hanya booking langganan
-        .get();
+      // Ambil booking langganan untuk hari yang sama dengan hari yang dipilih
+      final recurringBookings = await FirebaseFirestore.instance
+          .collection('bookings')
+          .where('lapangId', isEqualTo: widget.lapang.id)
+          .where('hari',
+              isEqualTo: dayOfWeek) // Filter berdasarkan hari yang dipilih
+          .where('isRecurring', isEqualTo: true) // Hanya booking langganan
+          .get();
 
-    List<String> times = [];
-    for (var doc in [...bookings.docs, ...recurringBookings.docs]) {
-      final duration = int.tryParse(doc['duration'].toString()) ?? 1;
-      final startHour = int.parse(doc['jamMulai'].split(":")[0]);
-      for (int i = 0; i < duration; i++) {
-        times.add("${startHour + i}:00");
+      List<String> times = [];
+      for (var doc in [...bookings.docs, ...recurringBookings.docs]) {
+        final duration = int.tryParse(doc['duration'].toString()) ?? 1;
+        final startHour = int.parse(doc['jamMulai'].split(":")[0]);
+        for (int i = 0; i < duration; i++) {
+          times.add("${startHour + i}:00");
+        }
       }
+      setState(() {
+        unavailableTimes = times;
+      });
     }
-    setState(() {
-      unavailableTimes = times;
-    });
   }
-}
 
   Future<void> addToCart() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Harap isi nama tim/nama pemesan terlebih dahulu!"),
+        ),
+      );
+      return;
+    }
+
     if (selectedHour.isNotEmpty &&
         bookingDuration > 0 &&
         selectedDate != null &&
         user != null) {
+      // Hitung harga per jam
+      int pricePerHour = int.parse(widget.lapang.price.toString());
+      if (isMember) {
+        pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60% untuk member
+      }
+
+      // Hitung total harga
+      int totalPrice = bookingDuration * pricePerHour;
+
+      // Tambahkan biaya photographer jika dipilih dan bukan lapang Gokart
+      if (usePhotographer && widget.lapang.name != "Gokart") {
+        totalPrice += 200000; // Harga photographer
+      }
+
+      // Tambahkan biaya wasit jika dipilih dan bukan lapang Gokart
+      if (useReferee && widget.lapang.name != "Gokart") {
+        totalPrice += 70000; // Harga wasit
+      }
+
       // Tambahkan pemeriksaan batas tutup lapangan (misal tutup pukul 22:00)
       final int currentStartHour = int.parse(selectedHour.split(":")[0]);
       final int maxAllowedDuration =
@@ -182,7 +240,7 @@ class _DetailPageState extends State<DetailPage> {
       }
 
       try {
-        // Ambil data user dari Firestore
+        // Ambil data pengguna dari Firestore
         final userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(user!.uid)
@@ -196,41 +254,56 @@ class _DetailPageState extends State<DetailPage> {
         userName = userData['name'];
         userPhone = userData['phone'] as String?;
 
+        // Data yang akan disimpan ke Firestore
         final bookingData = {
           'lapangan': widget.lapang.name,
-          'tanggal': formattedDate,
+          'tanggal': DateFormat('yyyy-MM-dd').format(selectedDate!),
           'jamMulai': selectedHour,
           'jamSelesai': DateFormat('HH:mm').format(
-            selectedTime.add(Duration(hours: bookingDuration)),
+            DateTime(
+              selectedDate!.year,
+              selectedDate!.month,
+              selectedDate!.day,
+              int.parse(selectedHour.split(":")[0]) + bookingDuration,
+            ),
           ),
           'statusBooking': 'Pending',
           'lapangId': widget.lapang.id,
           'userId': user!.uid,
           'namaPengguna': userName,
           'noWhatsapp': userPhone ?? "",
-          'duration': bookingDuration.toString(), // disimpan sebagai string
+          'duration': bookingDuration.toString(),
+          'isMember': isMember, // Simpan status member
+          'teamName': teamName, // Simpan nama tim/atas nama
+          'usePhotographer': usePhotographer, // Simpan penggunaan photographer
+          'useReferee': useReferee, // Simpan penggunaan wasit
+          'totalPrice': totalPrice, // Simpan total harga
         };
 
-        // Tambahkan booking ke Firestore dan ambil docId-nya
+        // Tambahkan data ke Firestore
         final docRef = await FirebaseFirestore.instance
             .collection('bookings')
             .add(bookingData);
 
-        // Tambahkan ke cart (local) dengan menyertakan docId
+        // Tambahkan ke cart (local)
+        final cart = context.read<Cart>();
         cart.addToCart(
-          userId, // Ambil userId dengan aman
-          docRef.id, // ID dari Firestore
-          widget.lapang, // Objek Lapang sesuai dengan cart.dart
-          bookingDuration, // Durasi booking (int)
-          formattedDate, // Tanggal booking (String)
-          selectedHour, // Jam mulai booking (String)
-          totalPrice, // Total harga (num)
+          user!.uid,
+          docRef.id,
+          widget.lapang,
+          bookingDuration,
+          DateFormat('yyyy-MM-dd').format(selectedDate!),
+          selectedHour,
+          totalPrice,
+          usePhotographer,
+          useReferee,
         );
 
-        // Setelah booking berhasil, perbarui daftar unavailableTimes
+        // Perbarui daftar unavailableTimes
         await _fetchUnavailableTimes();
 
-        popUpDialog(); // Tampilkan dialog sukses atau aksi selanjutnya
+        // Tampilkan dialog sukses
+        popUpDialog();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Terjadi kesalahan: $e")),
@@ -356,11 +429,6 @@ class _DetailPageState extends State<DetailPage> {
       pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60%
     }
 
-    // Hitung totalPrice berdasarkan durasi booking
-    if (bookingDuration > 0) {
-      totalPrice = bookingDuration * pricePerHour;
-    }
-
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
@@ -456,7 +524,7 @@ class _DetailPageState extends State<DetailPage> {
                       ),
                     ),
                     Text(
-                      'Total: Rp. $totalPrice',
+                      'Total: Rp. ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -599,160 +667,306 @@ class _DetailPageState extends State<DetailPage> {
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Row(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Nama Tim / Atas Nama:",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  decoration: InputDecoration(
+                    hintText: "Masukkan nama tim atau nama pemesan",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Nama tim/nama pemesan wajib diisi!";
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    setState(() {
+                      teamName = value;
+                      isFormValid = _formKey.currentState!.validate();
+                    });
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Pilih Tanggal Booking:",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Row(
+                children: [
+                  Text(
+                    "Pilih Tanggal Booking:",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  if (!isFormValid) // Tampilkan pesan jika form belum valid
+                    const Padding(
+                      padding: EdgeInsets.only(left: 10),
+                      // child: Text(
+                      //   "(Isi nama tim/nama pemesan terlebih dahulu)",
+                      //   style: TextStyle(
+                      //     fontSize: 14,
+                      //     color: Colors.red,
+                      //   ),
+                      // ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              AbsorbPointer(
+                absorbing:
+                    !isFormValid, // Nonaktifkan widget jika form belum valid
+                child: Opacity(
+                  opacity:
+                      isFormValid ? 1.0 : 0.5, // Kurangi opacity jika nonaktif
+                  child: WeeklyCalendar(
+                    currentStartOfWeek: _currentStartOfWeek,
+                    onDateSelected: (date) {
+                      setState(() {
+                        selectedDate = date;
+                      });
+                      _fetchUnavailableTimes();
+                    },
+                    selectedDate: selectedDate,
+                    onCalendarIconPressed: _showDatePicker,
+                  ),
+                ),
               ),
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: WeeklyCalendar(
-            currentStartOfWeek: _currentStartOfWeek,
-            onDateSelected: (date) {
-              setState(() {
-                selectedDate = date;
-              });
-              _fetchUnavailableTimes();
-            },
-            selectedDate: selectedDate,
-            onCalendarIconPressed: _showDatePicker,
-          ),
-        ),
         const SizedBox(height: 20),
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.0),
-          child: Text(
-            "Pilih Jam Booking:",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: List.generate(
-              14,
-              (index) {
-                final hour = 8 + index;
-                final bookingTime = DateTime(
-                  selectedDate?.year ?? DateTime.now().year,
-                  selectedDate?.month ?? DateTime.now().month,
-                  selectedDate?.day ?? DateTime.now().day,
-                  hour,
-                );
-                bool isPast = bookingTime.isBefore(DateTime.now());
-                final isUnavailable = unavailableTimes.contains("$hour:00");
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Pilih Jam Booking:",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              if (!isFormValid ||
+                  selectedDate ==
+                      null) // Tampilkan pesan jika form atau tanggal belum valid
+                const Padding(
+                  padding: EdgeInsets.only(top: 10),
+                  // child: Text(
+                  //   "Isi nama tim/nama pemesan dan pilih tanggal terlebih dahulu.",
+                  //   style: TextStyle(
+                  //     fontSize: 14,
+                  //     color: Colors.red,
+                  //   ),
+                  // ),
+                ),
+              const SizedBox(height: 10),
+              AbsorbPointer(
+                absorbing: !isFormValid ||
+                    selectedDate ==
+                        null, // Nonaktifkan jika form atau tanggal belum valid
+                child: Opacity(
+                  opacity: isFormValid && selectedDate != null
+                      ? 1.0
+                      : 0.5, // Kurangi opacity jika nonaktif
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: List.generate(
+                      14,
+                      (index) {
+                        final hour = 8 + index;
+                        final bookingTime = DateTime(
+                          selectedDate?.year ?? DateTime.now().year,
+                          selectedDate?.month ?? DateTime.now().month,
+                          selectedDate?.day ?? DateTime.now().day,
+                          hour,
+                        );
+                        bool isPast = bookingTime.isBefore(DateTime.now());
+                        final isUnavailable =
+                            unavailableTimes.contains("$hour:00");
 
-                // Jika sudah memilih jam dan durasi, tampilkan slot dalam rentang booking dengan warna berbeda.
-                int? selectedStartHour;
-                if (selectedHour.isNotEmpty) {
-                  selectedStartHour = int.parse(selectedHour.split(":")[0]);
-                }
-                // Kondisi untuk jam dalam rentang booking (selain slot start)
-                bool isInBookedRange = false;
-                if (selectedStartHour != null && bookingDuration > 0) {
-                  // Slot start adalah selectedHour, sementara slot setelahnya (misalnya 17:00, 18:00, dst)
-                  if (hour > selectedStartHour &&
-                      hour < selectedStartHour + bookingDuration) {
-                    isInBookedRange = true;
-                  }
-                }
-
-                return ChoiceChip(
-                  label: Text("$hour:00"),
-                  selected: selectedHour == "$hour:00",
-                  onSelected: isPast || isUnavailable
-                      ? null
-                      : (bool selected) {
-                          setState(() {
-                            selectedHour = "$hour:00";
-                          });
-                        },
-                  backgroundColor: isPast || isUnavailable
-                      ? Colors.grey.shade300
-                      : isInBookedRange
-                          ? Colors.grey
-                              .shade300 // warna untuk slot yang berada dalam rentang booking
-                          : Colors.grey.shade100,
-                  labelStyle: TextStyle(
-                    color: selectedHour == "$hour:00"
-                        ? Colors.black
-                        : Colors.black,
+                        return ChoiceChip(
+                          label: Text("$hour:00"),
+                          selected: selectedHour == "$hour:00",
+                          onSelected: (isFormValid &&
+                                  selectedDate != null &&
+                                  !isPast &&
+                                  !isUnavailable)
+                              ? (bool selected) {
+                                  setState(() {
+                                    selectedHour = "$hour:00";
+                                  });
+                                }
+                              : null, // Nonaktifkan jika form atau tanggal belum valid
+                          backgroundColor: isPast || isUnavailable
+                              ? Colors.grey.shade300
+                              : Colors.grey.shade100,
+                          labelStyle: TextStyle(
+                            color: selectedHour == "$hour:00"
+                                ? Colors.black
+                                : Colors.black,
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: const Text(
-            "Pilih Durasi Booking (jam):",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Pilih Durasi Booking (jam):",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              if (!isFormValid ||
+                  selectedDate == null ||
+                  selectedHour
+                      .isEmpty) // Tampilkan pesan jika form, tanggal, atau jam belum valid
+                const Padding(
+                  padding: EdgeInsets.only(top: 10),
+                  // child: Text(
+                  //   "Isi nama tim/nama pemesan, pilih tanggal, dan jam terlebih dahulu.",
+                  //   style: TextStyle(
+                  //     fontSize: 14,
+                  //     color: Colors.red,
+                  //   ),
+                  // ),
+                ),
+              const SizedBox(height: 10),
+              AbsorbPointer(
+                absorbing: !isFormValid ||
+                    selectedDate == null ||
+                    selectedHour
+                        .isEmpty, // Nonaktifkan jika form, tanggal, atau jam belum valid
+                child: Opacity(
+                  opacity: isFormValid &&
+                          selectedDate != null &&
+                          selectedHour.isNotEmpty
+                      ? 1.0
+                      : 0.5, // Kurangi opacity jika nonaktif
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: List.generate(
+                      5,
+                      (index) {
+                        final duration = index + 1;
+                        final int currentStartHour = selectedHour.isNotEmpty
+                            ? int.parse(selectedHour.split(":")[0])
+                            : 0;
+                        final int maxAllowedDuration = selectedHour.isNotEmpty
+                            ? (22 - currentStartHour)
+                            : 5;
+
+                        final bool isWithinClosingTime =
+                            duration <= maxAllowedDuration;
+
+                        bool isDurationAvailable = true;
+                        if (selectedHour.isNotEmpty) {
+                          for (int i = 0; i < duration; i++) {
+                            if (unavailableTimes
+                                .contains("${currentStartHour + i}:00")) {
+                              isDurationAvailable = false;
+                              break;
+                            }
+                          }
+                        }
+
+                        return ChoiceChip(
+                          label: Text("$duration Jam"),
+                          selected: bookingDuration == duration,
+                          onSelected: (isFormValid &&
+                                  selectedDate != null &&
+                                  selectedHour.isNotEmpty &&
+                                  isWithinClosingTime &&
+                                  isDurationAvailable)
+                              ? (bool selected) {
+                                  setState(() {
+                                    bookingDuration = duration;
+                                    _updateTotalPrice();
+                                  });
+                                }
+                              : null, // Nonaktifkan jika form, tanggal, atau jam belum valid
+                          selectedColor: Colors.grey.shade300,
+                          backgroundColor: Colors.grey.shade100,
+                          labelStyle: TextStyle(
+                            color: bookingDuration == duration
+                                ? Colors.black
+                                : Colors.black,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: List.generate(
-              5,
-              (index) {
-                final duration = index + 1;
-                // Jika selectedHour sudah dipilih, hitung jam mulai dan batas durasi maksimal (22:00)
-                final int currentStartHour = selectedHour.isNotEmpty
-                    ? int.parse(selectedHour.split(":")[0])
-                    : 0;
-                final int maxAllowedDuration = selectedHour.isNotEmpty
-                    ? (22 - currentStartHour)
-                    : 5; // jika belum pilih jam, biarkan semua pilihan tampil
-
-                // Periksa apakah durasi ini melebihi batas tutup lapangan
-                final bool isWithinClosingTime = duration <= maxAllowedDuration;
-
-                // Selain itu, cek juga apakah dalam rentang waktu tersebut ada slot yang sudah unavailable
-                bool isDurationAvailable = true;
-                if (selectedHour.isNotEmpty) {
-                  for (int i = 0; i < duration; i++) {
-                    if (unavailableTimes
-                        .contains("${currentStartHour + i}:00")) {
-                      isDurationAvailable = false;
-                      break;
-                    }
-                  }
-                }
-
-                return ChoiceChip(
-                  label: Text("$duration Jam"),
-                  selected: bookingDuration == duration,
-                  onSelected: (isWithinClosingTime && isDurationAvailable)
-                      ? (bool selected) {
-                          setState(() {
-                            bookingDuration = duration;
-                            totalPrice = bookingDuration *
-                                int.parse(widget.lapang.price.toString());
-                          });
-                        }
-                      : null,
-                  selectedColor: Colors.grey.shade300,
-                  backgroundColor: Colors.grey.shade100,
-                  labelStyle: TextStyle(
-                    color: bookingDuration == duration
-                        ? Colors.black
-                        : Colors.black,
-                  ),
-                );
-              },
+        const SizedBox(height: 20),
+        // Tampilkan layanan tambahan hanya jika bukan lapang Gokart
+        if (widget.lapang.name != "Gokart")
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Tambahan Layanan:",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                _buildServiceOption(
+                  icon: Icons.camera_alt,
+                  title: "Photographer",
+                  price: "Rp 200,000",
+                  value: usePhotographer,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      usePhotographer = value ?? false;
+                      _updateTotalPrice(); // Panggil fungsi ini
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                _buildServiceOption(
+                  icon: Icons.sports,
+                  title: "Wasit",
+                  price: "Rp 70,000",
+                  value: useReferee,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      useReferee = value ?? false;
+                      _updateTotalPrice(); // Panggil fungsi ini
+                    });
+                  },
+                ),
+              ],
             ),
           ),
-        ),
       ],
     );
   }
@@ -858,4 +1072,59 @@ class WeeklyCalendar extends StatelessWidget {
       },
     );
   }
+}
+
+Widget _buildServiceOption({
+  required IconData icon,
+  required String title,
+  required String price,
+  required bool value,
+  required Function(bool) onChanged,
+}) {
+  return GestureDetector(
+    onTap: () {
+      onChanged(!value);
+    },
+    child: Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: value ? Colors.black : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: value ? Colors.black : Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: value ? Colors.white : Colors.black),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: value ? Colors.white : Colors.black,
+                ),
+              ),
+              Text(
+                price,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: value ? Colors.white : Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Icon(
+            value ? Icons.check_circle : Icons.radio_button_unchecked,
+            color: value ? Colors.white : Colors.black,
+          ),
+        ],
+      ),
+    ),
+  );
 }

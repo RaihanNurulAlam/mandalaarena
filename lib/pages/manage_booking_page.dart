@@ -1,4 +1,4 @@
-// ignore_for_file: unnecessary_to_list_in_spreads, use_build_context_synchronously
+// ignore_for_file: unnecessary_to_list_in_spreads
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -57,7 +57,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     }
 
     return Scaffold(
-     appBar: AppBar(
+      appBar: AppBar(
         title: Text('Kelola Booking'),
         actions: [
           Padding(
@@ -171,6 +171,12 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                         booking['namaPengguna'] as String? ?? 'Tidak Diketahui';
                     final noWhatsapp = booking['noWhatsapp'] as String? ?? '-';
                     final imagePath = booking['imagePath'] as String? ?? '';
+                    final teamName = booking['teamName'] as String? ?? '';
+                    final usePhotographer =
+                        booking['usePhotographer'] as bool? ?? false;
+                    final useReferee = booking['useReferee'] as bool? ?? false;
+                    final totalPrice = booking['totalPrice'] as int? ?? 0;
+
                     return Card(
                       margin: EdgeInsets.all(8),
                       child: Column(
@@ -208,6 +214,14 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                           Text('Status: $status'),
                                           Text('Nama: $namaPengguna'),
                                           Text('No WhatsApp: $noWhatsapp'),
+                                          Text('Nama Tim/Atas Nama: $teamName'),
+                                          if (usePhotographer)
+                                            Text(
+                                                'Layanan: Photographer (+Rp 200,000)'),
+                                          if (useReferee)
+                                            Text('Layanan: Wasit (+Rp 70,000)'),
+                                          Text(
+                                              'Total Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}'),
                                         ],
                                       ),
                                     ),
@@ -225,24 +239,31 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                             content: Text(
                                                 'Yakin ingin menghapus booking ini?'),
                                             actions: [
-  TextButton(
-    onPressed: () => Navigator.of(context).pop(false),
-    style: TextButton.styleFrom(
-      backgroundColor: Colors.black, // Warna hitam
-      foregroundColor: Colors.white, // Font warna putih
-    ),
-    child: Text('Batal'),
-  ),
-  TextButton(
-    onPressed: () => Navigator.of(context).pop(true),
-    style: TextButton.styleFrom(
-      backgroundColor: Colors.black, // Warna hitam
-      foregroundColor: Colors.white, // Font warna putih
-    ),
-    child: Text('Hapus'),
-  ),
-],
-
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(false),
+                                                style: TextButton.styleFrom(
+                                                  backgroundColor: Colors
+                                                      .black, // Warna hitam
+                                                  foregroundColor: Colors
+                                                      .white, // Font warna putih
+                                                ),
+                                                child: Text('Batal'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(true),
+                                                style: TextButton.styleFrom(
+                                                  backgroundColor: Colors
+                                                      .black, // Warna hitam
+                                                  foregroundColor: Colors
+                                                      .white, // Font warna putih
+                                                ),
+                                                child: Text('Hapus'),
+                                              ),
+                                            ],
                                           ),
                                         );
 

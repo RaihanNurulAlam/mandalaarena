@@ -38,6 +38,11 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   final DateTime _currentStartOfWeek =
       DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
   bool isMember = false;
+  bool usePhotographer = false;
+  bool useReferee = false;
+  String teamName = "";
+  final _formKey = GlobalKey<FormState>();
+  bool isFormValid = false;
 
   @override
   void initState() {
@@ -51,6 +56,27 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     // Ambil status member dari UserProvider
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     isMember = userProvider.isMember;
+  }
+
+  void _updateTotalPrice() {
+    int pricePerHour = int.parse(selectedLapang!.price.toString());
+    if (isMember) {
+      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60% untuk member
+    }
+
+    totalPrice = bookingDuration * pricePerHour;
+
+    // Tambahkan biaya photographer jika dipilih
+    if (usePhotographer) {
+      totalPrice += 200000; // Biaya photographer
+    }
+
+    // Tambahkan biaya wasit jika dipilih
+    if (useReferee) {
+      totalPrice += 70000; // Biaya wasit
+    }
+
+    setState(() {}); // Perbarui UI
   }
 
   Future<void> _fetchLapangData() async {
@@ -67,7 +93,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       if (lapang.name != null) {
         setState(() {
           selectedLapang = lapang;
-          totalPrice = int.parse(selectedLapang!.price!) * bookingDuration;
+          _updateTotalPrice(); // Hitung ulang total harga
         });
       } else {
         // Jika lapang tidak ditemukan, tampilkan pesan error
@@ -181,6 +207,15 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   }
 
   Future<void> addToCart() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Harap isi nama tim/nama pemesan terlebih dahulu!"),
+        ),
+      );
+      return;
+    }
+
     if (selectedHour.isNotEmpty &&
         bookingDuration > 0 &&
         selectedDate != null) {
@@ -242,6 +277,10 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         'namaPengguna': user.displayName ?? "",
         'noWhatsapp': user.phoneNumber ?? "",
         'duration': bookingDuration.toString(),
+        'teamName': teamName, // Simpan nama tim
+        'usePhotographer': usePhotographer, // Simpan penggunaan photographer
+        'useReferee': useReferee, // Simpan penggunaan wasit
+        'totalPrice': totalPrice, // Simpan total harga
       };
 
       final docRef = await FirebaseFirestore.instance
@@ -257,6 +296,8 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         formattedDate,
         selectedHour,
         totalPrice,
+        usePhotographer,
+        useReferee,
       );
 
       // Tampilkan popup sukses
@@ -363,7 +404,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
     // Hitung totalPrice berdasarkan durasi booking
     if (bookingDuration > 0) {
-      totalPrice = bookingDuration * pricePerHour;
+      _updateTotalPrice(); // Perbarui total harga
     }
 
     if (selectedLapang == null || selectedLapang!.name == null) {
@@ -527,6 +568,43 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                           [],
                     ),
                     SizedBox(height: 20),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Nama Tim / Atas Nama:",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          TextFormField(
+                            decoration: InputDecoration(
+                              hintText: "Masukkan nama tim atau nama pemesan",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return "Nama tim/nama pemesan wajib diisi!";
+                              }
+                              return null;
+                            },
+                            onChanged: (value) {
+                              setState(() {
+                                teamName = value;
+                                isFormValid = _formKey.currentState!.validate();
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
                     Text(
                       "Pilih Tanggal Booking:",
                       style: TextStyle(
@@ -575,21 +653,18 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                         return ChoiceChip(
                           label: Text("$hour:00"),
                           selected: selectedHour == "$hour:00",
-                          onSelected: isPast ||
-                                  isUnavailable ||
-                                  isOverOperationalTime
-                              ? null
-                              : (bool selected) {
-                                  setState(() {
-                                    selectedHour = "$hour:00";
-                                    if (hour == 22) {
-                                      bookingDuration = 1;
-                                      totalPrice =
-                                          int.parse(selectedLapang!.price!) *
-                                              bookingDuration;
-                                    }
-                                  });
-                                },
+                          onSelected:
+                              isPast || isUnavailable || isOverOperationalTime
+                                  ? null
+                                  : (bool selected) {
+                                      setState(() {
+                                        selectedHour = "$hour:00";
+                                        if (hour == 22) {
+                                          bookingDuration = 1;
+                                          _updateTotalPrice();
+                                        }
+                                      });
+                                    },
                           backgroundColor:
                               isPast || isUnavailable || isOverOperationalTime
                                   ? Colors.grey.shade300
@@ -633,9 +708,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                               ? (bool selected) {
                                   setState(() {
                                     bookingDuration = duration;
-                                    totalPrice =
-                                        int.parse(selectedLapang!.price!) *
-                                            bookingDuration;
+                                    _updateTotalPrice();
                                   });
                                 }
                               : null,
@@ -648,6 +721,40 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                           ),
                         );
                       }),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      "Tambahan Layanan:",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    _buildServiceOption(
+                      icon: Icons.camera_alt,
+                      title: "Photographer",
+                      price: "Rp 200,000",
+                      value: usePhotographer,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          usePhotographer = value ?? false;
+                          _updateTotalPrice();
+                        });
+                      },
+                    ),
+                    SizedBox(height: 10),
+                    _buildServiceOption(
+                      icon: Icons.sports,
+                      title: "Wasit",
+                      price: "Rp 70,000",
+                      value: useReferee,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          useReferee = value ?? false;
+                          _updateTotalPrice();
+                        });
+                      },
                     ),
                   ],
                 ),
@@ -680,7 +787,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                       ),
                     ),
                     Text(
-                      'Total: Rp. $totalPrice',
+                      'Total: Rp. ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -694,6 +801,61 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
           : SizedBox.shrink(),
     );
   }
+}
+
+Widget _buildServiceOption({
+  required IconData icon,
+  required String title,
+  required String price,
+  required bool value,
+  required Function(bool) onChanged,
+}) {
+  return GestureDetector(
+    onTap: () {
+      onChanged(!value);
+    },
+    child: Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: value ? Colors.black : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: value ? Colors.black : Colors.grey.shade300,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: value ? Colors.white : Colors.black),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: value ? Colors.white : Colors.black,
+                ),
+              ),
+              Text(
+                price,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: value ? Colors.white : Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Icon(
+            value ? Icons.check_circle : Icons.radio_button_unchecked,
+            color: value ? Colors.white : Colors.black,
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class WeeklyCalendar extends StatelessWidget {

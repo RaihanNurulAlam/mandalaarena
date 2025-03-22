@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
@@ -41,7 +42,19 @@ class _CartPageState extends State<CartPage> {
             price = price * 0.4; // Diskon 60% untuk member
           }
           final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
-          return previousValue + (price * quantity);
+          double itemTotal = price * quantity;
+
+          // Tambahkan biaya photographer jika digunakan
+          if (cartModel.usePhotographer ?? false) {
+            itemTotal += 200000; // Biaya tambahan photographer
+          }
+
+          // Tambahkan biaya wasit jika digunakan
+          if (cartModel.useReferee ?? false) {
+            itemTotal += 70000; // Biaya tambahan wasit
+          }
+
+          return previousValue + itemTotal;
         });
 
         return Scaffold(
@@ -176,6 +189,10 @@ class _CartPageState extends State<CartPage> {
                                       'Rp. ${price.toString()} x ${item.quantity} Jam'),
                                   Text(
                                       'Tanggal: ${item.bookingDate} - Jam: ${item.time}'),
+                                  if (item.usePhotographer ?? false)
+                                    Text('Photographer: Rp 200,000'),
+                                  if (item.useReferee ?? false)
+                                    Text('Wasit: Rp 70,000'),
                                 ],
                               ),
                               trailing: IconButton(
@@ -270,9 +287,9 @@ class _CartPageState extends State<CartPage> {
                           ),
                         ),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 16), // Dikurangi
+                            horizontal: 20, vertical: 16),
                         margin: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 20), // Dikurangi
+                            horizontal: 20, vertical: 20),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -280,14 +297,14 @@ class _CartPageState extends State<CartPage> {
                               'Total Harga',
                               style: TextStyle(
                                 color: Colors.black,
-                                fontSize: 18, // Dikurangi
+                                fontSize: 18,
                               ),
                             ),
                             Text(
-                              'Rp. ${totalPrice.toString()}',
+                              'Total: Rp. ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
                               style: const TextStyle(
                                 color: Colors.black,
-                                fontSize: 18, // Dikurangi
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -295,14 +312,11 @@ class _CartPageState extends State<CartPage> {
                         ),
                       ),
                       Container(
-                        margin: const EdgeInsets.fromLTRB(
-                            16, 0, 16, 14), // Dikurangi
-                        width: MediaQuery.of(context).size.width *
-                            0.8, // Lebarnya dikurangi
+                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                        width: MediaQuery.of(context).size.width * 0.8,
                         child: CupertinoButton(
                           color: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10), // Dikurangi
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                           borderRadius: BorderRadius.circular(50),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -311,16 +325,16 @@ class _CartPageState extends State<CartPage> {
                                 'Bayar Sekarang',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 18, // Dikurangi
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Urbanist',
                                 ),
                               ),
-                              SizedBox(width: 8), // Dikurangi
+                              SizedBox(width: 8),
                               Icon(
                                 CupertinoIcons.arrow_right,
                                 color: Colors.white,
-                                size: 20, // Ukuran ikon dikurangi
+                                size: 20,
                               ),
                             ],
                           ),

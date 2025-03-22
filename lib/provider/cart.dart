@@ -1,5 +1,3 @@
-// ignore_for_file: cast_from_null_always_fails, unnecessary_null_comparison
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/models/cart_model.dart';
@@ -19,6 +17,8 @@ class Cart extends ChangeNotifier {
     String bookingDate,
     String selectedHour,
     num totalPrice,
+    bool usePhotographer, // Tambahkan parameter ini
+    bool useReferee, // Tambahkan parameter ini
   ) async {
     try {
       // Ambil data pengguna dari Firestore
@@ -55,6 +55,9 @@ class Cart extends ChangeNotifier {
         'namaPengguna': userName, // Nama pengguna
         'noWhatsapp': userPhone, // Nomor WhatsApp pengguna
         'duration': bookingDuration.toString(), // Durasi booking dalam string
+        'usePhotographer': usePhotographer, // Simpan penggunaan photographer
+        'useReferee': useReferee, // Simpan penggunaan wasit
+        'totalPrice': totalPrice, // Simpan total harga
       });
 
       // Tambahkan ke lokal cart
@@ -72,6 +75,8 @@ class Cart extends ChangeNotifier {
           duration: bookingDuration,
           namaPengguna: userName,
           noWhatsapp: userPhone,
+          usePhotographer: usePhotographer, // Simpan informasi photographer
+          useReferee: useReferee, // Simpan informasi wasit
         ),
       );
 
@@ -80,31 +85,6 @@ class Cart extends ChangeNotifier {
       debugPrint('Error adding item to cart: $e');
     }
   }
-
-  /// Menghapus item dari cart berdasarkan docId
-  // Future<void> removeItemByDocId(String docId) async {
-  //   try {
-  //     // Temukan item di cart yang docId-nya sama
-  //     final itemToRemove = _cart.firstWhere(
-  //       (item) => item.docId == docId,
-  //       orElse: () => null as CartModel,
-  //     );
-
-  //     if (itemToRemove != null) {
-  //       // Hapus dari Firestore
-  //       await FirebaseFirestore.instance
-  //           .collection('bookings')
-  //           .doc(docId)
-  //           .delete();
-
-  //       // Hapus dari list cart
-  //       _cart.remove(itemToRemove);
-  //       notifyListeners();
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Error removing item by docId: $e');
-  //   }
-  // }
 
   Future<void> removeItemByDocId(String docId) async {
     try {
@@ -140,7 +120,6 @@ class Cart extends ChangeNotifier {
           await doc.reference.delete();
         }
 
-        // _cart.remove(item);
         _cart.removeWhere((cartItem) =>
             cartItem.id == item.id &&
             cartItem.bookingDate == item.bookingDate &&
@@ -205,6 +184,9 @@ class Cart extends ChangeNotifier {
             duration: int.tryParse(data['duration'].toString()) ?? 0,
             namaPengguna: data['namaPengguna'],
             noWhatsapp: data['noWhatsapp'],
+            usePhotographer:
+                data['usePhotographer'] ?? false, // Ambil data photographer
+            useReferee: data['useReferee'] ?? false, // Ambil data wasit
           ),
         );
       }
@@ -241,6 +223,9 @@ class Cart extends ChangeNotifier {
             duration: int.tryParse(data['duration'].toString()) ?? 0,
             namaPengguna: data['namaPengguna'],
             noWhatsapp: data['noWhatsapp'],
+            usePhotographer:
+                data['usePhotographer'] ?? false, // Ambil data photographer
+            useReferee: data['useReferee'] ?? false, // Ambil data wasit
           ),
         );
       }
@@ -255,7 +240,19 @@ class Cart extends ChangeNotifier {
     return _cart.fold(0, (total, item) {
       final price = double.tryParse(item.price ?? '0') ?? 0;
       final quantity = int.tryParse(item.quantity ?? '0') ?? 0;
-      return total + price * quantity;
+      double itemTotal = price * quantity;
+
+      // Tambahkan biaya photographer jika digunakan
+      if (item.usePhotographer ?? false) {
+        itemTotal += 200000; // Biaya tambahan photographer
+      }
+
+      // Tambahkan biaya wasit jika digunakan
+      if (item.useReferee ?? false) {
+        itemTotal += 70000; // Biaya tambahan wasit
+      }
+
+      return total + itemTotal;
     });
   }
 }

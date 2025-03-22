@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart'; // Import halaman home
 import 'package:mandalaarenaapp/pages/points_page.dart'; // Halaman poin
 import 'package:mandalaarenaapp/pages/riwayat_pembayaran.dart';
@@ -96,6 +97,17 @@ class _PaymentPageState extends State<PaymentPage> {
         if (userProvider.isMember) {
           price = price * 0.4; // Diskon 60% untuk member
         }
+
+        // Tambahkan biaya photographer jika dipilih
+        if (cartModel.usePhotographer ?? false) {
+          price += 200000; // Biaya photographer
+        }
+
+        // Tambahkan biaya wasit jika dipilih
+        if (cartModel.useReferee ?? false) {
+          price += 70000; // Biaya wasit
+        }
+
         return previousValue + (price * int.parse(cartModel.quantity!));
       },
     );
@@ -234,6 +246,17 @@ class _PaymentPageState extends State<PaymentPage> {
                     if (userProvider.isMember) {
                       price = price * 0.4; // Diskon 60% untuk member
                     }
+
+                    // Tambahkan biaya photographer jika dipilih
+                    if (item.usePhotographer ?? false) {
+                      price += 200000; // Biaya photographer
+                    }
+
+                    // Tambahkan biaya wasit jika dipilih
+                    if (item.useReferee ?? false) {
+                      price += 70000; // Biaya wasit
+                    }
+
                     return Container(
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.all(16),
@@ -287,6 +310,22 @@ class _PaymentPageState extends State<PaymentPage> {
                                     color: Colors.black54,
                                   ),
                                 ),
+                                if (item.usePhotographer ?? false)
+                                  Text(
+                                    'Layanan: Photographer (+Rp 200,000)',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                if (item.useReferee ?? false)
+                                  Text(
+                                    'Layanan: Wasit (+Rp 70,000)',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
                               ],
                             ),
                           ),
@@ -311,7 +350,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         ),
                       ),
                       Text(
-                        'Rp. ${totalPrice.toString()}',
+                        'Total: Rp. ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
