@@ -173,10 +173,9 @@ class _DetailPageState extends State<DetailPage> {
         totalPrice += 70000; // Harga wasit
       }
 
-      // Tambahkan pemeriksaan batas tutup lapangan (misal tutup pukul 22:00)
+      // Cek batas tutup lapangan
       final int currentStartHour = int.parse(selectedHour.split(":")[0]);
-      final int maxAllowedDuration =
-          22 - currentStartHour; // jam tersisa hingga 22:00
+      final int maxAllowedDuration = 22 - currentStartHour;
       if (bookingDuration > maxAllowedDuration) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -189,7 +188,7 @@ class _DetailPageState extends State<DetailPage> {
       }
 
       final cart = context.read<Cart>();
-      final userId = user?.uid ?? ""; // Pastikan userId tidak null
+      final userId = user?.uid ?? "";
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
       final selectedTime = DateTime(
         selectedDate!.year,
@@ -198,7 +197,7 @@ class _DetailPageState extends State<DetailPage> {
         currentStartHour,
       );
 
-      // Cek ketersediaan slot di Firestore untuk seluruh durasi
+      // Cek ketersediaan slot di Firestore
       bool isAvailable = true;
       for (int i = 0; i < bookingDuration; i++) {
         final timeToCheck = selectedTime.add(Duration(hours: i));
@@ -273,11 +272,12 @@ class _DetailPageState extends State<DetailPage> {
           'namaPengguna': userName,
           'noWhatsapp': userPhone ?? "",
           'duration': bookingDuration.toString(),
-          'isMember': isMember, // Simpan status member
-          'teamName': teamName, // Simpan nama tim/atas nama
-          'usePhotographer': usePhotographer, // Simpan penggunaan photographer
-          'useReferee': useReferee, // Simpan penggunaan wasit
-          'totalPrice': totalPrice, // Simpan total harga
+          'isMember': isMember,
+          'teamName':
+              teamName, // Simpan nama tim/atas nama dari state `teamName`
+          'usePhotographer': usePhotographer,
+          'useReferee': useReferee,
+          'totalPrice': totalPrice,
         };
 
         // Tambahkan data ke Firestore
@@ -297,6 +297,7 @@ class _DetailPageState extends State<DetailPage> {
           totalPrice,
           usePhotographer,
           useReferee,
+          teamName, // Sertakan teamName saat menambahkan ke cart
         );
 
         // Perbarui daftar unavailableTimes
@@ -695,7 +696,8 @@ class _DetailPageState extends State<DetailPage> {
                   },
                   onChanged: (value) {
                     setState(() {
-                      teamName = value;
+                      teamName =
+                          value; // Nilai input disimpan ke state `teamName`
                       isFormValid = _formKey.currentState!.validate();
                     });
                   },

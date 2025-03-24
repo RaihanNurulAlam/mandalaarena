@@ -17,8 +17,9 @@ class Cart extends ChangeNotifier {
     String bookingDate,
     String selectedHour,
     num totalPrice,
-    bool usePhotographer, // Tambahkan parameter ini
-    bool useReferee, // Tambahkan parameter ini
+    bool usePhotographer,
+    bool useReferee,
+    String teamName, // Tambahkan parameter teamName
   ) async {
     try {
       // Ambil data pengguna dari Firestore
@@ -43,21 +44,22 @@ class Cart extends ChangeNotifier {
 
       // Simpan data booking ke Firestore dengan format yang sesuai
       await FirebaseFirestore.instance.collection('bookings').doc(docId).set({
-        'lapangan': lapangItem.name, // Nama lapangan
-        'tanggal': bookingDate, // Tanggal booking
-        'jamMulai': selectedHour, // Jam mulai
-        'jamSelesai': jamSelesai, // Jam selesai
-        'statusBooking': 'Pending', // Status booking
+        'lapangan': lapangItem.name,
+        'tanggal': bookingDate,
+        'jamMulai': selectedHour,
+        'jamSelesai': jamSelesai,
+        'statusBooking': 'Pending',
         'price': lapangItem.price,
         'imagePath': lapangItem.imagePath,
-        'lapangId': lapangItem.id, // ID lapangan
-        'userId': userId, // ID pengguna
-        'namaPengguna': userName, // Nama pengguna
-        'noWhatsapp': userPhone, // Nomor WhatsApp pengguna
-        'duration': bookingDuration.toString(), // Durasi booking dalam string
-        'usePhotographer': usePhotographer, // Simpan penggunaan photographer
-        'useReferee': useReferee, // Simpan penggunaan wasit
-        'totalPrice': totalPrice, // Simpan total harga
+        'lapangId': lapangItem.id,
+        'userId': userId,
+        'namaPengguna': userName,
+        'noWhatsapp': userPhone,
+        'duration': bookingDuration.toString(),
+        'usePhotographer': usePhotographer,
+        'useReferee': useReferee,
+        'totalPrice': totalPrice,
+        'teamName': teamName, // Simpan teamName
       });
 
       // Tambahkan ke lokal cart
@@ -75,8 +77,9 @@ class Cart extends ChangeNotifier {
           duration: bookingDuration,
           namaPengguna: userName,
           noWhatsapp: userPhone,
-          usePhotographer: usePhotographer, // Simpan informasi photographer
-          useReferee: useReferee, // Simpan informasi wasit
+          usePhotographer: usePhotographer,
+          useReferee: useReferee,
+          teamName: teamName, // Simpan teamName
         ),
       );
 

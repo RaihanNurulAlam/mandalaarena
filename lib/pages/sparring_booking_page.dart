@@ -298,6 +298,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         totalPrice,
         usePhotographer,
         useReferee,
+        teamName,
       );
 
       // Tampilkan popup sukses

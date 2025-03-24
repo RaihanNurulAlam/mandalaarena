@@ -1,19 +1,20 @@
 class CartModel {
-  String? userId; // User ID dari Firebase
-  String? docId; // Document ID dari Firebase
-  String? id; // ID dari lapangan
+  String? userId;
+  String? docId;
+  String? id;
   String? name;
   String? price;
   String? imagePath;
   String? quantity;
-  String? bookingDate; // Tanggal booking
-  String? time; // Waktu booking
-  int? duration; // Durasi booking
-  String? namaPengguna; // Nama pengguna
-  String? noWhatsapp; // Nomor WhatsApp
-  bool? usePhotographer; // Apakah menggunakan photographer
-  bool? useReferee; // Apakah menggunakan wasit
-  int? totalPrice; // Total harga termasuk biaya tambahan
+  String? bookingDate;
+  String? time;
+  int? duration;
+  String? namaPengguna;
+  String? noWhatsapp;
+  bool? usePhotographer;
+  bool? useReferee;
+  int? totalPrice;
+  String? teamName; // Tambahkan field teamName
 
   CartModel({
     this.userId,
@@ -31,6 +32,7 @@ class CartModel {
     this.usePhotographer,
     this.useReferee,
     this.totalPrice,
+    this.teamName, // Tambahkan field teamName
   });
 
   // Konversi dari JSON Firebase ke CartModel
@@ -50,6 +52,7 @@ class CartModel {
     usePhotographer = json['usePhotographer'];
     useReferee = json['useReferee'];
     totalPrice = json['totalPrice'];
+    teamName = json['teamName']; // Ambil teamName dari JSON
   }
 
   // Konversi dari CartModel ke JSON Firebase
@@ -69,6 +72,7 @@ class CartModel {
       'usePhotographer': usePhotographer,
       'useReferee': useReferee,
       'totalPrice': totalPrice,
+      'teamName': teamName, // Sertakan teamName dalam JSON
     };
   }
 }
