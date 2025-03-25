@@ -90,27 +90,26 @@ class _PaymentPageState extends State<PaymentPage> {
     final cart = Provider.of<Cart>(context);
 
     // Hitung total harga dari keranjang dengan diskon jika member
-    double totalPrice = cart.cart.fold(
-      0,
-      (previousValue, cartModel) {
-        double price = double.tryParse(cartModel.price ?? '0') ?? 0;
-        if (userProvider.isMember) {
-          price = price * 0.4; // Diskon 60% untuk member
-        }
+    double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
+      double price = double.tryParse(cartModel.price ?? '0') ?? 0;
+      if (userProvider.isMember) {
+        price = price * 0.4; // Diskon 60% untuk member
+      }
+      final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
+      double itemTotal = price * quantity;
 
-        // Tambahkan biaya photographer jika dipilih
-        if (cartModel.usePhotographer ?? false) {
-          price += 200000; // Biaya photographer
-        }
+      // Tambahkan biaya photographer jika digunakan
+      if (cartModel.usePhotographer ?? false) {
+        itemTotal += 200000; // Biaya tambahan photographer
+      }
 
-        // Tambahkan biaya wasit jika dipilih
-        if (cartModel.useReferee ?? false) {
-          price += 70000; // Biaya wasit
-        }
+      // Tambahkan biaya wasit jika digunakan
+      if (cartModel.useReferee ?? false) {
+        itemTotal += 70000; // Biaya tambahan wasit
+      }
 
-        return previousValue + (price * int.parse(cartModel.quantity!));
-      },
-    );
+      return previousValue + itemTotal;
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -246,6 +245,8 @@ class _PaymentPageState extends State<PaymentPage> {
                     if (userProvider.isMember) {
                       price = price * 0.4; // Diskon 60% untuk member
                     }
+                    final totalPrice =
+                        price * (int.tryParse(item.quantity ?? '1') ?? 1);
 
                     // Tambahkan biaya photographer jika dipilih
                     if (item.usePhotographer ?? false) {
@@ -277,8 +278,8 @@ class _PaymentPageState extends State<PaymentPage> {
                             borderRadius: BorderRadius.circular(8),
                             child: Image.asset(
                               item.imagePath ?? 'assets/images/placeholder.png',
-                              width: 50,
-                              height: 50,
+                              width: 100,
+                              height: 100,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -296,11 +297,24 @@ class _PaymentPageState extends State<PaymentPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Harga: Rp. ${price.toString()} x ${item.quantity} Jam',
+                                  'Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(double.tryParse(item.price ?? '0') ?? 0)} x ${item.quantity} Jam',
                                   style: const TextStyle(
                                     fontSize: 14,
                                     color: Colors.black54,
                                   ),
+                                ),
+                                if (userProvider.isMember)
+                                  Text(
+                                    'Diskon Member: 60%',
+                                    style: TextStyle(
+                                        fontSize: 14, color: Colors.green[700]),
+                                  ),
+                                Text(
+                                  'Total setelah diskon: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -335,8 +349,6 @@ class _PaymentPageState extends State<PaymentPage> {
                   },
                 ),
                 const Divider(height: 32),
-
-                // Tampilkan total harga
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Row(
@@ -350,7 +362,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         ),
                       ),
                       Text(
-                        'Total: Rp. ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
+                        'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
