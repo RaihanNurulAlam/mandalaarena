@@ -96,7 +96,7 @@ class HelpPage extends StatelessWidget {
                     builder: (context) => AlertDialog(
                       title: const Text("Hubungi Dukungan"),
                       content: const Text(
-                          "Anda dapat menghubungi tim dukungan kami melalui email di mandalaarena@gmail.com atau melalui telepon di +62 821-1755-6907."),
+                          "Anda dapat menghubungi tim dukungan kami melalui email di mandalaarena@gmail.com atau melalui telepon di +62 821-2946-2671."),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),

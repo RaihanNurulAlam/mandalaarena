@@ -1,20 +1,18 @@
+require("dotenv").config();
 const functions = require("firebase-functions");
 const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
 const midtransClient = require("midtrans-client");
-const axios = require("axios");
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // === Konfigurasi Midtrans ===
 const snap = new midtransClient.Snap({
-  isProduction: false, // Ubah ke `true` jika menggunakan environment produksi
-  serverKey: "SB-Mid-server-cy93tLqGdUiBnvuFQXhVjlH-", // Ganti dengan server key Anda
-  clientKey: "SB-Mid-client-HsSGwXWH6zCQ2Hmb", // Ganti dengan client key Anda
+  isProduction: false,
+  serverKey: process.env.MIDTRANS_SERVER_KEY,
 });
 
 // Endpoint untuk membuat transaksi
@@ -23,7 +21,6 @@ app.post("/pay", async (req, res) => {
     const { orderId, grossAmount, firstName, lastName, email, phone } =
       req.body;
 
-    // Validasi input
     if (!orderId || !grossAmount || !firstName || !email || !phone) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -31,22 +28,21 @@ app.post("/pay", async (req, res) => {
     const parameter = {
       transaction_details: {
         order_id: orderId,
-        gross_amount: parseInt(grossAmount, 10),
+        gross_amount: parseInt(grossAmount),
       },
       customer_details: {
         first_name: firstName,
         last_name: lastName || "",
-        email,
-        phone,
-      }, // Trailing comma sudah ditambahkan
+        email: email,
+        phone: phone,
+      },
     };
 
-    // Membuat transaksi di Midtrans
     const transaction = await snap.createTransaction(parameter);
 
     res.status(200).json({
       transactionToken: transaction.token,
-      orderId,
+      orderId: orderId,
     });
   } catch (error) {
     console.error(error);
@@ -54,7 +50,7 @@ app.post("/pay", async (req, res) => {
   }
 });
 
-// Endpoint untuk memeriksa status transaksi
+// Endpoint untuk memeriksa status transaksi dengan Midtrans SDK
 app.get("/transaction-status", async (req, res) => {
   try {
     const { orderId } = req.query;
@@ -62,29 +58,19 @@ app.get("/transaction-status", async (req, res) => {
       return res.status(400).json({ error: "orderId is required" });
     }
 
-    const response = await axios.get(
-        `https://api.sandbox.midtrans.com/v2/${orderId}/status`,
-        {
-          headers: {
-            Authorization: `Basic ${Buffer.from(
-                `${snap.apiConfig.serverKey}:`,
-            ).toString("base64")}`,
-          },
-        },
-    );
-
-    res.status(200).json(response.data);
+    const transactionStatus = await snap.transaction.status(orderId);
+    res.status(200).json(transactionStatus);
   } catch (error) {
     console.error("Error fetching transaction status:", error);
     res.status(500).json({ error: "Failed to fetch transaction status" });
   }
 });
 
-// Dengarkan port yang disediakan oleh Firebase
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// Middleware Global untuk Menangani Error
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
-// Ekspor ke Firebase Cloud Functions
+// === Ekspor ke Firebase Cloud Functions ===
 exports.api = functions.https.onRequest(app);

@@ -61,7 +61,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   void _updateTotalPrice() {
     int pricePerHour = int.parse(selectedLapang!.price.toString());
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60% untuk member
+      pricePerHour = (pricePerHour * 0.6).round();
     }
 
     totalPrice = bookingDuration * pricePerHour;
@@ -400,7 +400,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     // Hitung harga dengan diskon jika member
     int pricePerHour = int.parse(selectedLapang!.price.toString());
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60%
+      pricePerHour = (pricePerHour * 0.6).round();
     }
 
     // Hitung totalPrice berdasarkan durasi booking
@@ -528,7 +528,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                     SizedBox(height: 8),
                     Text(
                       isMember
-                          ? "Harga (Diskon 60%): Rp $pricePerHour / jam"
+                          ? "Harga (Diskon 40%): Rp $pricePerHour / jam"
                           : "Harga: Rp ${selectedLapang!.price} / jam",
                       style: TextStyle(
                         fontSize: 20,

@@ -204,7 +204,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       child: FloatingActionButton(
                         heroTag: "whatsapp",
                         onPressed: () =>
-                            _launchURL('https://wa.me/6282117556907'),
+                            _launchURL('https://wa.me/6281111122525'),
                         backgroundColor: Colors.green,
                         child: Image.network(
                           "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
@@ -371,10 +371,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
         crossAxisCount: MediaQuery.of(context).size.width > 1650
             ? 5 // Jika lebar layar lebih dari 1650px, tampilkan 5 kolom
             : MediaQuery.of(context).size.width > 1200
-            ? 4 // Jika lebar layar lebih dari 1200px, tampilkan 4 kolom
-            : MediaQuery.of(context).size.width > 750
-                ? 3 // Jika layar lebih dari 750px, tampilkan 3 kolom (tablet)
-                : 2, // Selain itu (mobile), tampilkan 2 kolom
+                ? 4 // Jika lebar layar lebih dari 1200px, tampilkan 4 kolom
+                : MediaQuery.of(context).size.width > 750
+                    ? 3 // Jika layar lebih dari 750px, tampilkan 3 kolom (tablet)
+                    : 2, // Selain itu (mobile), tampilkan 2 kolom
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
         childAspectRatio: 4 / 5,

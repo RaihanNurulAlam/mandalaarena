@@ -46,7 +46,7 @@ class _DetailPageState extends State<DetailPage> {
   void _updateTotalPrice() {
     int pricePerHour = int.parse(widget.lapang.price.toString());
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60% untuk member
+      pricePerHour = (pricePerHour * 0.6).round();
     }
 
     totalPrice = bookingDuration * pricePerHour;
@@ -157,7 +157,7 @@ class _DetailPageState extends State<DetailPage> {
       // Hitung harga per jam
       int pricePerHour = int.parse(widget.lapang.price.toString());
       if (isMember) {
-        pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60% untuk member
+        pricePerHour = (pricePerHour * 0.6).round();
       }
 
       // Hitung total harga
@@ -427,7 +427,7 @@ class _DetailPageState extends State<DetailPage> {
     // Hitung harga dengan diskon jika member
     int pricePerHour = int.parse(widget.lapang.price.toString());
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60%
+      pricePerHour = (pricePerHour * 0.6).round();
     }
 
     return Scaffold(
@@ -548,7 +548,7 @@ class _DetailPageState extends State<DetailPage> {
     // Hitung harga dengan diskon jika member
     int pricePerHour = int.parse(widget.lapang.price.toString());
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60%
+      pricePerHour = (pricePerHour * 0.6).round();
     }
 
     return Column(
@@ -603,7 +603,7 @@ class _DetailPageState extends State<DetailPage> {
             children: [
               Text(
                 isMember
-                    ? "Harga (Diskon 60%): Rp $pricePerHour / jam"
+                    ? "Harga (Diskon 40%): Rp $pricePerHour / jam"
                     : "Harga: Rp ${widget.lapang.price} / jam",
                 style: const TextStyle(
                   fontSize: 20,

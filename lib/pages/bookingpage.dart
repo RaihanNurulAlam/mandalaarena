@@ -176,7 +176,7 @@ class _BookingPageState extends State<BookingPage> {
     int pricePerHour = int.parse(selectedLapang['price']);
 
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.4).round();
+      pricePerHour = (pricePerHour * 0.6).round();
     }
 
     totalPrice = bookingDuration * pricePerHour;
@@ -402,7 +402,7 @@ class _BookingPageState extends State<BookingPage> {
     }
 
     int pricePerHour = int.parse(selectedLapang['price']);
-    if (isMember) pricePerHour = (pricePerHour * 0.4).round();
+    if (isMember) pricePerHour = (pricePerHour * 0.6).round();
     _updateTotalPrice();
 
     return Scaffold(
@@ -441,7 +441,7 @@ class _BookingPageState extends State<BookingPage> {
                       const SizedBox(height: 5),
                       Text(
                         isMember
-                            ? "Harga (Diskon 60%): Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(pricePerHour)} / jam"
+                            ? "Harga (Diskon 40%): Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(pricePerHour)} / jam"
                             : "Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(pricePerHour)} / jam",
                         style: const TextStyle(
                           fontSize: 16,

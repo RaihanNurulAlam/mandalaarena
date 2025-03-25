@@ -93,7 +93,7 @@ class _PaymentPageState extends State<PaymentPage> {
     double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
       double price = double.tryParse(cartModel.price ?? '0') ?? 0;
       if (userProvider.isMember) {
-        price = price * 0.4; // Diskon 60% untuk member
+        price = price * 0.6;
       }
       final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
       double itemTotal = price * quantity;
@@ -243,7 +243,7 @@ class _PaymentPageState extends State<PaymentPage> {
                     final item = cart.cart[index];
                     double price = double.tryParse(item.price ?? '0') ?? 0;
                     if (userProvider.isMember) {
-                      price = price * 0.4; // Diskon 60% untuk member
+                      price = price * 0.6;
                     }
                     final totalPrice =
                         price * (int.tryParse(item.quantity ?? '1') ?? 1);
@@ -305,7 +305,7 @@ class _PaymentPageState extends State<PaymentPage> {
                                 ),
                                 if (userProvider.isMember)
                                   Text(
-                                    'Diskon Member: 60%',
+                                    'Diskon Member: 40%',
                                     style: TextStyle(
                                         fontSize: 14, color: Colors.green[700]),
                                   ),

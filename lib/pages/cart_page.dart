@@ -39,7 +39,7 @@ class _CartPageState extends State<CartPage> {
         double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
           double price = double.tryParse(cartModel.price ?? '0') ?? 0;
           if (userProvider.isMember) {
-            price = price * 0.4; // Diskon 60% untuk member
+            price = price * 0.6;
           }
           final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
           double itemTotal = price * quantity;
@@ -161,7 +161,7 @@ class _CartPageState extends State<CartPage> {
                             double price =
                                 double.tryParse(item.price ?? '0') ?? 0;
                             if (userProvider.isMember) {
-                              price = price * 0.4; // Diskon 60% untuk member
+                              price = price * 0.6;
                             }
                             return ListTile(
                               leading: ClipRRect(
