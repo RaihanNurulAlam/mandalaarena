@@ -1,9 +1,12 @@
+// booking_schedule_page.dart
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
 import 'package:mandalaarenaapp/pages/add_recurring_booking_page.dart';
 import 'package:mandalaarenaapp/pages/bookingpage.dart';
+import 'package:mandalaarenaapp/pages/edit_bookingpage.dart';
 
 class BookingSchedulePage extends StatefulWidget {
   @override
@@ -11,8 +14,8 @@ class BookingSchedulePage extends StatefulWidget {
 }
 
 class _BookingSchedulePageState extends State<BookingSchedulePage> {
-  String? selectedLapangan = 'Lapang Minisoccer'; // Default lapangan
-  DateTime? selectedDate = DateTime.now(); // Default hari ini
+  String? selectedLapangan = 'Lapang Minisoccer';
+  DateTime? selectedDate = DateTime.now();
   List<String> lapanganList = [];
   List<Map<String, dynamic>> lapangData = [];
 
@@ -22,7 +25,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
     _loadLapangData();
   }
 
-  // Load data lapang dari file JSON
   Future<void> _loadLapangData() async {
     final String jsonString =
         await DefaultAssetBundle.of(context).loadString('assets/lapang.json');
@@ -34,7 +36,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
     });
   }
 
-  // Tampilkan popup pemilihan lapangan
   void _showLapanganSelectionPopup(BuildContext context, String selectedTime) {
     final lapanganOptions = [
       'Lapang Basket Vynil',
@@ -54,7 +55,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
             return ListTile(
               title: Text(lapangan),
               onTap: () {
-                Navigator.of(context).pop(); // Tutup popup
+                Navigator.of(context).pop();
                 _navigateToBookingPage(context, lapangan, selectedTime);
               },
             );
@@ -64,7 +65,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
     );
   }
 
-  // Navigasi ke halaman BookingPage
   void _navigateToBookingPage(
       BuildContext context, String lapangan, String selectedTime) {
     Navigator.push(
@@ -79,7 +79,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
     );
   }
 
-  // Cek apakah jam sudah terlewat
   bool _isTimePast(String time) {
     if (selectedDate == null) return false;
 
@@ -94,6 +93,182 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
     return selectedDateTime.isBefore(now);
   }
 
+  void _showBookingDetailPopup(BuildContext context, DocumentSnapshot booking) {
+    final data = booking.data() as Map<String, dynamic>;
+    final isPaidFull = data['paymentStatus'] == 'Lunas';
+    final downPayment = data['downPaymentAmount'] ?? 0;
+    final remainingAmount = data['remainingAmount'] ?? 0;
+    final paymentProofUrl = data['paymentProofUrl'] as String?;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Detail Booking'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.sports),
+                title: Text('Lapangan'),
+                subtitle: Text(data['lapangan'] ?? '-'),
+              ),
+              ListTile(
+                leading: Icon(Icons.calendar_today),
+                title: Text('Tanggal'),
+                subtitle: Text(data['tanggal'] ?? '-'),
+              ),
+              ListTile(
+                leading: Icon(Icons.access_time),
+                title: Text('Jam'),
+                subtitle: Text('${data['jamMulai']} - ${data['jamSelesai']}'),
+              ),
+              ListTile(
+                leading: Icon(Icons.person),
+                title: Text('Nama Pemesan'),
+                subtitle: Text(data['namaPengguna'] ?? '-'),
+              ),
+              ListTile(
+                leading: Icon(Icons.phone),
+                title: Text('No WhatsApp'),
+                subtitle: Text(data['noWhatsapp'] ?? '-'),
+              ),
+              ListTile(
+                leading: Icon(Icons.group),
+                title: Text('Nama Tim/Atas Nama'),
+                subtitle: Text(data['teamName'] ?? '-'),
+              ),
+              if (data['usePhotographer'] == true)
+                ListTile(
+                  leading: Icon(Icons.camera_alt),
+                  title: Text('Photographer'),
+                  subtitle: Text('Rp 200,000'),
+                ),
+              if (data['useReferee'] == true)
+                ListTile(
+                  leading: Icon(Icons.sports_score),
+                  title: Text('Wasit'),
+                  subtitle: Text('Rp 70,000'),
+                ),
+              ListTile(
+                leading: Icon(Icons.payment),
+                title: Text('Status Pembayaran'),
+                subtitle: Text(
+                  isPaidFull ? 'Lunas' : 'DP (${data['paymentStatus']})',
+                  style: TextStyle(
+                    color: isPaidFull ? Colors.green : Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (!isPaidFull) ...[
+                ListTile(
+                  leading: Icon(Icons.money),
+                  title: Text('DP Dibayar'),
+                  subtitle: Text(
+                      'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(downPayment)}'),
+                ),
+                ListTile(
+                  leading: Icon(Icons.money_off),
+                  title: Text('Sisa Pembayaran'),
+                  subtitle: Text(
+                    'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(remainingAmount)}',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+              if (paymentProofUrl != null) ...[
+                ListTile(
+                  leading: Icon(Icons.image),
+                  title: Text('Bukti Pembayaran'),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Image.network(
+                    paymentProofUrl,
+                    height: 150,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Text('Gagal memuat gambar'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Tutup'),
+          ),
+          IconButton(
+            icon: Icon(Icons.edit, color: Colors.blue),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _navigateToEditPage(context, booking);
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.delete, color: Colors.red),
+            onPressed: () async {
+              final shouldDelete = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text('Konfirmasi Hapus'),
+                  content: Text('Yakin ingin menghapus booking ini?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text('Batal'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: Text('Hapus', style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (shouldDelete == true) {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('bookings')
+                      .doc(booking.id)
+                      .delete();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Booking berhasil dihapus.')),
+                  );
+
+                  Navigator.of(context).pop();
+                  setState(() {});
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menghapus booking: $e')),
+                  );
+                }
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToEditPage(BuildContext context, DocumentSnapshot booking) {
+    final data = booking.data() as Map<String, dynamic>;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditBookingPage(
+          bookingId: booking.id,
+          initialData: data,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,7 +280,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
             child: IconButton(
               icon: Icon(Icons.add),
               onPressed: () {
-                // Navigasi ke halaman tambah booking langganan
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -119,7 +293,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
       ),
       body: Column(
         children: [
-          // Filter Lapangan
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
@@ -139,7 +312,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
               },
             ),
           ),
-          // Tombol Pilih Tanggal dan Teks Tanggal yang Dipilih
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
@@ -160,7 +332,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                       context: context,
                       initialDate: selectedDate ?? DateTime.now(),
                       firstDate: DateTime(1900),
-                      // firstDate: DateTime.now(),
                       lastDate: DateTime.now().add(Duration(days: 365)),
                     );
                     if (pickedDate != null) {
@@ -188,7 +359,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                   return Center(child: CircularProgressIndicator());
                 }
 
-                // Buat daftar jam yang sudah dibooking
                 final bookedTimes = <String>[];
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                   final bookings = snapshot.data!.docs;
@@ -206,7 +376,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                   }
                 }
 
-                // Tampilkan jam dari 08:00 hingga 21:00
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: GridView.builder(
@@ -217,7 +386,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                       mainAxisSpacing: 15,
                       childAspectRatio: 1.2,
                     ),
-                    itemCount: 14, // Jam dari 08:00 hingga 21:00
+                    itemCount: 14,
                     itemBuilder: (context, index) {
                       final hour = 8 + index;
                       final time = '$hour:00';
@@ -227,7 +396,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                       return GestureDetector(
                         onTap: isBooked
                             ? () {
-                                // Tampilkan popup detail booking
                                 final booking =
                                     snapshot.data!.docs.firstWhere((booking) {
                                   final data =
@@ -242,105 +410,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                                       int.parse(jamSelesai.split(':')[0]);
                                   return hour >= startHour && hour < endHour;
                                 });
-                                final data =
-                                    booking.data() as Map<String, dynamic>;
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: Text('Detail Booking'),
-                                    content: SingleChildScrollView(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text('Lapangan: ${data['lapangan']}'),
-                                          Text('Tanggal: ${data['tanggal']}'),
-                                          Text(
-                                              'Jam: ${data['jamMulai']} - ${data['jamSelesai']}'),
-                                          Text('Nama: ${data['namaPengguna']}'),
-                                          Text(
-                                              'No WhatsApp: ${data['noWhatsapp']}'),
-                                          Text(
-                                              'Nama Tim/Atas Nama: ${data['teamName']}'),
-                                          if (data['usePhotographer'] == true)
-                                            Text(
-                                                'Layanan: Photographer (+Rp 200,000)'),
-                                          if (data['useReferee'] == true)
-                                            Text('Layanan: Wasit (+Rp 70,000)'),
-                                          Text(
-                                              'Total Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(data['totalPrice'])}'),
-                                        ],
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.of(context).pop(),
-                                        child: Text('Tutup'),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(Icons.delete,
-                                            color: Colors.red),
-                                        onPressed: () async {
-                                          final shouldDelete =
-                                              await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: Text('Konfirmasi Hapus'),
-                                              content: Text(
-                                                  'Yakin ingin menghapus booking ini?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.of(context)
-                                                          .pop(false),
-                                                  child: Text('Batal'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.of(context)
-                                                          .pop(true),
-                                                  child: Text('Hapus',
-                                                      style: TextStyle(
-                                                          color: Colors.red)),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-
-                                          if (shouldDelete == true) {
-                                            try {
-                                              await FirebaseFirestore.instance
-                                                  .collection('bookings')
-                                                  .doc(booking.id)
-                                                  .delete();
-
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                    content: Text(
-                                                        'Booking berhasil dihapus.')),
-                                              );
-
-                                              Navigator.of(context)
-                                                  .pop(); // Tutup popup detail
-                                              setState(
-                                                  () {}); // Perbarui tampilan
-                                            } catch (e) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                    content: Text(
-                                                        'Gagal menghapus booking: $e')),
-                                              );
-                                            }
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                );
+                                _showBookingDetailPopup(context, booking);
                               }
                             : isPast
                                 ? () {

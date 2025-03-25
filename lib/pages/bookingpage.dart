@@ -1,11 +1,13 @@
-// ignore_for_file: unused_local_variable, avoid_print, deprecated_member_use, use_build_context_synchronously, use_super_parameters, prefer_final_fields
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 
 class BookingPage extends StatefulWidget {
   final String lapangan;
@@ -27,7 +29,7 @@ class _BookingPageState extends State<BookingPage> {
   int totalPrice = 0;
   int photographerPrice = 200000;
   int refereePrice = 70000;
-  int bookingDuration = 1; // Default duration is 1 hour
+  int bookingDuration = 1;
   bool isMember = false;
   bool usePhotographer = false;
   bool useReferee = false;
@@ -37,8 +39,12 @@ class _BookingPageState extends State<BookingPage> {
   String? userName;
   String? userPhone;
   User? user;
+  Uint8List? _webImage;
+  File? _imageFile;
+  bool _isPaidFull = true;
+  int _downPaymentAmount = 0;
+  final TextEditingController _downPaymentController = TextEditingController();
 
-  // Lapang data from the JSON structure
   final List<Map<String, dynamic>> lapangData = [
     {
       "id": "1",
@@ -99,33 +105,86 @@ class _BookingPageState extends State<BookingPage> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     isMember = userProvider.isMember;
     _fetchUnavailableTimes();
+    _downPaymentController.addListener(_updateDownPayment);
+  }
+
+  @override
+  void dispose() {
+    _downPaymentController.dispose();
+    super.dispose();
+  }
+
+  void _updateDownPayment() {
+    setState(() {
+      _downPaymentAmount = int.tryParse(_downPaymentController.text) ?? 0;
+    });
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    try {
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        if (kIsWeb) {
+          _webImage = await pickedFile.readAsBytes();
+        } else {
+          _imageFile = File(pickedFile.path);
+        }
+        setState(() {});
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memilih gambar: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<String?> _uploadImage() async {
+    try {
+      if (_imageFile == null && _webImage == null) return null;
+
+      String fileName =
+          'buktipembayaran/${user!.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+
+      UploadTask uploadTask;
+      if (kIsWeb && _webImage != null) {
+        uploadTask = storageRef.putData(_webImage!);
+      } else if (_imageFile != null) {
+        uploadTask = storageRef.putFile(_imageFile!);
+      } else {
+        throw Exception("Gambar tidak ditemukan");
+      }
+
+      TaskSnapshot taskSnapshot = await uploadTask;
+      return await taskSnapshot.ref.getDownloadURL();
+    } catch (e) {
+      debugPrint('Error uploading image: $e');
+      return null;
+    }
   }
 
   void _updateTotalPrice() {
-    // Find the selected lapang data
     final selectedLapang = lapangData.firstWhere(
       (lapang) => lapang['name'] == widget.lapangan,
       orElse: () => {},
     );
 
-    if (selectedLapang.isEmpty) {
-      return;
-    }
+    if (selectedLapang.isEmpty) return;
 
     int pricePerHour = int.parse(selectedLapang['price']);
 
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60% untuk member
+      pricePerHour = (pricePerHour * 0.4).round();
     }
 
     totalPrice = bookingDuration * pricePerHour;
 
-    // Tambahkan biaya photographer jika dipilih dan bukan lapang Gokart
     if (usePhotographer && widget.lapangan != "Gokart") {
       totalPrice += photographerPrice;
     }
 
-    // Tambahkan biaya wasit jika dipilih dan bukan lapang Gokart
     if (useReferee && widget.lapangan != "Gokart") {
       totalPrice += refereePrice;
     }
@@ -137,14 +196,12 @@ class _BookingPageState extends State<BookingPage> {
     final formattedDate = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
     final dayOfWeek = DateFormat('EEEE').format(widget.selectedDate);
 
-    // Ambil booking reguler untuk tanggal yang dipilih
     final bookings = await FirebaseFirestore.instance
         .collection('bookings')
         .where('lapangan', isEqualTo: widget.lapangan)
         .where('tanggal', isEqualTo: formattedDate)
         .get();
 
-    // Ambil booking langganan untuk hari yang sama dengan hari yang dipilih
     final recurringBookings = await FirebaseFirestore.instance
         .collection('bookings')
         .where('lapangan', isEqualTo: widget.lapangan)
@@ -165,13 +222,17 @@ class _BookingPageState extends State<BookingPage> {
     });
   }
 
-  // Di bagian _confirmBooking(), ubah menjadi:
   Future<void> _confirmBooking() async {
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Harap isi nama tim/nama pemesan terlebih dahulu!"),
-        ),
+        const SnackBar(content: Text("Harap isi nama tim/nama pemesan!")),
+      );
+      return;
+    }
+
+    if (!_isPaidFull && _downPaymentAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Harap isi jumlah DP yang dibayarkan!")),
       );
       return;
     }
@@ -182,14 +243,12 @@ class _BookingPageState extends State<BookingPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            "Tidak bisa booking pada jam tersebut karena melebihi jam tutup!",
-          ),
+              "Tidak bisa booking pada jam tersebut karena melebihi jam tutup!"),
         ),
       );
       return;
     }
 
-    // Cek ketersediaan slot
     bool isAvailable = true;
     for (int i = 0; i < bookingDuration; i++) {
       final timeToCheck = currentStartHour + i;
@@ -207,21 +266,19 @@ class _BookingPageState extends State<BookingPage> {
     }
 
     try {
-      // Ambil data pengguna dari Firestore
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user!.uid)
           .get();
 
-      if (!userDoc.exists) {
-        throw Exception("User data not found in Firestore.");
-      }
+      if (!userDoc.exists) throw Exception("User data not found");
 
       final userData = userDoc.data() as Map<String, dynamic>;
       userName = userData['name'];
       userPhone = userData['phone'] as String?;
 
-      // Data yang akan disimpan ke Firestore
+      String? paymentProofUrl = await _uploadImage();
+
       final bookingData = {
         'lapangan': widget.lapangan,
         'tanggal': DateFormat('yyyy-MM-dd').format(widget.selectedDate),
@@ -244,8 +301,11 @@ class _BookingPageState extends State<BookingPage> {
         'usePhotographer': usePhotographer,
         'useReferee': useReferee,
         'totalPrice': totalPrice,
+        'paymentStatus': _isPaidFull ? 'Lunas' : 'DP',
+        'downPaymentAmount': _isPaidFull ? totalPrice : _downPaymentAmount,
+        'remainingAmount': _isPaidFull ? 0 : totalPrice - _downPaymentAmount,
+        'paymentProofUrl': paymentProofUrl,
         'createdAt': FieldValue.serverTimestamp(),
-        // Tambahkan field lain yang diperlukan untuk payment
         'price': int.parse(lapangData.firstWhere(
           (lapang) => lapang['name'] == widget.lapangan,
           orElse: () => {'price': '0'},
@@ -260,14 +320,11 @@ class _BookingPageState extends State<BookingPage> {
         )['id'],
       };
 
-      // Simpan langsung ke collection bookings tanpa melalui cart
       await FirebaseFirestore.instance.collection('bookings').add(bookingData);
-
-      // Tampilkan dialog sukses
       _showSuccessDialog();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Terjadi kesalahan: $e")),
+        SnackBar(content: Text("Error: $e")),
       );
     }
   }
@@ -280,7 +337,7 @@ class _BookingPageState extends State<BookingPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text('Booking Berhasil'),
+        title: const Text('Booking Berhasil'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,6 +354,21 @@ class _BookingPageState extends State<BookingPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            if (!_isPaidFull) ...[
+              const SizedBox(height: 10),
+              Text(
+                'DP: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_downPaymentAmount)}',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Sisa: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice - _downPaymentAmount)}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.red,
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -317,7 +389,6 @@ class _BookingPageState extends State<BookingPage> {
     final userProvider = Provider.of<UserProvider>(context);
     isMember = userProvider.isMember;
 
-    // Find the selected lapang data
     final selectedLapang = lapangData.firstWhere(
       (lapang) => lapang['name'] == widget.lapangan,
       orElse: () => {},
@@ -325,18 +396,13 @@ class _BookingPageState extends State<BookingPage> {
 
     if (selectedLapang.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('Booking')),
-        body: Center(child: Text('Lapangan tidak ditemukan')),
+        appBar: AppBar(title: const Text('Booking')),
+        body: const Center(child: Text('Lapangan tidak ditemukan')),
       );
     }
 
     int pricePerHour = int.parse(selectedLapang['price']);
-
-    if (isMember) {
-      pricePerHour = (pricePerHour * 0.4).round(); // Diskon 60%
-    }
-
-    // Update total price when building
+    if (isMember) pricePerHour = (pricePerHour * 0.4).round();
     _updateTotalPrice();
 
     return Scaffold(
@@ -349,7 +415,6 @@ class _BookingPageState extends State<BookingPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Informasi Booking
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -387,10 +452,7 @@ class _BookingPageState extends State<BookingPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Form Nama Tim/Atas Nama
               Form(
                 key: _formKey,
                 child: Column(
@@ -426,73 +488,195 @@ class _BookingPageState extends State<BookingPage> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Pilih Durasi Booking (jam):",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: List.generate(5, (index) {
+                            final duration = index + 1;
+                            final int currentStartHour =
+                                int.parse(widget.selectedTime.split(":")[0]);
+                            final int maxAllowedDuration =
+                                22 - currentStartHour;
+                            final bool isWithinClosingTime =
+                                duration <= maxAllowedDuration;
 
-              // Durasi Booking
+                            bool isDurationAvailable = true;
+                            for (int i = 0; i < duration; i++) {
+                              if (unavailableTimes
+                                  .contains("${currentStartHour + i}:00")) {
+                                isDurationAvailable = false;
+                                break;
+                              }
+                            }
+
+                            return ChoiceChip(
+                              label: Text("$duration Jam"),
+                              selected: bookingDuration == duration,
+                              onSelected:
+                                  isWithinClosingTime && isDurationAvailable
+                                      ? (bool selected) {
+                                          setState(() {
+                                            bookingDuration = duration;
+                                            _updateTotalPrice();
+                                          });
+                                        }
+                                      : null,
+                              selectedColor: Colors.grey.shade300,
+                              backgroundColor: Colors.grey.shade100,
+                              labelStyle: const TextStyle(
+                                color: Colors.black,
+                              ),
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Pembayaran:",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Text('Lunas'),
+                                selected: _isPaidFull,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _isPaidFull = true;
+                                    _downPaymentController.text = '';
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Text('DP'),
+                                selected: !_isPaidFull,
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _isPaidFull = false;
+                                    _downPaymentController.text = '';
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (!_isPaidFull) ...[
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _downPaymentController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Jumlah DP',
+                              hintText: 'Masukkan jumlah DP',
+                              border: OutlineInputBorder(),
+                              prefixText: 'Rp ',
+                            ),
+                            validator: (value) {
+                              if (!_isPaidFull &&
+                                  (value == null || value.isEmpty)) {
+                                return 'Harap isi jumlah DP';
+                              }
+                              final amount = int.tryParse(value ?? '0') ?? 0;
+                              if (!_isPaidFull && amount <= 0) {
+                                return 'Jumlah DP harus lebih dari 0';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Pilih Durasi Booking (jam):",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    "Bukti Pembayaran:",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: List.generate(5, (index) {
-                      final duration = index + 1;
-                      final int currentStartHour =
-                          int.parse(widget.selectedTime.split(":")[0]);
-                      final int maxAllowedDuration = 22 - currentStartHour;
-                      final bool isWithinClosingTime =
-                          duration <= maxAllowedDuration;
-
-                      bool isDurationAvailable = true;
-                      for (int i = 0; i < duration; i++) {
-                        if (unavailableTimes
-                            .contains("${currentStartHour + i}:00")) {
-                          isDurationAvailable = false;
-                          break;
-                        }
-                      }
-
-                      return ChoiceChip(
-                        label: Text("$duration Jam"),
-                        selected: bookingDuration == duration,
-                        onSelected: isWithinClosingTime && isDurationAvailable
-                            ? (bool selected) {
-                                setState(() {
-                                  bookingDuration = duration;
-                                  _updateTotalPrice();
-                                });
-                              }
-                            : null,
-                        selectedColor: Colors.grey.shade300,
-                        backgroundColor: Colors.grey.shade100,
-                        labelStyle: TextStyle(
-                          color: bookingDuration == duration
-                              ? Colors.black
-                              : Colors.black,
-                        ),
-                      );
-                    }),
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      height: 150,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: _imageFile != null
+                          ? Image.file(_imageFile!, fit: BoxFit.cover)
+                          : _webImage != null
+                              ? Image.memory(_webImage!, fit: BoxFit.cover)
+                              : const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add_a_photo, size: 40),
+                                      Text('Tambah Bukti Pembayaran'),
+                                    ],
+                                  ),
+                                ),
+                    ),
                   ),
+                  if (!_isPaidFull) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      'Sisa Pembayaran: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_isPaidFull ? 0 : totalPrice - _downPaymentAmount)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
                 ],
               ),
-
-              const SizedBox(height: 20),
-
-              // Tampilkan layanan tambahan hanya jika bukan lapang Gokart
-              if (widget.lapangan != "Gokart")
+              if (widget.lapangan != "Gokart") ...[
+                const SizedBox(height: 20),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       "Tambahan Layanan:",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     _buildServiceOption(
@@ -522,10 +706,8 @@ class _BookingPageState extends State<BookingPage> {
                     ),
                   ],
                 ),
-
+              ],
               const SizedBox(height: 30),
-
-              // Total Harga
               Card(
                 color: Colors.grey[200],
                 child: Padding(
@@ -551,10 +733,7 @@ class _BookingPageState extends State<BookingPage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Tombol Booking
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -591,9 +770,7 @@ class _BookingPageState extends State<BookingPage> {
     required Function(bool) onChanged,
   }) {
     return GestureDetector(
-      onTap: () {
-        onChanged(!value);
-      },
+      onTap: () => onChanged(!value),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(

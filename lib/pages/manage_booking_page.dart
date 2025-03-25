@@ -48,9 +48,9 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     int crossAxisCount;
 
     // Pengkondisian jumlah kolom berdasarkan lebar layar
-    if (screenWidth > 1200) {
+    if (screenWidth > 1250) {
       crossAxisCount = 3;
-    } else if (screenWidth > 750) {
+    } else if (screenWidth > 800) {
       crossAxisCount = 2;
     } else {
       crossAxisCount = 1;
