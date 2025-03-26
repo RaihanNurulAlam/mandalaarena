@@ -23,6 +23,7 @@
     }
   },
   "hosting": {
+    "site": "mandalaarenaapp-95d0d",
     "public": "build/web",
     "ignore": [
       "firebase.json",
@@ -30,6 +31,10 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/api/**",
+        "function": "api"
+      },
       {
         "source": "**",
         "destination": "/index.html"
