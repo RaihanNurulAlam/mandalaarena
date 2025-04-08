@@ -1,175 +1,111 @@
-const functions = require("firebase-functions");
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 const midtransClient = require('midtrans-client');
-const axios = require('axios');
-const { onRequest } = require("firebase-functions/v2/https");
-const { setGlobalOptions } = require("firebase-functions/v2");
+const cors = require('cors')({origin: true});
 
-const app = express();
+// Inisialisasi Firebase Admin SDK
+admin.initializeApp();
 
-// Enhanced CORS configuration
-const corsOptions = {
-  origin: [
-    'https://mandalaarenaapp-95d0d.web.app',
-    'https://mandalaarenaapp-95d0d.firebaseapp.com',
-    'http://localhost',
-    'http://localhost:5000', // Add additional ports if needed
-    'https://your-custom-domain.com' // Add if you have custom domain
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-
-// Apply CORS middleware before other middleware
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// Midtrans Configuration
+// Inisialisasi Midtrans Snap
 const snap = new midtransClient.Snap({
-  isProduction: false,
-  serverKey: 'SB-Mid-server-cy93tLqGdUiBnvuFQXhVjlH-',
-  clientKey: 'SB-Mid-client-HsSGwXWH6zCQ2Hmb',
+  isProduction: true, // Set true untuk produksi
+  serverKey: 'Mid-server-W2fyw-3QehVgbeJP7On4UxYl', // Ganti dengan server key sandbox/produksi
+  clientKey: 'Mid-client-QXd7sPAjIKeUCPbW' // Ganti dengan client key sandbox/produksi
 });
 
-// Enhanced error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Global error handler:', err);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
-    message: err.message 
-  });
-});
+// Fungsi utama untuk menangani API
+exports.api = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    try {
+      // Endpoint untuk membuat transaksi pembayaran
+      if (req.method === 'POST' && req.path === '/pay') {
+        const { 
+          orderId, 
+          grossAmount, 
+          firstName, 
+          lastName, 
+          email, 
+          phone 
+        } = req.body;
 
-// Pay endpoint with improved error handling
-app.post('/pay', async (req, res) => {
-  try {
-    console.log('Received payment request:', req.body);
-    
-    const { orderId, grossAmount, firstName, lastName, email, phone } = req.body;
+        // Validasi input
+        if (!orderId || !grossAmount || !email) {
+          return res.status(400).json({error: 'Missing required fields'});
+        }
 
-    if (!orderId || !grossAmount || !firstName || !email || !phone) {
-      console.warn('Missing required fields');
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['orderId', 'grossAmount', 'firstName', 'email', 'phone']
+        const parameter = {
+          transaction_details: {
+            order_id: orderId,
+            gross_amount: parseInt(grossAmount)
+          },
+          credit_card: {
+            secure: true
+          },
+          customer_details: {
+            first_name: firstName || 'Customer',
+            last_name: lastName || '',
+            email: email,
+            phone: phone || ''
+          },
+          callbacks: {
+            finish: 'https://your-app-url.com/payment-complete'
+          }
+        };
+
+        const transaction = await snap.createTransaction(parameter);
+        
+        // Simpan data transaksi awal ke Firestore
+        await admin.firestore().collection('transactions').doc(orderId).set({
+          orderId: orderId,
+          amount: grossAmount,
+          status: 'pending',
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          customerEmail: email
+        });
+
+        return res.status(200).json({
+          success: true,
+          redirect_url: transaction.redirect_url,
+          transactionToken: transaction.token
+        });
+      }
+      // Endpoint untuk memeriksa status transaksi
+      else if (req.method === 'GET' && req.path === '/transaction-status') {
+        const orderId = req.query.orderId;
+        
+        if (!orderId) {
+          return res.status(400).json({error: 'orderId is required'});
+        }
+
+        // Dapatkan status dari Midtrans
+        const transaction = await snap.transaction.status(orderId);
+        
+        // Update status di Firestore jika diperlukan
+        if (transaction.transaction_status === 'settlement' || 
+            transaction.transaction_status === 'capture') {
+          await admin.firestore().collection('transactions').doc(orderId).update({
+            status: 'completed',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        return res.status(200).json({
+          transaction_status: transaction.transaction_status,
+          status_message: transaction.status_message,
+          gross_amount: transaction.gross_amount,
+          order_id: transaction.order_id
+        });
+      }
+      // Endpoint tidak dikenali
+      else {
+        return res.status(404).json({error: 'Endpoint not found'});
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).json({
+        error: error.message,
+        stack: error.stack
       });
     }
-
-    const parameter = {
-      transaction_details: {
-        order_id: orderId,
-        gross_amount: parseInt(grossAmount),
-      },
-      customer_details: {
-        first_name: firstName,
-        last_name: lastName || '',
-        email: email,
-        phone: phone,
-      },
-      credit_card: { secure: true },
-      callbacks: {
-        finish: 'https://mandalaarenaapp-95d0d.web.app/payment-complete',
-        error: 'https://mandalaarenaapp-95d0d.web.app/payment-error',
-        pending: 'https://mandalaarenaapp-95d0d.web.app/payment-pending'
-      },
-      expiry: {
-        unit: 'hours',
-        duration: 24
-      }
-    };
-
-    const transaction = await snap.createTransaction(parameter);
-    // Tambahkan log untuk debugging
-    console.log('Midtrans response:', transaction);
-
-    res.status(200).json({
-      status: 'success',
-      transactionToken: transaction.token,
-      redirect_url: transaction.redirect_url,
-      orderId: orderId,
-    });
-
-  } catch (error) {
-    console.error('Payment processing error:', {
-      error: error.message,
-      stack: error.stack,
-      requestBody: req.body
-    });
-    
-    res.status(500).json({ 
-      status: 'error',
-      error: 'Transaction failed',
-      details: error.message,
-      code: error.code || 'UNKNOWN_ERROR'
-    });
-  }
+  });
 });
-
-// Transaction status endpoint
-app.get('/transaction-status', async (req, res) => {
-  try {
-    const { orderId } = req.query;
-    if (!orderId) {
-      return res.status(400).json({ error: 'orderId is required' });
-    }
-
-    const response = await axios.get(
-      `https://api.sandbox.midtrans.com/v2/${orderId}/status`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Basic ${Buffer.from(snap.apiConfig.serverKey + ":").toString("base64")}`,
-        },
-        timeout: 10000 // 10 seconds timeout
-      }
-    );
-
-    res.status(200).json(response.data);
-  } catch (error) {
-    console.error('Status check error:', {
-      error: error.message,
-      orderId: req.query.orderId
-    });
-    
-    const statusCode = error.response?.status || 500;
-    res.status(statusCode).json({ 
-      error: 'Failed to fetch transaction status',
-      details: error.response?.data || error.message 
-    });
-  }
-});
-
-// Notification handler
-app.post('/notification-handler', async (req, res) => {
-  try {
-    console.log('Received notification:', req.body);
-    const statusResponse = await snap.transaction.notification(req.body);
-    
-    // Process the notification...
-    
-    res.status(200).send('Notification processed');
-  } catch (error) {
-    console.error('Notification error:', error);
-    res.status(500).send('Error processing notification');
-  }
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
-});
-
-setGlobalOptions({
-  region: "asia-southeast2",
-  memory: "1GB",
-  timeoutSeconds: 60,
-});
-
-exports.api = onRequest(app);

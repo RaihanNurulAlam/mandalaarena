@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
@@ -27,11 +26,11 @@ class _PaymentPageState extends State<PaymentPage> {
   bool isProcessingPayment = false;
 
   String getBaseUrl() {
-    if (kIsWeb) {
-      return 'https://asia-southeast2-mandalaarenaapp-95d0d.cloudfunctions.net/api';
-    } else {
-      return 'https://asia-southeast2-mandalaarenaapp-95d0d.cloudfunctions.net/api';
+    const baseUrl = 'https://api-ygvy5l5oeq-uc.a.run.app';
+    if (kDebugMode) {
+      print('Using base URL: $baseUrl');
     }
+    return baseUrl;
   }
 
   Future<void> updateBookingStatus(String orderId, String status) async {
@@ -84,17 +83,141 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
-  Future<void> handleWebPayment(String redirectUrl) async {
-    if (kIsWeb) {
-      final uri = Uri.parse(redirectUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        throw 'Could not launch $redirectUrl';
+  Future<void> checkTransactionStatus(String orderId) async {
+    try {
+      final baseUrl = getBaseUrl();
+      final statusResponse = await http.get(
+        Uri.parse('$baseUrl/transaction-status?orderId=$orderId'),
+      );
+
+      if (statusResponse.statusCode == 200) {
+        final statusData = json.decode(statusResponse.body);
+        setState(() {
+          transactionStatus = statusData['transaction_status'];
+        });
+
+        if (transactionStatus == 'settlement' ||
+            transactionStatus == 'capture') {
+          final userProvider =
+              Provider.of<UserProvider>(context, listen: false);
+          final cart = Provider.of<Cart>(context, listen: false);
+
+          await updateBookingStatus(orderId, 'Sudah Bayar');
+          int earnedPoints = int.parse(cart.cart.first.quantity!) * 10;
+          await updateUserPoints(userProvider.userId, earnedPoints);
+          await saveUserPointsTransaction(
+              userProvider.userId, earnedPoints, orderId);
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TransactionHistoryPage(),
+            ),
+          );
+        }
       }
+    } catch (e) {
+      print('Error checking transaction status: $e');
+    }
+  }
+
+  Future<void> initiateMidtransPayment() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final cart = Provider.of<Cart>(context, listen: false);
+
+    setState(() {
+      isProcessingPayment = true;
+    });
+
+    try {
+      double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
+        double price = double.tryParse(cartModel.price ?? '0') ?? 0;
+        if (userProvider.isMember) {
+          price = price * 0.6;
+        }
+        final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
+        double itemTotal = price * quantity;
+
+        if (cartModel.usePhotographer ?? false) {
+          itemTotal += 200000;
+        }
+
+        if (cartModel.useReferee ?? false) {
+          itemTotal += 70000;
+        }
+
+        return previousValue + itemTotal;
+      });
+
+      final fullName = userProvider.userName.split(' ');
+      final firstName = fullName.isNotEmpty ? fullName[0] : '';
+      final lastName = fullName.length > 1 ? fullName.sublist(1).join(' ') : '';
+
+      final orderId =
+          'ORDER-${DateTime.now().millisecondsSinceEpoch}-${userProvider.userId.substring(0, 5)}';
+
+      final baseUrl = getBaseUrl();
+      final url = Uri.parse('$baseUrl/pay');
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/pay'),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({
+              'orderId': orderId,
+              'grossAmount': totalPrice.toString(),
+              'firstName': firstName,
+              'lastName': lastName,
+              'email': userProvider.userEmail,
+              'phone': userProvider.userPhone,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final redirectUrl = data['redirect_url'];
+        final transactionToken = data['transactionToken'];
+
+        // Untuk web
+        if (kIsWeb) {
+          if (await canLaunchUrl(Uri.parse(redirectUrl))) {
+            await launchUrl(
+              Uri.parse(redirectUrl),
+              mode: LaunchMode.externalApplication,
+            );
+          }
+        }
+        // Untuk mobile
+        else {
+          // Tampilkan popup pembayaran Midtrans
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MidtransPaymentPopup(
+                transactionToken: transactionToken,
+                orderId: orderId,
+              ),
+            ),
+          );
+        }
+
+        // Periksa status pembayaran
+        await checkTransactionStatus(orderId);
+      } else {
+        throw Exception('Failed to create transaction: ${response.body}');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isProcessingPayment = false;
+      });
     }
   }
 
@@ -402,84 +525,7 @@ class _PaymentPageState extends State<PaymentPage> {
                           vertical: 16,
                         ),
                       ),
-                      onPressed: () async {
-                        setState(() {
-                          isProcessingPayment = true;
-                        });
-
-                        try {
-                          final fullName = userProvider.userName.split(' ');
-                          final firstName =
-                              fullName.isNotEmpty ? fullName[0] : '';
-                          final lastName = fullName.length > 1
-                              ? fullName.sublist(1).join(' ')
-                              : '';
-
-                          final baseUrl = getBaseUrl();
-                          final orderId =
-                              'ORDER-${DateTime.now().millisecondsSinceEpoch}-${userProvider.userId.substring(0, 5)}';
-                          final response = await http.post(
-                            Uri.parse('$baseUrl/pay'),
-                            headers: {'Content-Type': 'application/json'},
-                            body: json.encode({
-                              'orderId': orderId,
-                              'grossAmount': totalPrice.toString(),
-                              'firstName': firstName,
-                              'lastName': lastName,
-                              'email': userProvider.userEmail,
-                              'phone': userProvider.userPhone,
-                            }),
-                          );
-
-                          if (response.statusCode == 200) {
-                            final data = json.decode(response.body);
-                            final redirectUrl = data['redirect_url'];
-
-                            // Untuk web
-                            if (kIsWeb) {
-                              if (await canLaunchUrl(Uri.parse(redirectUrl))) {
-                                await launchUrl(
-                                  Uri.parse(redirectUrl),
-                                  mode: LaunchMode.externalApplication,
-                                );
-
-                                // Periksa status pembayaran setelah redirect
-                                await Future.delayed(Duration(seconds: 10));
-                                await checkTransactionStatus(orderId);
-                              }
-                            }
-                            // Untuk mobile
-                            else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PaymentWebView(
-                                    transactionToken: data['transactionToken'],
-                                    orderId: orderId,
-                                  ),
-                                ),
-                              ).then((_) {
-                                // Periksa status pembayaran setelah kembali dari WebView
-                                checkTransactionStatus(orderId);
-                              });
-                            }
-                          } else {
-                            throw Exception(
-                                'Failed to create transaction: ${response.body}');
-                          }
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: ${e.toString()}'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        } finally {
-                          setState(() {
-                            isProcessingPayment = false;
-                          });
-                        }
-                      },
+                      onPressed: initiateMidtransPayment,
                       child: const Text(
                         'Lakukan Pembayaran',
                         style: TextStyle(
@@ -497,128 +543,65 @@ class _PaymentPageState extends State<PaymentPage> {
       ),
     );
   }
-
-  Future<void> checkTransactionStatus(String orderId) async {
-    try {
-      final baseUrl = getBaseUrl();
-      final statusResponse = await http.get(
-        Uri.parse('$baseUrl/transaction-status?orderId=$orderId'),
-      );
-
-      if (statusResponse.statusCode == 200) {
-        final statusData = json.decode(statusResponse.body);
-        setState(() {
-          transactionStatus = statusData['transaction_status'];
-        });
-
-        if (transactionStatus == 'settlement' ||
-            transactionStatus == 'capture') {
-          final userProvider =
-              Provider.of<UserProvider>(context, listen: false);
-          final cart = Provider.of<Cart>(context, listen: false);
-
-          await updateBookingStatus(orderId, 'Sudah Bayar');
-          int earnedPoints = int.parse(cart.cart.first.quantity!) * 10;
-          await updateUserPoints(userProvider.userId, earnedPoints);
-          await saveUserPointsTransaction(
-              userProvider.userId, earnedPoints, orderId);
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TransactionHistoryPage(),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      print('Error checking transaction status: $e');
-    }
-  }
 }
 
-class PaymentWebView extends StatefulWidget {
+class MidtransPaymentPopup extends StatefulWidget {
   final String transactionToken;
   final String orderId;
 
-  const PaymentWebView({
+  const MidtransPaymentPopup({
     super.key,
     required this.transactionToken,
     required this.orderId,
   });
 
   @override
-  State<PaymentWebView> createState() => _PaymentWebViewState();
+  State<MidtransPaymentPopup> createState() => _MidtransPaymentPopupState();
 }
 
-class _PaymentWebViewState extends State<PaymentWebView> {
-  late InAppWebViewController webViewController;
-  bool isLoading = true;
+class _MidtransPaymentPopupState extends State<MidtransPaymentPopup> {
+  @override
+  void initState() {
+    super.initState();
+    _openPaymentUrl();
+  }
+
+  Future<void> _openPaymentUrl() async {
+    final url =
+        'https://app.sandbox.midtrans.com/snap/v2/vtweb/${widget.transactionToken}';
+
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      // Simulasikan pembayaran selesai setelah membuka URL
+      _checkPaymentStatus();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak dapat membuka URL pembayaran'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      Navigator.pop(context, false);
+    }
+  }
+
+  void _checkPaymentStatus() {
+    // Simulasikan logika untuk memeriksa status pembayaran
+    // Misalnya, Anda dapat memanggil API untuk memeriksa status transaksi
+    Navigator.pop(context, true); // Kembali ke halaman sebelumnya
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pembayaran'),
-        actions: [
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(),
-            ),
-        ],
+        title: const Text('Pembayaran Midtrans'),
       ),
-      body: Stack(
-        children: [
-          InAppWebView(
-            initialUrlRequest: URLRequest(
-              url: WebUri(
-                'https://app.sandbox.midtrans.com/snap/v2/vtweb/${widget.transactionToken}',
-              ),
-            ),
-            onWebViewCreated: (controller) {
-              webViewController = controller;
-            },
-            onLoadStart: (controller, url) {
-              setState(() {
-                isLoading = true;
-              });
-
-              // Handle ketika pembayaran selesai (redirect ke URL callback)
-              if (url != null && url.toString().contains('payment-complete')) {
-                Navigator.pop(context, true);
-              }
-            },
-            onLoadStop: (controller, url) async {
-              setState(() {
-                isLoading = false;
-              });
-
-              // Periksa jika ada status transaksi di URL
-              if (url != null) {
-                final uri = Uri.parse(url.toString());
-                if (uri.queryParameters.containsKey('status_code')) {
-                  final status = uri.queryParameters['transaction_status'];
-                  if (status == 'settlement' || status == 'capture') {
-                    Navigator.pop(context, true);
-                  }
-                }
-              }
-            },
-            onLoadError: (controller, url, code, message) {
-              setState(() {
-                isLoading = false;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: $message')),
-              );
-            },
-          ),
-          if (isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
-        ],
+      body: const Center(
+        child: Text('Membuka halaman pembayaran...'),
       ),
     );
   }
