@@ -568,7 +568,7 @@ class _MidtransPaymentPopupState extends State<MidtransPaymentPopup> {
 
   Future<void> _openPaymentUrl() async {
     final url =
-        'https://app.sandbox.midtrans.com/snap/v2/vtweb/${widget.transactionToken}';
+        'https://app.midtrans.com/snap/v2/vtweb/${widget.transactionToken}';
 
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(
