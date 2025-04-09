@@ -1,9 +1,7 @@
-// edit_booking_page.dart
 // ignore_for_file: use_super_parameters
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,11 +23,13 @@ class EditBookingPage extends StatefulWidget {
 }
 
 class _EditBookingPageState extends State<EditBookingPage> {
-  late int totalPrice;
+  late int totalAmount;
   late int bookingDuration;
   late bool usePhotographer;
   late bool useReferee;
   late String teamName;
+  late String userName;
+  late String userPhone;
   final _formKey = GlobalKey<FormState>();
   Uint8List? _webImage;
   File? _imageFile;
@@ -37,18 +37,33 @@ class _EditBookingPageState extends State<EditBookingPage> {
   late int _downPaymentAmount;
   final TextEditingController _downPaymentController = TextEditingController();
   String? _paymentProofUrl;
+  late String lapangan;
+  late String bookingDate;
+  late String time;
 
   @override
   void initState() {
     super.initState();
-    // Initialize from initialData
-    totalPrice = widget.initialData['totalPrice'] ?? 0;
+    // Extract data from items array
+    final items = widget.initialData['items'] as List<dynamic>? ?? [];
+    final firstItem = items.isNotEmpty ? items[0] : {};
+
+    // Initialize values
+    totalAmount = widget.initialData['totalAmount'] ?? 0;
     bookingDuration =
-        int.tryParse(widget.initialData['duration'].toString()) ?? 1;
-    usePhotographer = widget.initialData['usePhotographer'] ?? false;
-    useReferee = widget.initialData['useReferee'] ?? false;
-    teamName = widget.initialData['teamName'] ?? "";
-    _isPaidFull = widget.initialData['paymentStatus'] == 'Lunas';
+        int.tryParse(firstItem['duration']?.toString() ?? '1') ?? 1;
+    usePhotographer = firstItem['usePhotographer'] ?? false;
+    useReferee = firstItem['useReferee'] ?? false;
+    teamName = firstItem['teamName'] ?? "";
+    userName = widget.initialData['userName'] ?? "";
+    userPhone = widget.initialData['userPhone'] ?? "";
+    lapangan = firstItem['name'] ?? "";
+    bookingDate = firstItem['bookingDate'] ?? "";
+    time = firstItem['time'] ?? "";
+
+    // Payment information
+    _isPaidFull =
+        widget.initialData['statusBooking']?.contains('Sudah Bayar') ?? false;
     _downPaymentAmount = widget.initialData['downPaymentAmount'] ?? 0;
     _downPaymentController.text = _downPaymentAmount.toString();
     _paymentProofUrl = widget.initialData['paymentProofUrl'];
@@ -80,12 +95,20 @@ class _EditBookingPageState extends State<EditBookingPage> {
     }
   }
 
+  Future<void> _deleteImage() async {
+    setState(() {
+      _imageFile = null;
+      _webImage = null;
+      _paymentProofUrl = null;
+    });
+  }
+
   Future<String?> _uploadImage() async {
     try {
       if (_imageFile == null && _webImage == null) return _paymentProofUrl;
 
       String fileName =
-          'buktipembayaran/${FirebaseAuth.instance.currentUser!.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          'buktipembayaran/${DateTime.now().millisecondsSinceEpoch}.jpg';
       Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
 
       UploadTask uploadTask;
@@ -105,16 +128,38 @@ class _EditBookingPageState extends State<EditBookingPage> {
     }
   }
 
-  void _updateTotalPrice() {
-    // Calculate based on current selections
-    // This should match your booking page logic
-    // ...
+  void _calculateTotalPrice() {
+    int basePrice = 0;
+
+    // Determine base price based on lapangan and duration
+    // This should match your pricing logic from the booking page
+    if (lapangan.contains('Minisoccer')) {
+      basePrice = 150000 * bookingDuration;
+    } else if (lapangan.contains('Basket')) {
+      basePrice = 120000 * bookingDuration;
+    } else if (lapangan == 'Gokart') {
+      basePrice = 100000 * bookingDuration;
+    }
+
+    // Add services if not Gokart
+    if (lapangan != 'Gokart') {
+      if (usePhotographer) basePrice += 200000;
+      if (useReferee) basePrice += 70000;
+    }
+
+    setState(() {
+      totalAmount = basePrice;
+      if (_isPaidFull) {
+        _downPaymentController.text = basePrice.toString();
+        _downPaymentAmount = basePrice;
+      }
+    });
   }
 
   Future<void> _updateBooking() async {
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap isi nama tim/nama pemesan!")),
+        const SnackBar(content: Text("Harap isi semua field yang diperlukan!")),
       );
       return;
     }
@@ -129,20 +174,31 @@ class _EditBookingPageState extends State<EditBookingPage> {
     try {
       String? newPaymentProofUrl = await _uploadImage();
 
+      // Update the booking document
       await FirebaseFirestore.instance
           .collection('bookings')
           .doc(widget.bookingId)
           .update({
-        'teamName': teamName,
-        'usePhotographer': usePhotographer,
-        'useReferee': useReferee,
-        'duration': bookingDuration.toString(),
-        'paymentStatus': _isPaidFull ? 'Lunas' : 'DP',
-        'downPaymentAmount': _isPaidFull ? totalPrice : _downPaymentAmount,
-        'remainingAmount': _isPaidFull ? 0 : totalPrice - _downPaymentAmount,
+        'userName': userName,
+        'userPhone': userPhone,
+        'statusBooking': _isPaidFull ? 'Sudah Bayar' : 'DP',
+        'downPaymentAmount': _downPaymentAmount,
+        'remainingAmount': _isPaidFull ? 0 : totalAmount - _downPaymentAmount,
         'paymentProofUrl': newPaymentProofUrl,
-        'totalPrice': totalPrice,
+        'totalAmount': totalAmount,
         'updatedAt': FieldValue.serverTimestamp(),
+        'items': FieldValue.arrayUnion([
+          {
+            'name': lapangan,
+            'bookingDate': bookingDate,
+            'time': time,
+            'duration': bookingDuration.toString(),
+            'teamName': teamName,
+            'usePhotographer': lapangan != 'Gokart' ? usePhotographer : false,
+            'useReferee': lapangan != 'Gokart' ? useReferee : false,
+            'price': totalAmount,
+          }
+        ]),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,13 +214,23 @@ class _EditBookingPageState extends State<EditBookingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isGokart = lapangan == 'Gokart';
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Booking'),
+        title: Text('Edit Booking - Admin'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20),
+            child: IconButton(
+              icon: Icon(Icons.save),
+              onPressed: _updateBooking,
+            ),
+          ),
           IconButton(
-            icon: Icon(Icons.save),
-            onPressed: _updateBooking,
+            icon: Icon(Icons.delete),
+            onPressed: _deleteImage,
+            tooltip: 'Hapus Bukti Pembayaran',
           ),
         ],
       ),
@@ -179,22 +245,21 @@ class _EditBookingPageState extends State<EditBookingPage> {
                 // Display booking information (read-only)
                 ListTile(
                   title: Text('Lapangan'),
-                  subtitle: Text(widget.initialData['lapangan'] ?? '-'),
+                  subtitle: Text(lapangan),
                 ),
                 ListTile(
                   title: Text('Tanggal'),
-                  subtitle: Text(widget.initialData['tanggal'] ?? '-'),
+                  subtitle: Text(bookingDate),
                 ),
                 ListTile(
                   title: Text('Jam'),
-                  subtitle: Text(
-                      '${widget.initialData['jamMulai']} - ${widget.initialData['jamSelesai']}'),
+                  subtitle: Text(time),
                 ),
 
                 // Editable fields
                 const SizedBox(height: 20),
                 const Text(
-                  "Nama Tim / Atas Nama:",
+                  "Informasi Pemesan:",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -202,8 +267,52 @@ class _EditBookingPageState extends State<EditBookingPage> {
                 ),
                 const SizedBox(height: 10),
                 TextFormField(
+                  initialValue: userName,
+                  decoration: InputDecoration(
+                    labelText: "Nama Pemesan",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Nama pemesan wajib diisi!";
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    setState(() {
+                      userName = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  initialValue: userPhone,
+                  decoration: InputDecoration(
+                    labelText: "No. WhatsApp",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Nomor WhatsApp wajib diisi!";
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    setState(() {
+                      userPhone = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
                   initialValue: teamName,
                   decoration: InputDecoration(
+                    labelText: "Nama Tim / Atas Nama",
                     hintText: "Masukkan nama tim atau nama pemesan",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -242,12 +351,12 @@ class _EditBookingPageState extends State<EditBookingPage> {
                   onChanged: (value) {
                     setState(() {
                       bookingDuration = value!;
-                      _updateTotalPrice();
+                      _calculateTotalPrice();
                     });
                   },
                 ),
 
-                if (widget.initialData['lapangan'] != "Gokart") ...[
+                if (!isGokart) ...[
                   const SizedBox(height: 20),
                   const Text(
                     "Tambahan Layanan:",
@@ -263,7 +372,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
                     onChanged: (value) {
                       setState(() {
                         usePhotographer = value;
-                        _updateTotalPrice();
+                        _calculateTotalPrice();
                       });
                     },
                   ),
@@ -273,7 +382,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
                     onChanged: (value) {
                       setState(() {
                         useReferee = value;
-                        _updateTotalPrice();
+                        _calculateTotalPrice();
                       });
                     },
                   ),
@@ -297,7 +406,9 @@ class _EditBookingPageState extends State<EditBookingPage> {
                         onSelected: (selected) {
                           setState(() {
                             _isPaidFull = true;
-                            _downPaymentController.text = totalPrice.toString();
+                            _downPaymentController.text =
+                                totalAmount.toString();
+                            _downPaymentAmount = totalAmount;
                           });
                         },
                       ),
@@ -336,9 +447,31 @@ class _EditBookingPageState extends State<EditBookingPage> {
                       if (!_isPaidFull && amount <= 0) {
                         return 'Jumlah DP harus lebih dari 0';
                       }
+                      if (amount > totalAmount) {
+                        return 'DP tidak boleh melebihi total harga';
+                      }
                       return null;
                     },
                     onChanged: (value) => _updateDownPayment(),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Sisa Pembayaran: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount - _downPaymentAmount)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
+                if (_isPaidFull) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Jumlah DP: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_downPaymentAmount)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
 
@@ -384,17 +517,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
                                   ),
                   ),
                 ),
-                if (!_isPaidFull) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    'Sisa Pembayaran: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_isPaidFull ? 0 : totalPrice - _downPaymentAmount)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
-                  ),
-                ],
 
                 const SizedBox(height: 30),
                 Card(
@@ -412,7 +534,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
                           ),
                         ),
                         Text(
-                          "Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}",
+                          "Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}",
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,

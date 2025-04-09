@@ -8,9 +8,11 @@ admin.initializeApp();
 
 // Inisialisasi Midtrans Snap
 const snap = new midtransClient.Snap({
-  isProduction: true, // Set true untuk produksi
-  serverKey: 'Mid-server-W2fyw-3QehVgbeJP7On4UxYl', // Ganti dengan server key sandbox/produksi
-  clientKey: 'Mid-client-QXd7sPAjIKeUCPbW' // Ganti dengan client key sandbox/produksi
+  isProduction: false, // Set true untuk produksi
+  // serverKey: 'Mid-server-W2fyw-3QehVgbeJP7On4UxYl', // produksi
+  serverKey: 'SB-Mid-server-cy93tLqGdUiBnvuFQXhVjlH-', // sandbox
+  // clientKey: 'Mid-client-QXd7sPAjIKeUCPbW' // produksi
+  clientKey: 'SB-Mid-client-HsSGwXWH6zCQ2Hmb' //sandbox
 });
 
 // Fungsi utama untuk menangani API
@@ -48,7 +50,9 @@ exports.api = functions.https.onRequest((req, res) => {
             phone: phone || ''
           },
           callbacks: {
-            finish: 'https://your-app-url.com/payment-complete'
+            finish: 'https://mandalaarenaapp-95d0d.web.app/payment-complete',
+            error: 'https://mandalaarenaapp-95d0d.web.app/payment-error',
+            pending: 'https://mandalaarenaapp-95d0d.web.app/payment-pending'
           }
         };
 

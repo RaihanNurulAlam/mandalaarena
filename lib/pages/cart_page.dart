@@ -17,6 +17,7 @@ class _CartPageState extends State<CartPage> {
   @override
   void initState() {
     super.initState();
+    _loadCartData();
 
     final cartProvider = Provider.of<Cart>(context, listen: false);
 
@@ -25,6 +26,14 @@ class _CartPageState extends State<CartPage> {
     if (user != null) {
       cartProvider
           .loadCart(user.uid); // Memuat data terbaru saat halaman dibuka
+    }
+  }
+
+  Future<void> _loadCartData() async {
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final cart = Provider.of<Cart>(context, listen: false);
+      await cart.loadCart(user.uid);
     }
   }
 

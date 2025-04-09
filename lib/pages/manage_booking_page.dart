@@ -26,14 +26,21 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
   }
 
   Future<void> _fetchLapanganList() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('bookings').get();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('bookings')
+        .where('items', isNotEqualTo: null)
+        .get();
+
     final lapanganSet = <String>{};
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
-      if (data.containsKey('lapangan')) {
-        lapanganSet.add(data['lapangan']);
+      final items = data['items'] as List<dynamic>?;
+      if (items != null && items.isNotEmpty) {
+        final firstItem = items[0];
+        if (firstItem['name'] != null) {
+          lapanganSet.add(firstItem['name']);
+        }
       }
     }
 
@@ -47,7 +54,6 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     int crossAxisCount;
 
-    // Pengkondisian jumlah kolom berdasarkan lebar layar
     if (screenWidth > 1250) {
       crossAxisCount = 3;
     } else if (screenWidth > 800) {
@@ -61,11 +67,10 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
         title: Text('Kelola Booking'),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 20.0), // Padding kanan 20
+            padding: const EdgeInsets.only(right: 20.0),
             child: IconButton(
-              icon: Icon(Icons.calendar_today), // Ikon untuk melihat jadwal
+              icon: Icon(Icons.calendar_today),
               onPressed: () {
-                // Navigasi ke halaman jadwal booking
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -125,14 +130,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('bookings')
-                  .where('lapangan',
-                      isEqualTo: selectedLapangan == 'Semua Lapangan'
-                          ? null
-                          : selectedLapangan)
-                  .where('tanggal',
-                      isEqualTo: selectedDate != null
-                          ? DateFormat('yyyy-MM-dd').format(selectedDate!)
-                          : null)
+                  .orderBy('createdAt', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -141,7 +139,38 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(child: Text('Tidak ada booking.'));
                 }
-                final bookings = snapshot.data!.docs;
+
+                final bookings = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final items = data['items'] as List<dynamic>? ?? [];
+
+                  // Filter berdasarkan lapangan jika dipilih
+                  if (selectedLapangan != null && items.isNotEmpty) {
+                    final firstItem = items[0];
+                    return firstItem['name'] == selectedLapangan;
+                  }
+
+                  // Filter berdasarkan tanggal jika dipilih
+                  if (selectedDate != null && items.isNotEmpty) {
+                    final firstItem = items[0];
+                    final bookingDate = firstItem['bookingDate'] as String?;
+                    if (bookingDate != null) {
+                      final date = DateFormat('yyyy-MM-dd').parse(bookingDate);
+                      return date.year == selectedDate!.year &&
+                          date.month == selectedDate!.month &&
+                          date.day == selectedDate!.day;
+                    }
+                  }
+
+                  return true;
+                }).toList();
+
+                if (bookings.isEmpty) {
+                  return Center(
+                      child: Text(
+                          'Tidak ada booking dengan filter yang dipilih.'));
+                }
+
                 return GridView.builder(
                   padding: EdgeInsets.all(20),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -153,29 +182,41 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                   itemCount: bookings.length,
                   itemBuilder: (context, index) {
                     final bookingData =
-                        bookings[index].data() as Map<String, dynamic>?;
-                    if (bookingData == null) {
-                      return SizedBox.shrink();
-                    }
-                    final booking = bookingData;
+                        bookings[index].data() as Map<String, dynamic>;
                     final bookingId = bookings[index].id;
-                    final lapangan = booking['lapangan'] as String? ?? '';
-                    final tanggal = (booking['tanggal'] as String?) != null
-                        ? DateFormat('yyyy-MM-dd').parse(booking['tanggal'])
-                        : DateTime.now();
-                    final jamMulai = booking['jamMulai'] as String? ?? '';
-                    final jamSelesai = booking['jamSelesai'] as String? ?? '';
-                    final status =
-                        booking['statusBooking'] as String? ?? 'Pending';
+                    final items = bookingData['items'] as List<dynamic>? ?? [];
+                    final firstItem = items.isNotEmpty ? items[0] : {};
+
+                    // Extract data dari items
+                    final lapangan =
+                        firstItem['name'] ?? 'Lapangan Tidak Diketahui';
+                    final bookingDate = firstItem['bookingDate'] ?? '';
+                    final time = firstItem['time'] ?? '';
+                    final status = bookingData['statusBooking'] ?? 'Pending';
+                    final totalAmount = bookingData['totalAmount'] ?? 0;
                     final namaPengguna =
-                        booking['namaPengguna'] as String? ?? 'Tidak Diketahui';
-                    final noWhatsapp = booking['noWhatsapp'] as String? ?? '-';
-                    final imagePath = booking['imagePath'] as String? ?? '';
-                    final teamName = booking['teamName'] as String? ?? '';
+                        bookingData['userName'] ?? 'Tidak Diketahui';
+                    final noWhatsapp = bookingData['userPhone'] ?? '-';
+                    final imagePath = firstItem['imagePath'] ?? '';
+                    final teamName = firstItem['teamName'] ?? '';
                     final usePhotographer =
-                        booking['usePhotographer'] as bool? ?? false;
-                    final useReferee = booking['useReferee'] as bool? ?? false;
-                    final totalPrice = booking['totalPrice'] as int? ?? 0;
+                        firstItem['usePhotographer'] ?? false;
+                    final useReferee = firstItem['useReferee'] ?? false;
+
+                    Color statusColor = Colors.grey;
+                    IconData statusIcon = Icons.access_time;
+
+                    if (status.contains('Sudah Bayar')) {
+                      statusColor = Colors.green;
+                      statusIcon = Icons.check_circle;
+                    } else if (status.contains('Booking')) {
+                      statusColor = Colors.blue;
+                      statusIcon = Icons.calendar_today;
+                    } else if (status.contains('Gagal') ||
+                        status.contains('expire')) {
+                      statusColor = Colors.red;
+                      statusIcon = Icons.error;
+                    }
 
                     return Card(
                       margin: EdgeInsets.all(8),
@@ -184,10 +225,12 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                         children: [
                           Expanded(
                             child: imagePath.isNotEmpty
-                                ? Image.network(imagePath,
+                                ? Image.network(
+                                    imagePath,
                                     width: double.infinity,
                                     height: 150,
-                                    fit: BoxFit.cover)
+                                    fit: BoxFit.cover,
+                                  )
                                 : Icon(Icons.image_not_supported, size: 50),
                           ),
                           Padding(
@@ -208,20 +251,35 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                           Text('Lapangan: $lapangan',
                                               style: TextStyle(
                                                   fontWeight: FontWeight.bold)),
-                                          Text(
-                                              'Tanggal: ${DateFormat('dd MMMM yyyy').format(tanggal)}'),
-                                          Text('Jam: $jamMulai - $jamSelesai'),
-                                          Text('Status: $status'),
+                                          Text('Tanggal: $bookingDate'),
+                                          Text('Jam: $time'),
+                                          Row(
+                                            children: [
+                                              Icon(statusIcon,
+                                                  size: 16, color: statusColor),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                status,
+                                                style: TextStyle(
+                                                  color: statusColor,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                           Text('Nama: $namaPengguna'),
                                           Text('No WhatsApp: $noWhatsapp'),
-                                          Text('Nama Tim/Atas Nama: $teamName'),
+                                          if (teamName.isNotEmpty)
+                                            Text('Atas Nama: $teamName'),
                                           if (usePhotographer)
-                                            Text(
-                                                'Layanan: Photographer (+Rp 200,000)'),
+                                            Text('Photographer: Rp 200,000'),
                                           if (useReferee)
-                                            Text('Layanan: Wasit (+Rp 70,000)'),
+                                            Text('Wasit: Rp 70,000'),
                                           Text(
-                                              'Total Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}'),
+                                            'Total Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -244,10 +302,8 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                                     Navigator.of(context)
                                                         .pop(false),
                                                 style: TextButton.styleFrom(
-                                                  backgroundColor: Colors
-                                                      .black, // Warna hitam
-                                                  foregroundColor: Colors
-                                                      .white, // Font warna putih
+                                                  backgroundColor: Colors.black,
+                                                  foregroundColor: Colors.white,
                                                 ),
                                                 child: Text('Batal'),
                                               ),
@@ -256,10 +312,8 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                                     Navigator.of(context)
                                                         .pop(true),
                                                 style: TextButton.styleFrom(
-                                                  backgroundColor: Colors
-                                                      .black, // Warna hitam
-                                                  foregroundColor: Colors
-                                                      .white, // Font warna putih
+                                                  backgroundColor: Colors.black,
+                                                  foregroundColor: Colors.white,
                                                 ),
                                                 child: Text('Hapus'),
                                               ),
@@ -282,8 +336,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                             final User? user = FirebaseAuth
                                                 .instance.currentUser;
                                             if (user != null) {
-                                              await cart.loadCart(user
-                                                  .uid); // Pastikan cart diperbarui
+                                              await cart.loadCart(user.uid);
                                             }
 
                                             ScaffoldMessenger.of(context)

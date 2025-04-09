@@ -1,4 +1,3 @@
-// booking_schedule_page.dart
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -95,9 +94,12 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
 
   void _showBookingDetailPopup(BuildContext context, DocumentSnapshot booking) {
     final data = booking.data() as Map<String, dynamic>;
-    final isPaidFull = data['paymentStatus'] == 'Lunas';
-    final downPayment = data['downPaymentAmount'] ?? 0;
-    final remainingAmount = data['remainingAmount'] ?? 0;
+    final items = data['items'] as List<dynamic>? ?? [];
+    final firstItem = items.isNotEmpty ? items[0] : {};
+
+    final status = data['statusBooking'] ?? 'Pending';
+    final isPaid = status.contains('Sudah Bayar');
+    final totalAmount = data['totalAmount'] ?? 0;
     final paymentProofUrl = data['paymentProofUrl'] as String?;
 
     showDialog(
@@ -112,40 +114,40 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
               ListTile(
                 leading: Icon(Icons.sports),
                 title: Text('Lapangan'),
-                subtitle: Text(data['lapangan'] ?? '-'),
+                subtitle: Text(firstItem['name'] ?? '-'),
               ),
               ListTile(
                 leading: Icon(Icons.calendar_today),
                 title: Text('Tanggal'),
-                subtitle: Text(data['tanggal'] ?? '-'),
+                subtitle: Text(firstItem['bookingDate'] ?? '-'),
               ),
               ListTile(
                 leading: Icon(Icons.access_time),
                 title: Text('Jam'),
-                subtitle: Text('${data['jamMulai']} - ${data['jamSelesai']}'),
+                subtitle: Text(firstItem['time'] ?? '-'),
               ),
               ListTile(
                 leading: Icon(Icons.person),
                 title: Text('Nama Pemesan'),
-                subtitle: Text(data['namaPengguna'] ?? '-'),
+                subtitle: Text(data['userName'] ?? '-'),
               ),
               ListTile(
                 leading: Icon(Icons.phone),
                 title: Text('No WhatsApp'),
-                subtitle: Text(data['noWhatsapp'] ?? '-'),
+                subtitle: Text(data['userPhone'] ?? '-'),
               ),
               ListTile(
                 leading: Icon(Icons.group),
                 title: Text('Nama Tim/Atas Nama'),
-                subtitle: Text(data['teamName'] ?? '-'),
+                subtitle: Text(firstItem['teamName'] ?? '-'),
               ),
-              if (data['usePhotographer'] == true)
+              if (firstItem['usePhotographer'] == true)
                 ListTile(
                   leading: Icon(Icons.camera_alt),
                   title: Text('Photographer'),
                   subtitle: Text('Rp 200,000'),
                 ),
-              if (data['useReferee'] == true)
+              if (firstItem['useReferee'] == true)
                 ListTile(
                   leading: Icon(Icons.sports_score),
                   title: Text('Wasit'),
@@ -155,29 +157,20 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                 leading: Icon(Icons.payment),
                 title: Text('Status Pembayaran'),
                 subtitle: Text(
-                  isPaidFull ? 'Lunas' : 'DP (${data['paymentStatus']})',
+                  status,
                   style: TextStyle(
-                    color: isPaidFull ? Colors.green : Colors.orange,
+                    color: isPaid ? Colors.green : Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              if (!isPaidFull) ...[
-                ListTile(
-                  leading: Icon(Icons.money),
-                  title: Text('DP Dibayar'),
-                  subtitle: Text(
-                      'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(downPayment)}'),
+              ListTile(
+                leading: Icon(Icons.money),
+                title: Text('Total Pembayaran'),
+                subtitle: Text(
+                  'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}',
                 ),
-                ListTile(
-                  leading: Icon(Icons.money_off),
-                  title: Text('Sisa Pembayaran'),
-                  subtitle: Text(
-                    'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(remainingAmount)}',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
-              ],
+              ),
               if (paymentProofUrl != null) ...[
                 ListTile(
                   leading: Icon(Icons.image),
@@ -348,11 +341,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('bookings')
-                  .where('lapangan', isEqualTo: selectedLapangan)
-                  .where('tanggal',
-                      isEqualTo: selectedDate != null
-                          ? DateFormat('yyyy-MM-dd').format(selectedDate!)
-                          : null)
+                  .where('items', isNotEqualTo: null)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -361,17 +350,41 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
 
                 final bookedTimes = <String>[];
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                  final bookings = snapshot.data!.docs;
+                  final bookings = snapshot.data!.docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final items = data['items'] as List<dynamic>? ?? [];
+                    if (items.isEmpty) return false;
+
+                    final firstItem = items[0];
+                    final lapangan = firstItem['name'] as String?;
+                    final bookingDate = firstItem['bookingDate'] as String?;
+
+                    // Filter by selected lapangan and date
+                    if (selectedLapangan != null &&
+                        lapangan != selectedLapangan) {
+                      return false;
+                    }
+
+                    if (selectedDate != null && bookingDate != null) {
+                      final date = DateFormat('yyyy-MM-dd').parse(bookingDate);
+                      return date.year == selectedDate!.year &&
+                          date.month == selectedDate!.month &&
+                          date.day == selectedDate!.day;
+                    }
+
+                    return true;
+                  }).toList();
+
                   for (var booking in bookings) {
                     final data = booking.data() as Map<String, dynamic>;
-                    final jamMulai = data['jamMulai'] as String? ?? '';
-                    final jamSelesai = data['jamSelesai'] as String? ?? '';
-                    if (jamMulai.isNotEmpty && jamSelesai.isNotEmpty) {
-                      final startHour = int.parse(jamMulai.split(':')[0]);
-                      final endHour = int.parse(jamSelesai.split(':')[0]);
-                      for (int i = startHour; i < endHour; i++) {
-                        bookedTimes.add('$i:00');
-                      }
+                    final items = data['items'] as List<dynamic>? ?? [];
+                    if (items.isEmpty) continue;
+
+                    final firstItem = items[0];
+                    final time = firstItem['time'] as String? ?? '';
+                    if (time.isNotEmpty) {
+                      final hour = int.parse(time.split(':')[0]);
+                      bookedTimes.add('$hour:00');
                     }
                   }
                 }
@@ -400,15 +413,16 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                                     snapshot.data!.docs.firstWhere((booking) {
                                   final data =
                                       booking.data() as Map<String, dynamic>;
-                                  final jamMulai =
-                                      data['jamMulai'] as String? ?? '';
-                                  final jamSelesai =
-                                      data['jamSelesai'] as String? ?? '';
-                                  final startHour =
-                                      int.parse(jamMulai.split(':')[0]);
-                                  final endHour =
-                                      int.parse(jamSelesai.split(':')[0]);
-                                  return hour >= startHour && hour < endHour;
+                                  final items =
+                                      data['items'] as List<dynamic>? ?? [];
+                                  if (items.isEmpty) return false;
+                                  final firstItem = items[0];
+                                  final bookingTime =
+                                      firstItem['time'] as String? ?? '';
+                                  final bookingHour = bookingTime.isNotEmpty
+                                      ? int.parse(bookingTime.split(':')[0])
+                                      : -1;
+                                  return bookingHour == hour;
                                 });
                                 _showBookingDetailPopup(context, booking);
                               }

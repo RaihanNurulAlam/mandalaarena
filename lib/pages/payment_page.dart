@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
-import 'package:mandalaarenaapp/pages/points_page.dart';
 import 'package:mandalaarenaapp/pages/riwayat_pembayaran.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
@@ -24,6 +23,11 @@ class PaymentPage extends StatefulWidget {
 class _PaymentPageState extends State<PaymentPage> {
   String? transactionStatus;
   bool isProcessingPayment = false;
+  bool showPaymentPopup = false;
+  String? paymentUrl;
+  String? currentOrderId;
+  bool showPaymentOptions = false;
+  bool isPayingOnSite = false;
 
   String getBaseUrl() {
     const baseUrl = 'https://api-ygvy5l5oeq-uc.a.run.app';
@@ -33,22 +37,163 @@ class _PaymentPageState extends State<PaymentPage> {
     return baseUrl;
   }
 
+  Future<void> _createBookingDocument(String orderId) async {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final cart = Provider.of<Cart>(context, listen: false);
+
+      final bookingData = {
+        'orderId': orderId,
+        'userId': userProvider.userId,
+        'userName': userProvider.userName,
+        'userEmail': userProvider.userEmail,
+        'userPhone': userProvider.userPhone,
+        'statusBooking': 'Pending',
+        'createdAt': FieldValue.serverTimestamp(),
+        'items': cart.cart
+            .map((item) => {
+                  'name': item.name,
+                  'price': item.price,
+                  'originalPrice': item.price,
+                  'quantity': item.quantity,
+                  'bookingDate': item.bookingDate,
+                  'time': item.time,
+                  'usePhotographer': item.usePhotographer,
+                  'useReferee': item.useReferee,
+                  'imagePath': item.imagePath,
+                  'teamName': item.teamName,
+                  'isMember': userProvider.isMember,
+                  'discountedPrice': userProvider.isMember
+                      ? (double.tryParse(item.price ?? '0') ?? 0) * 0.6
+                      : (double.tryParse(item.price ?? '0') ?? 0),
+                })
+            .toList(),
+        'totalAmount': _calculateTotalPrice(),
+        'originalTotalAmount':
+            cart.cart.fold(0.0, (double previousValue, cartModel) {
+          double price = double.tryParse(cartModel.price ?? '0') ?? 0;
+          final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
+          double itemTotal = price * quantity;
+
+          if (cartModel.usePhotographer ?? false) {
+            itemTotal += 200000;
+          }
+
+          if (cartModel.useReferee ?? false) {
+            itemTotal += 70000;
+          }
+
+          return previousValue + itemTotal.toInt();
+        }),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('bookings')
+          .doc(orderId)
+          .set(bookingData);
+
+      if (kDebugMode) {
+        print('Booking document created successfully with all original fields');
+      }
+    } catch (e) {
+      print('Error creating booking document: $e');
+      rethrow;
+    }
+  }
+
   Future<void> updateBookingStatus(String orderId, String status) async {
     try {
       final bookingRef =
           FirebaseFirestore.instance.collection('bookings').doc(orderId);
       await bookingRef.update({'statusBooking': status});
+      print('Booking status updated to: $status');
     } catch (e) {
       print('Error updating booking status: $e');
+      if (e.toString().contains('not-found')) {
+        await _createBookingDocument(orderId);
+        await updateBookingStatus(orderId, status);
+      }
     }
   }
 
-  Future<void> saveUserPointsTransaction(
+  double _calculateTotalPrice() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final cart = Provider.of<Cart>(context, listen: false);
+
+    return cart.cart.fold(0, (previousValue, cartModel) {
+      double price = double.tryParse(cartModel.price ?? '0') ?? 0;
+      if (userProvider.isMember) {
+        price = price * 0.6;
+      }
+      final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
+      double itemTotal = price * quantity;
+
+      if (cartModel.usePhotographer ?? false) {
+        itemTotal += 200000;
+      }
+
+      if (cartModel.useReferee ?? false) {
+        itemTotal += 70000;
+      }
+
+      return previousValue + itemTotal.toInt();
+    });
+  }
+
+  Future<void> _completePayment(String orderId) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final cart = Provider.of<Cart>(context, listen: false);
+
+    try {
+      await updateBookingStatus(orderId, 'Sudah Bayar');
+      int earnedPoints = int.parse(cart.cart.first.quantity!) * 10;
+      await _updateUserPoints(userProvider.userId, earnedPoints);
+      await _saveUserPointsTransaction(
+          userProvider.userId, earnedPoints, orderId);
+
+      await cart.clearCart();
+      await cart.loadCart(userProvider.userId);
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TransactionHistoryPage(),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error completing payment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateUserPoints(String userId, int earnedPoints) async {
+    if (userId.isEmpty) return;
+
+    try {
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(userId);
+      await userRef.update({
+        'points': FieldValue.increment(earnedPoints),
+      });
+      print('User points updated successfully');
+    } catch (e) {
+      print('Error updating user points: $e');
+    }
+  }
+
+  Future<void> _saveUserPointsTransaction(
       String userId, int earnedPoints, String orderId) async {
     try {
-      final pointsRef = FirebaseFirestore.instance.collection('points').doc();
-
-      await pointsRef.set({
+      await FirebaseFirestore.instance.collection('points').doc().set({
         'userId': userId,
         'points': earnedPoints,
         'orderId': orderId,
@@ -56,30 +201,9 @@ class _PaymentPageState extends State<PaymentPage> {
         'timestamp': FieldValue.serverTimestamp(),
         'description': 'Poin dari pembayaran booking',
       });
-
-      print('Poin berhasil disimpan');
+      print('Points transaction saved successfully');
     } catch (e) {
-      print('Error menyimpan poin: $e');
-    }
-  }
-
-  Future<void> updateUserPoints(String userId, int earnedPoints) async {
-    if (userId.isEmpty) return;
-
-    try {
-      final userRef =
-          FirebaseFirestore.instance.collection('users').doc(userId);
-      final userDoc = await userRef.get();
-
-      if (userDoc.exists) {
-        int currentPoints = userDoc.data()?['points'] ?? 0;
-        await userRef.update({'points': currentPoints + earnedPoints});
-        print('Poin user berhasil diperbarui.');
-      } else {
-        print('User tidak ditemukan.');
-      }
-    } catch (e) {
-      print('Error updating user points: $e');
+      print('Error saving points transaction: $e');
     }
   }
 
@@ -98,20 +222,31 @@ class _PaymentPageState extends State<PaymentPage> {
 
         if (transactionStatus == 'settlement' ||
             transactionStatus == 'capture') {
-          final userProvider =
-              Provider.of<UserProvider>(context, listen: false);
-          final cart = Provider.of<Cart>(context, listen: false);
+          await _completePayment(orderId);
 
-          await updateBookingStatus(orderId, 'Sudah Bayar');
-          int earnedPoints = int.parse(cart.cart.first.quantity!) * 10;
-          await updateUserPoints(userProvider.userId, earnedPoints);
-          await saveUserPointsTransaction(
-              userProvider.userId, earnedPoints, orderId);
+          setState(() {
+            showPaymentPopup = false;
+          });
 
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => const TransactionHistoryPage(),
+            ),
+          );
+        } else if (transactionStatus == 'pending') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Pembayaran Anda masih pending. Silakan selesaikan pembayaran.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Pembayaran gagal. Status: $transactionStatus'),
+              backgroundColor: Colors.red,
             ),
           );
         }
@@ -125,85 +260,60 @@ class _PaymentPageState extends State<PaymentPage> {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final cart = Provider.of<Cart>(context, listen: false);
 
+    if (cart.cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada item untuk dibayar'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       isProcessingPayment = true;
     });
 
     try {
-      double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
-        double price = double.tryParse(cartModel.price ?? '0') ?? 0;
-        if (userProvider.isMember) {
-          price = price * 0.6;
-        }
-        final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
-        double itemTotal = price * quantity;
-
-        if (cartModel.usePhotographer ?? false) {
-          itemTotal += 200000;
-        }
-
-        if (cartModel.useReferee ?? false) {
-          itemTotal += 70000;
-        }
-
-        return previousValue + itemTotal;
-      });
-
-      final fullName = userProvider.userName.split(' ');
-      final firstName = fullName.isNotEmpty ? fullName[0] : '';
-      final lastName = fullName.length > 1 ? fullName.sublist(1).join(' ') : '';
-
       final orderId =
           'ORDER-${DateTime.now().millisecondsSinceEpoch}-${userProvider.userId.substring(0, 5)}';
 
-      final baseUrl = getBaseUrl();
-      final url = Uri.parse('$baseUrl/pay');
+      await _createBookingDocument(orderId);
 
+      final baseUrl = getBaseUrl();
       final response = await http
           .post(
             Uri.parse('$baseUrl/pay'),
             headers: {'Content-Type': 'application/json'},
             body: json.encode({
               'orderId': orderId,
-              'grossAmount': totalPrice.toString(),
-              'firstName': firstName,
-              'lastName': lastName,
+              'grossAmount': _calculateTotalPrice().toString(),
+              'firstName': userProvider.userName.split(' ').first,
+              'lastName': userProvider.userName.split(' ').length > 1
+                  ? userProvider.userName.split(' ').sublist(1).join(' ')
+                  : '',
               'email': userProvider.userEmail,
               'phone': userProvider.userPhone,
+              'callbackUrl':
+                  'https://mandalaarenaapp-95d0d.web.app/payment-callback',
             }),
           )
           .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final redirectUrl = data['redirect_url'];
-        final transactionToken = data['transactionToken'];
+        setState(() {
+          showPaymentPopup = true;
+          paymentUrl = data['redirect_url'];
+          currentOrderId = orderId;
+        });
 
-        // Untuk web
-        if (kIsWeb) {
-          if (await canLaunchUrl(Uri.parse(redirectUrl))) {
-            await launchUrl(
-              Uri.parse(redirectUrl),
-              mode: LaunchMode.externalApplication,
-            );
-          }
-        }
-        // Untuk mobile
-        else {
-          // Tampilkan popup pembayaran Midtrans
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MidtransPaymentPopup(
-                transactionToken: transactionToken,
-                orderId: orderId,
-              ),
-            ),
+        if (kIsWeb && await canLaunchUrl(Uri.parse(paymentUrl!))) {
+          await launchUrl(
+            Uri.parse(paymentUrl!),
+            mode: LaunchMode.externalApplication,
           );
         }
-
-        // Periksa status pembayaran
-        await checkTransactionStatus(orderId);
       } else {
         throw Exception('Failed to create transaction: ${response.body}');
       }
@@ -221,388 +331,639 @@ class _PaymentPageState extends State<PaymentPage> {
     }
   }
 
+  Future<void> initiateOnSitePayment() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final cart = Provider.of<Cart>(context, listen: false);
+
+    if (cart.cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada item untuk dibooking'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isProcessingPayment = true;
+      isPayingOnSite = true;
+    });
+
+    try {
+      final orderId =
+          'ORDER-${DateTime.now().millisecondsSinceEpoch}-${userProvider.userId.substring(0, 5)}';
+
+      await _createBookingDocument(orderId);
+      await updateBookingStatus(orderId, 'Booking (Bayar di Tempat)');
+
+      final bookingDetails = cart.cart.map((item) {
+        double price = double.tryParse(item.price ?? '0') ?? 0;
+        if (userProvider.isMember) {
+          price = price * 0.6;
+        }
+
+        return '''
+Lapangan: ${item.name}
+Tanggal: ${item.bookingDate}
+Jam: ${item.time}
+Durasi: ${item.quantity} jam
+Harga per jam: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(price)}
+${item.usePhotographer ?? false ? 'Dengan Photographer (+Rp 200,000)' : ''}
+${item.useReferee ?? false ? 'Dengan Wasit (+Rp 70,000)' : ''}
+''';
+      }).join('\n');
+
+      final whatsappMessage = '''
+Halo Admin Mandala Arena,
+
+Saya ingin melakukan booking dengan detail berikut:
+
+$bookingDetails
+
+Nama: ${userProvider.userName}
+Email: ${userProvider.userEmail}
+No. HP: ${userProvider.userPhone}
+Status Member: ${userProvider.isMember ? 'Ya' : 'Tidak'}
+
+Saya memilih untuk bayar di tempat.
+
+Terima kasih.
+''';
+
+      final encodedMessage = Uri.encodeComponent(whatsappMessage);
+      final whatsappUrl = 'https://wa.me/6281111122525?text=$encodedMessage';
+
+      cart.clearCart();
+
+      if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+        await launchUrl(Uri.parse(whatsappUrl));
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TransactionHistoryPage(),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isProcessingPayment = false;
+        isPayingOnSite = false;
+      });
+    }
+  }
+
+  void _closePaymentPopup() {
+    setState(() {
+      showPaymentPopup = false;
+    });
+    if (currentOrderId != null) {
+      checkTransactionStatus(currentOrderId!);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final cart = Provider.of<Cart>(context);
 
-    double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
-      double price = double.tryParse(cartModel.price ?? '0') ?? 0;
-      if (userProvider.isMember) {
-        price = price * 0.6;
-      }
-      final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
-      double itemTotal = price * quantity;
-
-      if (cartModel.usePhotographer ?? false) {
-        itemTotal += 200000;
-      }
-
-      if (cartModel.useReferee ?? false) {
-        itemTotal += 70000;
-      }
-
-      return previousValue + itemTotal;
-    });
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transaksi', style: TextStyle(color: Colors.black)),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: IconButton(
-              icon: const Icon(Icons.history, color: Colors.black),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HistoryPaymentPage(),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (transactionStatus != null)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: transactionStatus == 'settlement'
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        transactionStatus == 'settlement'
-                            ? Icons.check_circle
-                            : Icons.error,
-                        color: transactionStatus == 'settlement'
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Status Transaksi: $transactionStatus',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: transactionStatus == 'settlement'
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              if (isProcessingPayment)
-                const Center(
-                  child: CircularProgressIndicator(),
-                ),
-
-              // Informasi jumlah item di keranjang
-              Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
-                      blurRadius: 6,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.shopping_cart, color: Colors.black54),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        cart.cart.isNotEmpty
-                            ? 'Jumlah Item: ${cart.cart.length}'
-                            : 'Tidak ada item',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    if (cart.cart.isEmpty)
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => HomePage(),
-                            ),
-                          );
-                        },
-                        child: const Text('Lakukan Booking',
-                            style: TextStyle(color: Colors.black)),
-                      ),
-                  ],
-                ),
-              ),
-
-              // Tampilkan daftar item dalam keranjang
-              if (cart.cart.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    'Item di keranjang:',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: cart.cart.length,
-                  itemBuilder: (context, index) {
-                    final item = cart.cart[index];
-                    double price = double.tryParse(item.price ?? '0') ?? 0;
-                    if (userProvider.isMember) {
-                      price = price * 0.6;
-                    }
-                    final totalPrice =
-                        price * (int.tryParse(item.quantity ?? '1') ?? 1);
-
-                    if (item.usePhotographer ?? false) {
-                      price += 200000;
-                    }
-
-                    if (item.useReferee ?? false) {
-                      price += 70000;
-                    }
-
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset(
-                              item.imagePath ?? 'assets/images/placeholder.png',
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.name ?? 'Item tidak diketahui',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(double.tryParse(item.price ?? '0') ?? 0)} x ${item.quantity} Jam',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                if (userProvider.isMember)
-                                  Text(
-                                    'Diskon Member: 40%',
-                                    style: TextStyle(
-                                        fontSize: 14, color: Colors.green[700]),
-                                  ),
-                                Text(
-                                  'Total setelah diskon: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Tanggal: ${item.bookingDate} - Jam: ${item.time}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                if (item.usePhotographer ?? false)
-                                  Text(
-                                    'Layanan: Photographer (+Rp 200,000)',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                                if (item.useReferee ?? false)
-                                  Text(
-                                    'Layanan: Wasit (+Rp 70,000)',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black54,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title:
+                const Text('Transaksi', style: TextStyle(color: Colors.black)),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: IconButton(
+                  icon: const Icon(Icons.history, color: Colors.black),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TransactionHistoryPage(),
                       ),
                     );
                   },
                 ),
-                const Divider(height: 32),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total Harga:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (transactionStatus != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: transactionStatus == 'settlement'
+                            ? Colors.green.withOpacity(0.1)
+                            : Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      Text(
-                        'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            transactionStatus == 'settlement'
+                                ? Icons.check_circle
+                                : Icons.error,
+                            color: transactionStatus == 'settlement'
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Status Transaksi: $transactionStatus',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: transactionStatus == 'settlement'
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
+                  if (isProcessingPayment)
+                    const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          blurRadius: 6,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.shopping_cart, color: Colors.black54),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            cart.cart.isNotEmpty
+                                ? 'Jumlah Item: ${cart.cart.length}'
+                                : 'Tidak ada item',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (cart.cart.isEmpty)
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HomePage(),
+                                ),
+                              );
+                            },
+                            child: const Text('Lakukan Booking',
+                                style: TextStyle(color: Colors.black)),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-
-                // Tombol pembayaran
-                if (transactionStatus == null && !isProcessingPayment)
-                  Center(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                      ),
-                      onPressed: initiateMidtransPayment,
-                      child: const Text(
-                        'Lakukan Pembayaran',
+                  if (cart.cart.isNotEmpty) ...[
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Item di keranjang:',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ],
+                    const SizedBox(height: 12),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: cart.cart.length,
+                      itemBuilder: (context, index) {
+                        final item = cart.cart[index];
+                        double price = double.tryParse(item.price ?? '0') ?? 0;
+                        final originalPrice = price;
+                        if (userProvider.isMember) {
+                          price = price * 0.6;
+                        }
+                        final totalPrice =
+                            price * (int.tryParse(item.quantity ?? '1') ?? 1);
+
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.asset(
+                                  item.imagePath ??
+                                      'assets/images/placeholder.png',
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name ?? 'Item tidak diketahui',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if (userProvider.isMember)
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Harga Asli: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(originalPrice)}',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                              decoration:
+                                                  TextDecoration.lineThrough,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Harga Member: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(price)} x ${item.quantity} Jam',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Text(
+                                        'Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(price)} x ${item.quantity} Jam',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    Text(
+                                      'Total: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Tanggal: ${item.bookingDate} - Jam: ${item.time}',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                    if (item.usePhotographer ?? false)
+                                      const Text(
+                                        'Photographer: Rp 200,000',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    if (item.useReferee ?? false)
+                                      const Text(
+                                        'Wasit: Rp 70,000',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 32),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Harga:',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (userProvider.isMember)
+                                Text(
+                                  'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(cart.cart.fold(0, (previousValue, cartModel) {
+                                    double price = double.tryParse(
+                                            cartModel.price ?? '0') ??
+                                        0;
+                                    final int quantity = int.tryParse(
+                                            cartModel.quantity ?? '1') ??
+                                        1;
+                                    double itemTotal = price * quantity;
+
+                                    if (cartModel.usePhotographer ?? false) {
+                                      itemTotal += 200000;
+                                    }
+
+                                    if (cartModel.useReferee ?? false) {
+                                      itemTotal += 70000;
+                                    }
+
+                                    return previousValue + itemTotal.toInt();
+                                  }))}',
+                                  style: const TextStyle(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              Text(
+                                'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_calculateTotalPrice())}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              if (userProvider.isMember)
+                                Text(
+                                  'Anda hemat Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(cart.cart.fold(0, (previousValue, cartModel) {
+                                    double price = double.tryParse(
+                                            cartModel.price ?? '0') ??
+                                        0;
+                                    final int quantity = int.tryParse(
+                                            cartModel.quantity ?? '1') ??
+                                        1;
+                                    double itemTotal = price * quantity;
+                                    double discountedItemTotal =
+                                        (price * 0.6) * quantity;
+
+                                    if (cartModel.usePhotographer ?? false) {
+                                      itemTotal += 200000;
+                                      discountedItemTotal += 200000;
+                                    }
+
+                                    if (cartModel.useReferee ?? false) {
+                                      itemTotal += 70000;
+                                      discountedItemTotal += 70000;
+                                    }
+
+                                    return previousValue +
+                                        (itemTotal - discountedItemTotal)
+                                            .toInt();
+                                  }))}',
+                                  style: TextStyle(
+                                    color: Colors.green[700],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    if (transactionStatus == null && !isProcessingPayment)
+                      Column(
+                        children: [
+                          if (!showPaymentOptions)
+                            Center(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 32,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    showPaymentOptions = true;
+                                  });
+                                },
+                                child: const Text(
+                                  'Pilih Metode Pembayaran',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (showPaymentOptions) ...[
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Pilih Metode Pembayaran:',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 16,
+                                ),
+                              ),
+                              onPressed: initiateMidtransPayment,
+                              child: const Text(
+                                'Bayar Online',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 16,
+                                ),
+                              ),
+                              onPressed: initiateOnSitePayment,
+                              child: const Text(
+                                'Bayar di Tempat',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  showPaymentOptions = false;
+                                });
+                              },
+                              child: const Text(
+                                'Batal',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class MidtransPaymentPopup extends StatefulWidget {
-  final String transactionToken;
-  final String orderId;
-
-  const MidtransPaymentPopup({
-    super.key,
-    required this.transactionToken,
-    required this.orderId,
-  });
-
-  @override
-  State<MidtransPaymentPopup> createState() => _MidtransPaymentPopupState();
-}
-
-class _MidtransPaymentPopupState extends State<MidtransPaymentPopup> {
-  @override
-  void initState() {
-    super.initState();
-    _openPaymentUrl();
-  }
-
-  Future<void> _openPaymentUrl() async {
-    final url =
-        'https://app.midtrans.com/snap/v2/vtweb/${widget.transactionToken}';
-
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      );
-      // Simulasikan pembayaran selesai setelah membuka URL
-      _checkPaymentStatus();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tidak dapat membuka URL pembayaran'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      Navigator.pop(context, false);
-    }
-  }
-
-  void _checkPaymentStatus() {
-    // Simulasikan logika untuk memeriksa status pembayaran
-    // Misalnya, Anda dapat memanggil API untuk memeriksa status transaksi
-    Navigator.pop(context, true); // Kembali ke halaman sebelumnya
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pembayaran Midtrans'),
-      ),
-      body: const Center(
-        child: Text('Membuka halaman pembayaran...'),
-      ),
+        if (showPaymentPopup)
+          Dialog(
+            insetPadding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.payment,
+                      size: 50,
+                      color: Colors.blue,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Pembayaran Online',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Silakan selesaikan pembayaran Anda',
+                      style: TextStyle(fontSize: 15),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    if (paymentUrl != null)
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                        onPressed: () async {
+                          if (await canLaunchUrl(Uri.parse(paymentUrl!))) {
+                            await launchUrl(
+                              Uri.parse(paymentUrl!),
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        },
+                        child: const Text(
+                          'Buka Halaman Pembayaran',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Menunggu konfirmasi pembayaran...',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _closePaymentPopup,
+                      child: const Text(
+                        'Tutup',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

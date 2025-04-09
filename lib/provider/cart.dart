@@ -135,29 +135,53 @@ class Cart extends ChangeNotifier {
     }
   }
 
+  // Future<void> clearCart() async {
+  //   try {
+  //     final batch = FirebaseFirestore.instance.batch();
+
+  //     for (var item in _cart) {
+  //       final bookingRef = FirebaseFirestore.instance
+  //           .collection('bookings')
+  //           .where('lapangId', isEqualTo: item.id)
+  //           .where('tanggal', isEqualTo: item.bookingDate)
+  //           .where('jamMulai', isEqualTo: item.time)
+  //           .where('duration', isEqualTo: item.duration.toString());
+
+  //       final snapshot = await bookingRef.get();
+  //       for (var doc in snapshot.docs) {
+  //         batch.delete(doc.reference);
+  //       }
+  //     }
+
+  //     await batch.commit();
+  //     _cart.clear();
+  //     notifyListeners();
+  //   } catch (e) {
+  //     debugPrint('Error clearing cart in Firebase: $e');
+  //   }
+  // }
+
   Future<void> clearCart() async {
     try {
+      // Clear from Firestore
       final batch = FirebaseFirestore.instance.batch();
 
       for (var item in _cart) {
-        final bookingRef = FirebaseFirestore.instance
-            .collection('bookings')
-            .where('lapangId', isEqualTo: item.id)
-            .where('tanggal', isEqualTo: item.bookingDate)
-            .where('jamMulai', isEqualTo: item.time)
-            .where('duration', isEqualTo: item.duration.toString());
-
-        final snapshot = await bookingRef.get();
-        for (var doc in snapshot.docs) {
-          batch.delete(doc.reference);
+        if (item.docId != null && item.docId!.isNotEmpty) {
+          batch.delete(FirebaseFirestore.instance
+              .collection('bookings')
+              .doc(item.docId));
         }
       }
 
       await batch.commit();
+
+      // Clear local cart
       _cart.clear();
       notifyListeners();
     } catch (e) {
-      debugPrint('Error clearing cart in Firebase: $e');
+      debugPrint('Error clearing cart: $e');
+      rethrow;
     }
   }
 
@@ -200,42 +224,86 @@ class Cart extends ChangeNotifier {
     }
   }
 
+  // Future<void> loadCart(String userId) async {
+  //   try {
+  //     final snapshot = await FirebaseFirestore.instance
+  //         .collection('bookings')
+  //         .where('userId', isEqualTo: userId)
+  //         .get();
+
+  //     _cart.clear(); // Kosongkan cart sebelum memuat ulang
+
+  //     for (var doc in snapshot.docs) {
+  //       final data = doc.data();
+
+  //       _cart.add(
+  //         CartModel(
+  //           userId: data['userId'],
+  //           docId: doc.id,
+  //           id: data['lapangId'],
+  //           name: data['lapangan'], // Sesuai dengan format terbaru
+  //           price: data['price'],
+  //           imagePath: data['imagePath'],
+  //           quantity: data['duration'], // Durasi sebagai quantity
+  //           bookingDate: data['tanggal'],
+  //           time: data['jamMulai'],
+  //           duration: int.tryParse(data['duration'].toString()) ?? 0,
+  //           namaPengguna: data['namaPengguna'],
+  //           noWhatsapp: data['noWhatsapp'],
+  //           usePhotographer:
+  //               data['usePhotographer'] ?? false, // Ambil data photographer
+  //           useReferee: data['useReferee'] ?? false, // Ambil data wasit
+  //         ),
+  //       );
+  //     }
+
+  //     notifyListeners();
+  //   } catch (e) {
+  //     debugPrint('Error loading cart: $e');
+  //   }
+  // }
+
   Future<void> loadCart(String userId) async {
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('bookings')
           .where('userId', isEqualTo: userId)
-          .get();
+          .where('statusBooking',
+              whereIn: ['Pending', 'Booking (Bayar di Tempat)']).get();
 
-      _cart.clear(); // Kosongkan cart sebelum memuat ulang
+      _cart.clear();
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
-
-        _cart.add(
-          CartModel(
-            userId: data['userId'],
-            docId: doc.id,
-            id: data['lapangId'],
-            name: data['lapangan'], // Sesuai dengan format terbaru
-            price: data['price'],
-            imagePath: data['imagePath'],
-            quantity: data['duration'], // Durasi sebagai quantity
-            bookingDate: data['tanggal'],
-            time: data['jamMulai'],
-            duration: int.tryParse(data['duration'].toString()) ?? 0,
-            namaPengguna: data['namaPengguna'],
-            noWhatsapp: data['noWhatsapp'],
-            usePhotographer:
-                data['usePhotographer'] ?? false, // Ambil data photographer
-            useReferee: data['useReferee'] ?? false, // Ambil data wasit
-          ),
-        );
+        if (data['lapangan'] != null &&
+            data['tanggal'] != null &&
+            data['jamMulai'] != null) {
+          _cart.add(
+            CartModel(
+              userId: data['userId'] ?? '',
+              docId: doc.id,
+              id: data['lapangId'] ?? '',
+              name: data['lapangan'] ?? '',
+              price: data['price']?.toString() ?? '0',
+              imagePath: data['imagePath'] ?? '',
+              quantity: data['duration']?.toString() ?? '0',
+              bookingDate: data['tanggal'] ?? '',
+              time: data['jamMulai'] ?? '',
+              duration: int.tryParse(data['duration']?.toString() ?? '0') ?? 0,
+              namaPengguna: data['namaPengguna'] ?? '',
+              noWhatsapp: data['noWhatsapp'] ?? '',
+              usePhotographer: data['usePhotographer'] ?? false,
+              useReferee: data['useReferee'] ?? false,
+              teamName: data['teamName'] ?? '',
+            ),
+          );
+        }
       }
 
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading cart: $e');
+      rethrow;
     }
   }
 
