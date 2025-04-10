@@ -1,9 +1,9 @@
-import 'dart:convert';
+// ignore_for_file: no_leading_underscores_for_local_identifiers
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:mandalaarenaapp/pages/add_recurring_booking_page.dart';
 import 'package:mandalaarenaapp/pages/bookingpage.dart';
 import 'package:mandalaarenaapp/pages/edit_bookingpage.dart';
 
@@ -35,42 +35,19 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
     });
   }
 
-  void _showLapanganSelectionPopup(BuildContext context, String selectedTime) {
-    final lapanganOptions = [
-      'Lapang Basket Vynil',
-      'Lapang Basket Karet',
-      'Lapang Basket 3x3',
-      'Lapang Minisoccer',
-      'Gokart',
-    ];
+  void _navigateToBookingPage(BuildContext context, String selectedTime) {
+    if (selectedLapangan == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Silakan pilih lapangan terlebih dahulu')),
+      );
+      return;
+    }
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Pilih Lapangan'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: lapanganOptions.map((lapangan) {
-            return ListTile(
-              title: Text(lapangan),
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToBookingPage(context, lapangan, selectedTime);
-              },
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  void _navigateToBookingPage(
-      BuildContext context, String lapangan, String selectedTime) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => BookingPage(
-          lapangan: lapangan,
+          lapangan: selectedLapangan!,
           selectedTime: selectedTime,
           selectedDate: selectedDate!,
         ),
@@ -99,8 +76,12 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
 
     final status = data['statusBooking'] ?? 'Pending';
     final isPaid = status.contains('Sudah Bayar');
+    final isBookingOnSite = status.contains('Booking');
     final totalAmount = data['totalAmount'] ?? 0;
+    final downPayment = data['downPaymentAmount'] ?? 0;
+    final remainingAmount = data['remainingAmount'] ?? 0;
     final paymentProofUrl = data['paymentProofUrl'] as String?;
+    final bool _isPaidFull = remainingAmount == 0;
 
     showDialog(
       context: context,
@@ -159,19 +140,42 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                 subtitle: Text(
                   status,
                   style: TextStyle(
-                    color: isPaid ? Colors.green : Colors.orange,
+                    color: isPaid
+                        ? Colors.green
+                        : isBookingOnSite
+                            ? Colors.blue
+                            : Colors.orange,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              ListTile(
-                leading: Icon(Icons.money),
-                title: Text('Total Pembayaran'),
-                subtitle: Text(
-                  'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}',
+              if (!isBookingOnSite) ...[
+                ListTile(
+                  leading: Icon(Icons.money),
+                  title: Text('Total Pembayaran'),
+                  subtitle: Text(
+                    'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}',
+                  ),
                 ),
-              ),
-              if (paymentProofUrl != null) ...[
+                if (!_isPaidFull) ...[
+                  ListTile(
+                    leading: Icon(Icons.payment),
+                    title: Text('DP Dibayar'),
+                    subtitle: Text(
+                      'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(downPayment)}',
+                    ),
+                  ),
+                  ListTile(
+                    leading: Icon(Icons.payment),
+                    title: Text('Sisa Pembayaran'),
+                    subtitle: Text(
+                      'Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(remainingAmount)}',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ],
+              if (paymentProofUrl != null && !isBookingOnSite) ...[
                 ListTile(
                   leading: Icon(Icons.image),
                   title: Text('Bukti Pembayaran'),
@@ -267,22 +271,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Jadwal Booking'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20),
-            child: IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddRecurringBookingPage(),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -445,7 +433,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                                     );
                                   }
                                 : () {
-                                    _showLapanganSelectionPopup(context, time);
+                                    _navigateToBookingPage(context, time);
                                   },
                         child: Container(
                           decoration: BoxDecoration(

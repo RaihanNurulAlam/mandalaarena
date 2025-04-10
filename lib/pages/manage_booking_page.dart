@@ -28,7 +28,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
   Future<void> _fetchLapanganList() async {
     final snapshot = await FirebaseFirestore.instance
         .collection('bookings')
-        .where('items', isNotEqualTo: null)
+        // .where('items', isNotEqualTo: null)
         .get();
 
     final lapanganSet = <String>{};

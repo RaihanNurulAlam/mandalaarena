@@ -33,8 +33,9 @@ class _EditBookingPageState extends State<EditBookingPage> {
   final _formKey = GlobalKey<FormState>();
   Uint8List? _webImage;
   File? _imageFile;
-  late bool _isPaidFull;
+  late String _paymentStatus;
   late int _downPaymentAmount;
+  late int _remainingAmount;
   final TextEditingController _downPaymentController = TextEditingController();
   String? _paymentProofUrl;
   late String lapangan;
@@ -44,11 +45,9 @@ class _EditBookingPageState extends State<EditBookingPage> {
   @override
   void initState() {
     super.initState();
-    // Extract data from items array
     final items = widget.initialData['items'] as List<dynamic>? ?? [];
     final firstItem = items.isNotEmpty ? items[0] : {};
 
-    // Initialize values
     totalAmount = widget.initialData['totalAmount'] ?? 0;
     bookingDuration =
         int.tryParse(firstItem['duration']?.toString() ?? '1') ?? 1;
@@ -61,17 +60,17 @@ class _EditBookingPageState extends State<EditBookingPage> {
     bookingDate = firstItem['bookingDate'] ?? "";
     time = firstItem['time'] ?? "";
 
-    // Payment information
-    _isPaidFull =
-        widget.initialData['statusBooking']?.contains('Sudah Bayar') ?? false;
+    _paymentStatus = widget.initialData['statusBooking'] ?? 'Booking';
     _downPaymentAmount = widget.initialData['downPaymentAmount'] ?? 0;
+    _remainingAmount = widget.initialData['remainingAmount'] ?? 0;
     _downPaymentController.text = _downPaymentAmount.toString();
     _paymentProofUrl = widget.initialData['paymentProofUrl'];
   }
 
-  void _updateDownPayment() {
+  void _updatePaymentInfo() {
     setState(() {
       _downPaymentAmount = int.tryParse(_downPaymentController.text) ?? 0;
+      _remainingAmount = totalAmount - _downPaymentAmount;
     });
   }
 
@@ -131,8 +130,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
   void _calculateTotalPrice() {
     int basePrice = 0;
 
-    // Determine base price based on lapangan and duration
-    // This should match your pricing logic from the booking page
     if (lapangan.contains('Minisoccer')) {
       basePrice = 150000 * bookingDuration;
     } else if (lapangan.contains('Basket')) {
@@ -141,7 +138,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
       basePrice = 100000 * bookingDuration;
     }
 
-    // Add services if not Gokart
     if (lapangan != 'Gokart') {
       if (usePhotographer) basePrice += 200000;
       if (useReferee) basePrice += 70000;
@@ -149,9 +145,12 @@ class _EditBookingPageState extends State<EditBookingPage> {
 
     setState(() {
       totalAmount = basePrice;
-      if (_isPaidFull) {
+      if (_paymentStatus == 'Sudah Bayar') {
         _downPaymentController.text = basePrice.toString();
         _downPaymentAmount = basePrice;
+        _remainingAmount = 0;
+      } else if (_paymentStatus == 'DP') {
+        _remainingAmount = basePrice - _downPaymentAmount;
       }
     });
   }
@@ -164,7 +163,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
       return;
     }
 
-    if (!_isPaidFull && _downPaymentAmount <= 0) {
+    if (_paymentStatus == 'DP' && _downPaymentAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Harap isi jumlah DP yang dibayarkan!")),
       );
@@ -174,17 +173,22 @@ class _EditBookingPageState extends State<EditBookingPage> {
     try {
       String? newPaymentProofUrl = await _uploadImage();
 
-      // Update the booking document
       await FirebaseFirestore.instance
           .collection('bookings')
           .doc(widget.bookingId)
           .update({
         'userName': userName,
         'userPhone': userPhone,
-        'statusBooking': _isPaidFull ? 'Sudah Bayar' : 'DP',
-        'downPaymentAmount': _downPaymentAmount,
-        'remainingAmount': _isPaidFull ? 0 : totalAmount - _downPaymentAmount,
-        'paymentProofUrl': newPaymentProofUrl,
+        'statusBooking': _paymentStatus,
+        'downPaymentAmount':
+            _paymentStatus == 'Booking' ? 0 : _downPaymentAmount,
+        'remainingAmount': _paymentStatus == 'Sudah Bayar'
+            ? 0
+            : _paymentStatus == 'Booking'
+                ? totalAmount
+                : totalAmount - _downPaymentAmount,
+        'paymentProofUrl':
+            _paymentStatus == 'Booking' ? null : newPaymentProofUrl,
         'totalAmount': totalAmount,
         'updatedAt': FieldValue.serverTimestamp(),
         'items': FieldValue.arrayUnion([
@@ -242,7 +246,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Display booking information (read-only)
                 ListTile(
                   title: Text('Lapangan'),
                   subtitle: Text(lapangan),
@@ -255,8 +258,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
                   title: Text('Jam'),
                   subtitle: Text(time),
                 ),
-
-                // Editable fields
                 const SizedBox(height: 20),
                 const Text(
                   "Informasi Pemesan:",
@@ -330,7 +331,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
                     });
                   },
                 ),
-
                 const SizedBox(height: 20),
                 const Text(
                   "Durasi Booking (jam):",
@@ -355,7 +355,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
                     });
                   },
                 ),
-
                 if (!isGokart) ...[
                   const SizedBox(height: 20),
                   const Text(
@@ -387,7 +386,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
                     },
                   ),
                 ],
-
                 const SizedBox(height: 20),
                 const Text(
                   "Pembayaran:",
@@ -402,13 +400,14 @@ class _EditBookingPageState extends State<EditBookingPage> {
                     Expanded(
                       child: ChoiceChip(
                         label: const Text('Lunas'),
-                        selected: _isPaidFull,
+                        selected: _paymentStatus == 'Sudah Bayar',
                         onSelected: (selected) {
                           setState(() {
-                            _isPaidFull = true;
+                            _paymentStatus = 'Sudah Bayar';
                             _downPaymentController.text =
                                 totalAmount.toString();
                             _downPaymentAmount = totalAmount;
+                            _remainingAmount = 0;
                           });
                         },
                       ),
@@ -417,18 +416,33 @@ class _EditBookingPageState extends State<EditBookingPage> {
                     Expanded(
                       child: ChoiceChip(
                         label: const Text('DP'),
-                        selected: !_isPaidFull,
+                        selected: _paymentStatus == 'DP',
                         onSelected: (selected) {
                           setState(() {
-                            _isPaidFull = false;
+                            _paymentStatus = 'DP';
                             _downPaymentController.text = '';
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Text('Tanpa DP'),
+                        selected: _paymentStatus == 'Booking',
+                        onSelected: (selected) {
+                          setState(() {
+                            _paymentStatus = 'Booking';
+                            _downPaymentController.text = '0';
+                            _downPaymentAmount = 0;
+                            _remainingAmount = totalAmount;
                           });
                         },
                       ),
                     ),
                   ],
                 ),
-                if (!_isPaidFull) ...[
+                if (_paymentStatus == 'DP') ...[
                   const SizedBox(height: 10),
                   TextFormField(
                     controller: _downPaymentController,
@@ -440,11 +454,11 @@ class _EditBookingPageState extends State<EditBookingPage> {
                       prefixText: 'Rp ',
                     ),
                     validator: (value) {
-                      if (!_isPaidFull && (value == null || value.isEmpty)) {
+                      if (value == null || value.isEmpty) {
                         return 'Harap isi jumlah DP';
                       }
-                      final amount = int.tryParse(value ?? '0') ?? 0;
-                      if (!_isPaidFull && amount <= 0) {
+                      final amount = int.tryParse(value) ?? 0;
+                      if (amount <= 0) {
                         return 'Jumlah DP harus lebih dari 0';
                       }
                       if (amount > totalAmount) {
@@ -452,98 +466,92 @@ class _EditBookingPageState extends State<EditBookingPage> {
                       }
                       return null;
                     },
-                    onChanged: (value) => _updateDownPayment(),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Sisa Pembayaran: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount - _downPaymentAmount)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
+                    onChanged: (value) => _updatePaymentInfo(),
                   ),
                 ],
-                if (_isPaidFull) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    'Jumlah DP: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_downPaymentAmount)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 20),
-                const Text(
-                  "Bukti Pembayaran:",
+                const SizedBox(height: 10),
+                Text(
+                  'Total Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 150,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
+                if (_paymentStatus == 'DP') ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'DP Dibayar: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_downPaymentAmount)}',
+                    style: TextStyle(
+                      fontSize: 16,
                     ),
-                    child: _imageFile != null
-                        ? Image.file(_imageFile!, fit: BoxFit.cover)
-                        : _webImage != null
-                            ? Image.memory(_webImage!, fit: BoxFit.cover)
-                            : _paymentProofUrl != null
-                                ? Image.network(
-                                    _paymentProofUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error,
-                                            stackTrace) =>
-                                        const Center(
-                                            child: Text('Gagal memuat gambar')),
-                                  )
-                                : const Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.add_a_photo, size: 40),
-                                        Text('Tambah Bukti Pembayaran'),
-                                      ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Sisa Pembayaran: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_remainingAmount)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+                if (_paymentStatus == 'Booking') ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Jumlah yang harus dibayar di tempat: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+                if (_paymentStatus != 'Booking') ...[
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Bukti Pembayaran:",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      height: 150,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: _imageFile != null
+                          ? Image.file(_imageFile!, fit: BoxFit.cover)
+                          : _webImage != null
+                              ? Image.memory(_webImage!, fit: BoxFit.cover)
+                              : _paymentProofUrl != null
+                                  ? Image.network(
+                                      _paymentProofUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error,
+                                              stackTrace) =>
+                                          const Center(
+                                              child:
+                                                  Text('Gagal memuat gambar')),
+                                    )
+                                  : const Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.add_a_photo, size: 40),
+                                          Text('Tambah Bukti Pembayaran'),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-                Card(
-                  color: Colors.grey[200],
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Total Harga:",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          "Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-                ),
+                ],
+                const SizedBox(height: 30),
               ],
             ),
           ),

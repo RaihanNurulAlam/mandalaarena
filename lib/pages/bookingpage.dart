@@ -198,23 +198,27 @@ class _BookingPageState extends State<BookingPage> {
 
     final bookings = await FirebaseFirestore.instance
         .collection('bookings')
-        .where('lapangan', isEqualTo: widget.lapangan)
-        .where('tanggal', isEqualTo: formattedDate)
+        .where('items.name', isEqualTo: widget.lapangan)
+        .where('items.bookingDate', isEqualTo: formattedDate)
         .get();
 
     final recurringBookings = await FirebaseFirestore.instance
         .collection('bookings')
-        .where('lapangan', isEqualTo: widget.lapangan)
-        .where('hari', isEqualTo: dayOfWeek)
-        .where('isRecurring', isEqualTo: true)
+        .where('items.name', isEqualTo: widget.lapangan)
+        .where('items.dayOfWeek', isEqualTo: dayOfWeek)
+        .where('items.isRecurring', isEqualTo: true)
         .get();
 
     List<String> times = [];
     for (var doc in [...bookings.docs, ...recurringBookings.docs]) {
-      final duration = int.tryParse(doc['duration'].toString()) ?? 1;
-      final startHour = int.parse(doc['jamMulai'].split(":")[0]);
-      for (int i = 0; i < duration; i++) {
-        times.add("${startHour + i}:00");
+      final items = doc['items'] as List<dynamic>;
+      if (items.isNotEmpty) {
+        final firstItem = items[0];
+        final duration = int.tryParse(firstItem['duration'].toString()) ?? 1;
+        final startHour = int.parse(firstItem['time'].split(":")[0]);
+        for (int i = 0; i < duration; i++) {
+          times.add("${startHour + i}:00");
+        }
       }
     }
     setState(() {
@@ -279,45 +283,47 @@ class _BookingPageState extends State<BookingPage> {
 
       String? paymentProofUrl = await _uploadImage();
 
+      final selectedLapang = lapangData.firstWhere(
+        (lapang) => lapang['name'] == widget.lapangan,
+        orElse: () => {},
+      );
+
       final bookingData = {
-        'lapangan': widget.lapangan,
-        'tanggal': DateFormat('yyyy-MM-dd').format(widget.selectedDate),
-        'jamMulai': widget.selectedTime,
-        'jamSelesai': DateFormat('HH:mm').format(
-          DateTime(
-            widget.selectedDate.year,
-            widget.selectedDate.month,
-            widget.selectedDate.day,
-            currentStartHour + bookingDuration,
-          ),
-        ),
         'statusBooking': 'Pending',
         'userId': user!.uid,
-        'namaPengguna': userName,
-        'noWhatsapp': userPhone ?? "",
-        'duration': bookingDuration.toString(),
-        'isMember': isMember,
-        'teamName': teamName,
-        'usePhotographer': usePhotographer,
-        'useReferee': useReferee,
-        'totalPrice': totalPrice,
+        'userName': userName,
+        'userPhone': userPhone ?? "",
+        'totalAmount': totalPrice,
         'paymentStatus': _isPaidFull ? 'Lunas' : 'DP',
         'downPaymentAmount': _isPaidFull ? totalPrice : _downPaymentAmount,
         'remainingAmount': _isPaidFull ? 0 : totalPrice - _downPaymentAmount,
         'paymentProofUrl': paymentProofUrl,
         'createdAt': FieldValue.serverTimestamp(),
-        'price': int.parse(lapangData.firstWhere(
-          (lapang) => lapang['name'] == widget.lapangan,
-          orElse: () => {'price': '0'},
-        )['price']),
-        'imagePath': lapangData.firstWhere(
-          (lapang) => lapang['name'] == widget.lapangan,
-          orElse: () => {'image_path': ''},
-        )['image_path'],
-        'lapangId': lapangData.firstWhere(
-          (lapang) => lapang['name'] == widget.lapangan,
-          orElse: () => {'id': ''},
-        )['id'],
+        'items': [
+          {
+            'name': widget.lapangan,
+            'bookingDate': DateFormat('yyyy-MM-dd').format(widget.selectedDate),
+            'time': widget.selectedTime,
+            'endTime': DateFormat('HH:mm').format(
+              DateTime(
+                widget.selectedDate.year,
+                widget.selectedDate.month,
+                widget.selectedDate.day,
+                currentStartHour + bookingDuration,
+              ),
+            ),
+            'duration': bookingDuration.toString(),
+            'isMember': isMember,
+            'teamName': teamName,
+            'usePhotographer': usePhotographer,
+            'useReferee': useReferee,
+            'price': int.parse(selectedLapang['price']),
+            'imagePath': selectedLapang['image_path'],
+            'lapangId': selectedLapang['id'],
+            'dayOfWeek': DateFormat('EEEE').format(widget.selectedDate),
+            'isRecurring': false,
+          }
+        ],
       };
 
       await FirebaseFirestore.instance.collection('bookings').add(bookingData);
