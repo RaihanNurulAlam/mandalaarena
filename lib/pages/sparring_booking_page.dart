@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print, deprecated_member_use, unnecessary_null_comparison
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -134,31 +134,92 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     }
   }
 
-  void _setInitialBookingTime() {
+  Future<void> _setInitialBookingTime() async {
     final now = DateTime.now();
     final availableDays = widget.team.availableDays;
     final availableHours = widget.team.availableHours;
 
     // Cari hari terdekat yang tersedia
     DateTime? nearestDate;
-    for (var day in availableDays) {
-      final dayIndex = _getDayIndex(day);
-      final date = _currentStartOfWeek.add(Duration(days: dayIndex));
-      if (date.isAfter(now)) {
-        nearestDate = date;
-        break;
+    int weekOffset = 0; // Offset untuk minggu berikutnya
+
+    while (nearestDate == null) {
+      for (var day in availableDays) {
+        final dayIndex = _getDayIndex(day);
+        final date = _currentStartOfWeek
+            .add(Duration(days: dayIndex + (7 * weekOffset)));
+
+        // Periksa apakah hari sudah terlewat
+        if (date.isAfter(now) ||
+            (date.isAtSameMomentAs(now) && _isTimeAvailable(availableHours))) {
+          // Periksa apakah ada booking di hari ini
+          final isBooked = await _isDayBooked(date);
+          if (!isBooked) {
+            nearestDate = date;
+            break;
+          } else {
+            final formattedDate =
+                DateFormat('EEEE, dd MMMM yyyy', 'id').format(date);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      'Hari $formattedDate sudah dibooking. Mencari minggu berikutnya...')),
+            );
+          }
+        }
+      }
+
+      // Jika tidak ditemukan di minggu ini, lanjutkan ke minggu berikutnya
+      weekOffset++;
+      if (weekOffset > 52) {
+        // Batasi pencarian hingga 1 tahun
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Tidak ada tanggal tersedia untuk booking dalam 1 tahun.')),
+        );
+        return;
       }
     }
 
-    // Jika tidak ada hari tersedia, pilih hari pertama di minggu depan
-    nearestDate ??= _currentStartOfWeek
-        .add(Duration(days: 7 + _getDayIndex(availableDays.first)));
-
     // Set tanggal dan jam booking
-    setState(() {
-      selectedDate = nearestDate;
-      selectedHour = availableHours.isNotEmpty ? availableHours.first : "";
-    });
+    if (nearestDate != null) {
+      setState(() {
+        selectedDate = nearestDate;
+        selectedHour = availableHours.isNotEmpty ? availableHours.first : "";
+      });
+
+      final formattedDate =
+          DateFormat('EEEE, dd MMMM yyyy', 'id').format(nearestDate);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tanggal tersedia: $formattedDate')),
+      );
+    }
+  }
+
+  Future<bool> _isDayBooked(DateTime date) async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+
+    final bookings = await FirebaseFirestore.instance
+        .collection('bookings')
+        .where('lapangId', isEqualTo: selectedLapang?.id)
+        .where('tanggal', isEqualTo: formattedDate)
+        .get();
+
+    return bookings.docs.isNotEmpty;
+  }
+
+  bool _isTimeAvailable(List<String> availableHours) {
+    final now = DateTime.now();
+    final currentHour = now.hour;
+
+    for (var hour in availableHours) {
+      final bookingHour = int.parse(hour.split(":")[0]);
+      if (bookingHour > currentHour) {
+        return true;
+      }
+    }
+    return false;
   }
 
   int _getDayIndex(String day) {

@@ -76,8 +76,8 @@ class _DetailPageState extends State<DetailPage> {
     }).catchError((error) {
       print("Error initializing SharedPreferences: $error");
     });
-    // _fetchUnavailableTimes();
-    _fetchBookedSlots();
+    _fetchUnavailableTimes();
+    // _fetchBookedSlots();
     user = FirebaseAuth.instance.currentUser; // Get current user in initState
 
     // Ambil status member dari UserProvider
@@ -107,91 +107,87 @@ class _DetailPageState extends State<DetailPage> {
     await prefs.setBool(key, isLoved);
   }
 
-  // Future<void> _fetchUnavailableTimes() async {
-  //   if (selectedDate != null) {
-  //     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
-  //     final dayOfWeek = DateFormat('EEEE').format(
-  //         selectedDate!); // Ambil hari dari tanggal yang dipilih (misal: Sabtu)
-
-  //     // Ambil booking reguler untuk tanggal yang dipilih
-  //     final bookings = await FirebaseFirestore.instance
-  //         .collection('bookings')
-  //         .where('lapangId', isEqualTo: widget.lapang.id)
-  //         .where('tanggal', isEqualTo: formattedDate)
-  //         .get();
-
-  //     // Ambil booking langganan untuk hari yang sama dengan hari yang dipilih
-  //     final recurringBookings = await FirebaseFirestore.instance
-  //         .collection('bookings')
-  //         .where('lapangId', isEqualTo: widget.lapang.id)
-  //         .where('hari',
-  //             isEqualTo: dayOfWeek) // Filter berdasarkan hari yang dipilih
-  //         .where('isRecurring', isEqualTo: true) // Hanya booking langganan
-  //         .get();
-
-  //     List<String> times = [];
-  //     for (var doc in [...bookings.docs, ...recurringBookings.docs]) {
-  //       final duration = int.tryParse(doc['duration'].toString()) ?? 1;
-  //       final startHour = int.parse(doc['jamMulai'].split(":")[0]);
-  //       for (int i = 0; i < duration; i++) {
-  //         times.add("${startHour + i}:00");
-  //       }
-  //     }
-  //     setState(() {
-  //       unavailableTimes = times;
-  //     });
-  //   }
-  // }
-
-  Future<void> _fetchBookedSlots() async {
+  Future<void> _fetchUnavailableTimes() async {
     if (selectedDate != null) {
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
-      final dayOfWeek = DateFormat('EEEE').format(selectedDate!);
-
-      // Clear previous data
-      bookedSlots.clear();
-
-      // Get only confirmed bookings (paid or booked on-site)
-      final bookingsQuery = FirebaseFirestore.instance
-          .collection('bookings')
-          .where('lapangId', isEqualTo: widget.lapang.id)
-          .where('tanggal', isEqualTo: formattedDate)
-          .where('statusBooking',
-              whereIn: ['Sudah Bayar', 'Booking (Bayar Ditempat)']);
-
-      final recurringBookingsQuery = FirebaseFirestore.instance
-          .collection('bookings')
-          .where('lapangId', isEqualTo: widget.lapang.id)
-          .where('hari', isEqualTo: dayOfWeek)
-          .where('isRecurring', isEqualTo: true)
-          .where('statusBooking',
-              whereIn: ['Sudah Bayar', 'Booking (Bayar Ditempat)']);
 
       try {
-        final bookings = await bookingsQuery.get();
-        final recurringBookings = await recurringBookingsQuery.get();
+        // Ambil data booking dari Firestore berdasarkan lapangId, tanggal, dan nama lapangan
+        final bookings = await FirebaseFirestore.instance
+            .collection('bookings')
+            .where('items', isNotEqualTo: null)
+            .get();
 
-        // Process all confirmed bookings
-        for (var doc in [...bookings.docs, ...recurringBookings.docs]) {
-          final startHourStr = doc['jamMulai'].toString().split(':')[0];
-          final startHour = int.tryParse(startHourStr) ?? 0;
-          final duration = int.tryParse(doc['duration'].toString()) ?? 1;
+        List<String> times = [];
+        for (var doc in bookings.docs) {
+          final data = doc.data();
+          final items = data['items'] as List<dynamic>?;
 
-          for (int i = 0; i < duration; i++) {
-            final hour = startHour + i;
-            bookedSlots[hour.toString()] = duration - i;
+          if (items != null) {
+            for (var item in items) {
+              final bookingDate = item['bookingDate'] as String?;
+              final time = item['time'] as String?;
+              final lapangName = item['name'] as String?;
+              final quantity = int.tryParse(item['quantity'] ?? '1') ?? 1;
+
+              // Periksa apakah tanggal, jam, dan nama lapangan cocok
+              if (bookingDate == formattedDate &&
+                  time != null &&
+                  lapangName == widget.lapang.name) {
+                final startHour = int.parse(time.split(":")[0]);
+
+                // Tambahkan semua jam yang sudah dibooking ke dalam daftar unavailableTimes
+                for (int i = 0; i < quantity; i++) {
+                  times.add("${startHour + i}:00");
+                }
+              }
+            }
           }
         }
 
-        setState(() {});
+        setState(() {
+          unavailableTimes = times;
+        });
       } catch (e) {
-        print("Error fetching booked slots: $e");
+        print("Error fetching unavailable times: $e");
       }
     }
   }
 
+  // Future<void> _fetchBookedSlots() async {
+  //   if (selectedDate != null) {
+  //     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
+
+  //     try {
+  //       // Ambil data booking dari Firestore berdasarkan lapangId dan tanggal
+  //       final bookings = await FirebaseFirestore.instance
+  //           .collection('bookings')
+  //           .where('lapangId', isEqualTo: widget.lapang.id)
+  //           .where('tanggal', isEqualTo: formattedDate)
+  //           .get();
+
+  //       bookedSlots.clear();
+
+  //       for (var doc in bookings.docs) {
+  //         final startHourStr = doc['jamMulai'].toString().split(':')[0];
+  //         final startHour = int.tryParse(startHourStr) ?? 0;
+  //         final duration = int.tryParse(doc['duration'].toString()) ?? 1;
+
+  //         for (int i = 0; i < duration; i++) {
+  //           final hour = startHour + i;
+  //           bookedSlots[hour.toString()] = duration - i;
+  //         }
+  //       }
+
+  //       setState(() {});
+  //     } catch (e) {
+  //       print("Error fetching booked slots: $e");
+  //     }
+  //   }
+  // }
+
   bool isTimeSlotAvailable(int hour) {
-    return !bookedSlots.containsKey(hour.toString());
+    return !unavailableTimes.contains("$hour:00");
   }
 
   bool isDurationAvailable(int startHour, int duration) {
@@ -315,7 +311,7 @@ class _DetailPageState extends State<DetailPage> {
           teamName,
         );
 
-        await _fetchBookedSlots();
+        await _fetchUnavailableTimes();
         popUpDialog();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -427,8 +423,8 @@ class _DetailPageState extends State<DetailPage> {
       setState(() {
         selectedDate = date;
       });
-      _fetchBookedSlots();
-      // _fetchUnavailableTimes();
+      // _fetchBookedSlots();
+      _fetchUnavailableTimes();
     }
   }
 
@@ -757,8 +753,8 @@ class _DetailPageState extends State<DetailPage> {
                       setState(() {
                         selectedDate = date;
                       });
-                      // _fetchUnavailableTimes();
-                      _fetchBookedSlots();
+                      _fetchUnavailableTimes();
+                      // _fetchBookedSlots();
                     },
                     selectedDate: selectedDate,
                     onCalendarIconPressed: _showDatePicker,
@@ -784,66 +780,48 @@ class _DetailPageState extends State<DetailPage> {
                 ),
               const SizedBox(height: 10),
               AbsorbPointer(
-                absorbing: !isFormValid || selectedDate == null,
-                child: Opacity(
-                  opacity: isFormValid && selectedDate != null ? 1.0 : 0.5,
-                  child: Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: List.generate(
-                      14,
-                      (index) {
-                        final hour = 8 + index;
-                        final bookingTime = DateTime(
-                          selectedDate?.year ?? DateTime.now().year,
-                          selectedDate?.month ?? DateTime.now().month,
-                          selectedDate?.day ?? DateTime.now().day,
-                          hour,
-                        );
-                        bool isPast = bookingTime.isBefore(DateTime.now());
-                        final isBooked = !isTimeSlotAvailable(hour);
+                  absorbing: !isFormValid || selectedDate == null,
+                  child: Opacity(
+                      opacity: isFormValid && selectedDate != null ? 1.0 : 0.5,
+                      child: Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: List.generate(
+                          14,
+                          (index) {
+                            final hour = 8 + index;
+                            final bookingTime = DateTime(
+                              selectedDate?.year ?? DateTime.now().year,
+                              selectedDate?.month ?? DateTime.now().month,
+                              selectedDate?.day ?? DateTime.now().day,
+                              hour,
+                            );
+                            bool isPast = bookingTime.isBefore(DateTime.now());
+                            final isBooked =
+                                unavailableTimes.contains("$hour:00");
 
-                        // Check if this hour is within the selected duration
-                        bool isInSelectedDuration = false;
-                        if (selectedHour.isNotEmpty && bookingDuration > 0) {
-                          final selectedHourInt =
-                              int.parse(selectedHour.split(":")[0]);
-                          isInSelectedDuration = hour >= selectedHourInt &&
-                              hour < selectedHourInt + bookingDuration;
-                        }
-
-                        return ChoiceChip(
-                          label: Text("$hour:00"),
-                          selected: selectedHour == "$hour:00" ||
-                              isInSelectedDuration,
-                          onSelected: (isFormValid &&
-                                  selectedDate != null &&
-                                  !isPast &&
-                                  !isBooked)
-                              ? (bool selected) {
-                                  setState(() {
-                                    selectedHour = "$hour:00";
-                                  });
-                                }
-                              : null,
-                          backgroundColor: isPast || isBooked
-                              ? Colors.grey.shade300
-                              : (isInSelectedDuration
-                                  ? Colors.blue
-                                      .shade100 // Color for hours in selected duration
-                                  : Colors.grey.shade100),
-                          labelStyle: TextStyle(
-                            color: selectedHour == "$hour:00" ||
-                                    isInSelectedDuration
-                                ? Colors.black
-                                : Colors.black,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
+                            return ChoiceChip(
+                              label: Text("$hour:00"),
+                              selected: selectedHour == "$hour:00",
+                              onSelected: (isPast || isBooked)
+                                  ? null
+                                  : (bool selected) {
+                                      setState(() {
+                                        selectedHour = "$hour:00";
+                                      });
+                                    },
+                              backgroundColor: isPast || isBooked
+                                  ? Colors.grey.shade300
+                                  : Colors.grey.shade100,
+                              labelStyle: TextStyle(
+                                color: selectedHour == "$hour:00"
+                                    ? Colors.black
+                                    : Colors.black,
+                              ),
+                            );
+                          },
+                        ),
+                      )))
             ],
           ),
         ),

@@ -337,6 +337,8 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                 }
 
                 final bookedTimes = <String>[];
+                final filteredBookings = <DocumentSnapshot>[];
+
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
                   final bookings = snapshot.data!.docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
@@ -363,6 +365,8 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                     return true;
                   }).toList();
 
+                  filteredBookings.addAll(bookings);
+
                   for (var booking in bookings) {
                     final data = booking.data() as Map<String, dynamic>;
                     final items = data['items'] as List<dynamic>? ?? [];
@@ -376,7 +380,6 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                     }
                   }
                 }
-
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: GridView.builder(
@@ -398,7 +401,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                         onTap: isBooked
                             ? () {
                                 final booking =
-                                    snapshot.data!.docs.firstWhere((booking) {
+                                    filteredBookings.firstWhere((booking) {
                                   final data =
                                       booking.data() as Map<String, dynamic>;
                                   final items =

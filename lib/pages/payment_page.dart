@@ -315,6 +315,15 @@ class _PaymentPageState extends State<PaymentPage> {
           );
         }
       } else {
+        final errorData = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error: ${errorData['status_message'] ?? 'Terjadi kesalahan pada sistem pembayaran.'}',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
         throw Exception('Failed to create transaction: ${response.body}');
       }
     } catch (e) {

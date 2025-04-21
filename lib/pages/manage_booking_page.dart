@@ -142,18 +142,15 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
 
                 final bookings = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final items = data['items'] as List<dynamic>? ?? [];
 
                   // Filter berdasarkan lapangan jika dipilih
-                  if (selectedLapangan != null && items.isNotEmpty) {
-                    final firstItem = items[0];
-                    return firstItem['name'] == selectedLapangan;
+                  if (selectedLapangan != null) {
+                    return data['lapangId'] == selectedLapangan;
                   }
 
                   // Filter berdasarkan tanggal jika dipilih
-                  if (selectedDate != null && items.isNotEmpty) {
-                    final firstItem = items[0];
-                    final bookingDate = firstItem['bookingDate'] as String?;
+                  if (selectedDate != null) {
+                    final bookingDate = data['tanggal'] as String?;
                     if (bookingDate != null) {
                       final date = DateFormat('yyyy-MM-dd').parse(bookingDate);
                       return date.year == selectedDate!.year &&
