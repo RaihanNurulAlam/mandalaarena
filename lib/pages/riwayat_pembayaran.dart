@@ -39,7 +39,11 @@ class TransactionHistoryPage extends StatelessWidget {
             );
           }
 
-          final bookings = snapshot.data!.docs;
+          final bookings = snapshot.data!.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final status = data['statusBooking'] ?? '';
+            return status != 'Pending'; // Filter status "Pending"
+          }).toList();
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),

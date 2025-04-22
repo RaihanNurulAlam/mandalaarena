@@ -16,13 +16,12 @@ class PointsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20), // Padding untuk judul
+          padding: EdgeInsets.symmetric(horizontal: 20),
           child: Text('Poin Anda'),
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 20), // Padding untuk ikon
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
@@ -84,7 +83,7 @@ class PointsPage extends StatelessWidget {
                             ),
                           ),
                           child: ListTile(
-                            title: Text(
+                            title: const Text(
                               'Tukar 100 Poin - Gratis 1 Jam',
                               style: TextStyle(
                                 color: Colors.white,
@@ -126,7 +125,7 @@ class PointsPage extends StatelessWidget {
                             ),
                           ),
                           child: ListTile(
-                            title: Text(
+                            title: const Text(
                               'Tukar 30 Poin - Voucher Kopi',
                               style: TextStyle(
                                 color: Colors.white,
@@ -161,28 +160,46 @@ class PointsPage extends StatelessWidget {
   }
 }
 
-class TransactionHistoryPage extends StatelessWidget {
+class TransactionHistoryPage extends StatefulWidget {
   const TransactionHistoryPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
+  State<TransactionHistoryPage> createState() => _TransactionHistoryPageState();
+}
+
+class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
+  late Stream<QuerySnapshot> _transactionsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
     final userId = userProvider.userId;
 
+    _transactionsStream = FirebaseFirestore.instance
+        .collection('points')
+        .where('userId', isEqualTo: userId)
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat Transaksi Poin'),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('points')
-            .where('userId', isEqualTo: userId)
-            .orderBy('timestamp', descending: true)
-            .snapshots(),
+        stream: _transactionsStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text('Belum ada transaksi poin.'));
           }
@@ -192,24 +209,27 @@ class TransactionHistoryPage extends StatelessWidget {
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               var data = transactions[index].data() as Map<String, dynamic>;
-              return ListTile(
-                leading: data['imageUrl'] != null
-                    ? Image.asset(
-                        data['imageUrl'],
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-                title: Text(data['description']),
-                subtitle: Text(
-                  data['timestamp'].toDate().toString(),
-                ),
-                trailing: Text(
-                  '${data['points']} Poin',
-                  style: TextStyle(
-                    color: data['points'] > 0 ? Colors.green : Colors.red,
-                    fontWeight: FontWeight.bold,
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                child: ListTile(
+                  leading: data['imageUrl'] != null
+                      ? Image.asset(
+                          data['imageUrl'],
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  title: Text(data['description']),
+                  subtitle: Text(
+                    _formatDate(data['timestamp'].toDate()),
+                  ),
+                  trailing: Text(
+                    '${data['points']} Poin',
+                    style: TextStyle(
+                      color: data['points'] > 0 ? Colors.green : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               );
@@ -219,19 +239,37 @@ class TransactionHistoryPage extends StatelessWidget {
       ),
     );
   }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
 }
 
 Future<void> redeemPoints(BuildContext context, String userId, int cost,
     String reward, String imageUrl) async {
   try {
     final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
-    final userDoc = await userRef.get();
-    int currentPoints = userDoc.data()?['points'] ?? 0;
 
-    if (currentPoints >= cost) {
-      await userRef.update({'points': currentPoints - cost});
+    // Gunakan transaction untuk operasi atomic
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final userDoc = await transaction.get(userRef);
+      if (!userDoc.exists) {
+        throw Exception("User tidak ditemukan");
+      }
 
-      await FirebaseFirestore.instance.collection('points').add({
+      int currentPoints = userDoc.data()?['points'] ?? 0;
+      if (currentPoints < cost) {
+        showInsufficientPointsDialog(context);
+        throw Exception("Poin tidak cukup");
+      }
+
+      // Update poin user
+      transaction.update(userRef, {'points': currentPoints - cost});
+
+      // Tambahkan riwayat transaksi
+      final transactionRef =
+          FirebaseFirestore.instance.collection('points').doc();
+      transaction.set(transactionRef, {
         'userId': userId,
         'points': -cost,
         'description': 'Menukar $reward',
@@ -241,15 +279,24 @@ Future<void> redeemPoints(BuildContext context, String userId, int cost,
         'status': 'Berhasil',
         'type': 'redeemed',
       });
+    });
 
-      print('Transaksi berhasil disimpan ke Firestore');
-      showSuccessDialog(context);
-    } else {
-      print('Poin tidak cukup');
-      showInsufficientPointsDialog(context);
-    }
+    showSuccessDialog(context);
   } catch (e) {
     print('Terjadi kesalahan saat menukarkan poin: $e');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text('Gagal menukarkan poin: ${e.toString()}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

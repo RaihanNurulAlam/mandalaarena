@@ -226,7 +226,7 @@ class _BookingPageState extends State<BookingPage> {
     });
   }
 
-  Future<void> _confirmBooking() async {
+  void _confirmBooking() async {
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Harap isi nama tim/nama pemesan!")),
@@ -234,7 +234,7 @@ class _BookingPageState extends State<BookingPage> {
       return;
     }
 
-    if (!_isPaidFull && _downPaymentAmount <= 0) {
+    if (!_isPaidFull && _downPaymentAmount <= 0 && !_isPaidFull) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Harap isi jumlah DP yang dibayarkan!")),
       );
@@ -289,7 +289,13 @@ class _BookingPageState extends State<BookingPage> {
       );
 
       final bookingData = {
-        'statusBooking': 'Pending',
+        'orderId':
+            'ORDER-${user!.uid}-${DateTime.now().millisecondsSinceEpoch}',
+        'statusBooking': _isPaidFull
+            ? 'Sudah Bayar'
+            : _downPaymentAmount > 0
+                ? 'DP'
+                : 'Belum Lunas',
         'userId': user!.uid,
         'userName': userName,
         'userPhone': userPhone ?? "",

@@ -142,6 +142,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
 
                 final bookings = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
+                  final status = data['statusBooking'] ?? '';
 
                   // Filter berdasarkan lapangan jika dipilih
                   if (selectedLapangan != null) {
@@ -159,7 +160,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                     }
                   }
 
-                  return true;
+                  return status != 'Pending';
                 }).toList();
 
                 if (bookings.isEmpty) {

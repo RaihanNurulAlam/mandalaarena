@@ -192,11 +192,12 @@ class _DetailPageState extends State<DetailPage> {
 
   bool isDurationAvailable(int startHour, int duration) {
     for (int i = 0; i < duration; i++) {
-      if (bookedSlots.containsKey((startHour + i).toString())) {
-        return false;
+      final hour = startHour + i;
+      if (unavailableTimes.contains("$hour:00")) {
+        return false; // Jika salah satu jam dalam durasi tidak tersedia, return false
       }
     }
-    return true;
+    return true; // Semua jam dalam durasi tersedia
   }
 
   Future<void> addToCart() async {
@@ -888,7 +889,10 @@ class _DetailPageState extends State<DetailPage> {
                                 }
                               : null,
                           selectedColor: Colors.grey.shade300,
-                          backgroundColor: Colors.grey.shade100,
+                          backgroundColor: isDurationAvailable
+                              ? Colors.grey.shade100
+                              : Colors.grey
+                                  .shade300, // Nonaktifkan jika tidak tersedia
                           labelStyle: TextStyle(
                             color: bookingDuration == duration
                                 ? Colors.black

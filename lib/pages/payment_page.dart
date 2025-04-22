@@ -48,7 +48,7 @@ class _PaymentPageState extends State<PaymentPage> {
         'userName': userProvider.userName,
         'userEmail': userProvider.userEmail,
         'userPhone': userProvider.userPhone,
-        'statusBooking': 'Pending',
+        'statusBooking': 'Pending', // Default status for online payment
         'createdAt': FieldValue.serverTimestamp(),
         'items': cart.cart
             .map((item) => {
@@ -145,6 +145,7 @@ class _PaymentPageState extends State<PaymentPage> {
     final cart = Provider.of<Cart>(context, listen: false);
 
     try {
+      // Update status to "Sudah Bayar" and save to Firestore
       await updateBookingStatus(orderId, 'Sudah Bayar');
       int earnedPoints = int.parse(cart.cart.first.quantity!) * 10;
       await _updateUserPoints(userProvider.userId, earnedPoints);
@@ -181,12 +182,22 @@ class _PaymentPageState extends State<PaymentPage> {
     try {
       final userRef =
           FirebaseFirestore.instance.collection('users').doc(userId);
-      await userRef.update({
-        'points': FieldValue.increment(earnedPoints),
+
+      // Gunakan transaction untuk memastikan konsistensi
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) {
+          throw Exception("User tidak ditemukan");
+        }
+
+        int currentPoints = userDoc.data()?['points'] ?? 0;
+        transaction.update(userRef, {'points': currentPoints + earnedPoints});
       });
+
       print('User points updated successfully');
     } catch (e) {
       print('Error updating user points: $e');
+      rethrow;
     }
   }
 
@@ -200,10 +211,13 @@ class _PaymentPageState extends State<PaymentPage> {
         'type': 'earned',
         'timestamp': FieldValue.serverTimestamp(),
         'description': 'Poin dari pembayaran booking',
+        'status': 'Berhasil',
+        'imageUrl': 'assets/earned_points.png', // Gambar default
       });
       print('Points transaction saved successfully');
     } catch (e) {
       print('Error saving points transaction: $e');
+      rethrow;
     }
   }
 
@@ -278,6 +292,7 @@ class _PaymentPageState extends State<PaymentPage> {
       final orderId =
           'ORDER-${DateTime.now().millisecondsSinceEpoch}-${userProvider.userId.substring(0, 5)}';
 
+      // Create booking with 'Pending' status
       await _createBookingDocument(orderId);
 
       final baseUrl = getBaseUrl();
@@ -363,7 +378,7 @@ class _PaymentPageState extends State<PaymentPage> {
       final orderId =
           'ORDER-${DateTime.now().millisecondsSinceEpoch}-${userProvider.userId.substring(0, 5)}';
 
-      await _createBookingDocument(orderId);
+      // Update status to "Booking (Bayar di Tempat)" and save to Firestore
       await updateBookingStatus(orderId, 'Booking (Bayar di Tempat)');
 
       final bookingDetails = cart.cart.map((item) {
@@ -430,13 +445,123 @@ Terima kasih.
     }
   }
 
-  void _closePaymentPopup() {
+  void _closePaymentPopup() async {
     setState(() {
       showPaymentPopup = false;
     });
+
     if (currentOrderId != null) {
-      checkTransactionStatus(currentOrderId!);
+      // Periksa status transaksi
+      await checkTransactionStatus(currentOrderId!);
+
+      // Jika status masih "Pending", hapus data booking
+      if (transactionStatus == null || transactionStatus == 'pending') {
+        try {
+          await FirebaseFirestore.instance
+              .collection('bookings')
+              .doc(currentOrderId)
+              .delete();
+          print('Booking data deleted due to incomplete payment.');
+        } catch (e) {
+          print('Error deleting booking data: $e');
+        }
+      }
     }
+  }
+
+  void _showPaymentMethodDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Pilih Metode Pembayaran',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      initiateMidtransPayment();
+                    },
+                    child: const Text(
+                      'Bayar Online',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      initiateOnSitePayment();
+                    },
+                    child: const Text(
+                      'Bayar di Tempat',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -784,106 +909,28 @@ Terima kasih.
                     ),
                     const SizedBox(height: 24),
                     if (transactionStatus == null && !isProcessingPayment)
-                      Column(
-                        children: [
-                          if (!showPaymentOptions)
-                            Center(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.black,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 16,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    showPaymentOptions = true;
-                                  });
-                                },
-                                child: const Text(
-                                  'Pilih Metode Pembayaran',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
+                      Center(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          if (showPaymentOptions) ...[
-                            const SizedBox(height: 20),
-                            const Text(
-                              'Pilih Metode Pembayaran:',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
                             ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 16,
-                                ),
-                              ),
-                              onPressed: initiateMidtransPayment,
-                              child: const Text(
-                                'Bayar Online',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
+                          ),
+                          onPressed: _showPaymentMethodDialog,
+                          child: const Text(
+                            'Pilih Metode Pembayaran',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 16,
-                                ),
-                              ),
-                              onPressed: initiateOnSitePayment,
-                              child: const Text(
-                                'Bayar di Tempat',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  showPaymentOptions = false;
-                                });
-                              },
-                              child: const Text(
-                                'Batal',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
+                          ),
+                        ),
                       ),
                   ],
                 ],
