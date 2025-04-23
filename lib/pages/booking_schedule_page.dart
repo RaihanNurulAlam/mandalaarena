@@ -261,6 +261,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
         builder: (context) => EditBookingPage(
           bookingId: booking.id,
           initialData: data,
+          lapangan: selectedLapangan!,
         ),
       ),
     );

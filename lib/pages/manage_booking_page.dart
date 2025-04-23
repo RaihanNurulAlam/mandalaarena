@@ -126,6 +126,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
               ],
             ),
           ),
+          // Perbaikan pada StreamBuilder untuk sinkronisasi filter lapangan dan tanggal
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -142,25 +143,32 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
 
                 final bookings = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
-                  final status = data['statusBooking'] ?? '';
 
                   // Filter berdasarkan lapangan jika dipilih
-                  if (selectedLapangan != null) {
-                    return data['lapangId'] == selectedLapangan;
+                  if (selectedLapangan != null &&
+                      selectedLapangan != 'Semua Lapangan') {
+                    final items = data['items'] as List<dynamic>? ?? [];
+                    if (items.isEmpty || items[0]['name'] != selectedLapangan) {
+                      return false;
+                    }
                   }
 
                   // Filter berdasarkan tanggal jika dipilih
                   if (selectedDate != null) {
-                    final bookingDate = data['tanggal'] as String?;
-                    if (bookingDate != null) {
-                      final date = DateFormat('yyyy-MM-dd').parse(bookingDate);
-                      return date.year == selectedDate!.year &&
-                          date.month == selectedDate!.month &&
-                          date.day == selectedDate!.day;
+                    final createdAt = data['createdAt'] as Timestamp?;
+                    if (createdAt != null) {
+                      final bookingDate = createdAt.toDate();
+                      if (bookingDate.year != selectedDate!.year ||
+                          bookingDate.month != selectedDate!.month ||
+                          bookingDate.day != selectedDate!.day) {
+                        return false;
+                      }
+                    } else {
+                      return false; // Abaikan jika `createdAt` tidak tersedia
                     }
                   }
 
-                  return status != 'Pending';
+                  return true;
                 }).toList();
 
                 if (bookings.isEmpty) {

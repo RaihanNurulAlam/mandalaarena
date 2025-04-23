@@ -192,35 +192,46 @@ class _BookingPageState extends State<BookingPage> {
     setState(() {});
   }
 
+  bool _isDurationAvailable(int quantity) {
+    final currentStartHour = int.parse(widget.selectedTime.split(":")[0]);
+
+    for (int i = 0; i < quantity; i++) {
+      final timeToCheck = "${currentStartHour + i}:00";
+      if (unavailableTimes.contains(timeToCheck)) {
+        return false; // Jika waktu bertabrakan dengan booking lain, durasi tidak tersedia
+      }
+    }
+    return true;
+  }
+
   Future<void> _fetchUnavailableTimes() async {
     final formattedDate = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
-    final dayOfWeek = DateFormat('EEEE').format(widget.selectedDate);
 
+    // Ambil data booking dari Firestore untuk lapangan dan tanggal tertentu
     final bookings = await FirebaseFirestore.instance
         .collection('bookings')
-        .where('items.name', isEqualTo: widget.lapangan)
-        .where('items.bookingDate', isEqualTo: formattedDate)
-        .get();
-
-    final recurringBookings = await FirebaseFirestore.instance
-        .collection('bookings')
-        .where('items.name', isEqualTo: widget.lapangan)
-        .where('items.dayOfWeek', isEqualTo: dayOfWeek)
-        .where('items.isRecurring', isEqualTo: true)
-        .get();
+        .where('items', arrayContains: {
+      'name': widget.lapangan,
+      'bookingDate': formattedDate,
+    }).get();
 
     List<String> times = [];
-    for (var doc in [...bookings.docs, ...recurringBookings.docs]) {
+    for (var doc in bookings.docs) {
       final items = doc['items'] as List<dynamic>;
       if (items.isNotEmpty) {
-        final firstItem = items[0];
-        final duration = int.tryParse(firstItem['duration'].toString()) ?? 1;
-        final startHour = int.parse(firstItem['time'].split(":")[0]);
-        for (int i = 0; i < duration; i++) {
-          times.add("${startHour + i}:00");
+        for (var item in items) {
+          if (item['name'] == widget.lapangan &&
+              item['bookingDate'] == formattedDate) {
+            final quantity = int.tryParse(item['quantity'].toString()) ?? 1;
+            final startHour = int.parse(item['time'].split(":")[0]);
+            for (int i = 0; i < quantity; i++) {
+              times.add("${startHour + i}:00");
+            }
+          }
         }
       }
     }
+
     setState(() {
       unavailableTimes = times;
     });
@@ -234,16 +245,9 @@ class _BookingPageState extends State<BookingPage> {
       return;
     }
 
-    if (!_isPaidFull && _downPaymentAmount <= 0 && !_isPaidFull) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap isi jumlah DP yang dibayarkan!")),
-      );
-      return;
-    }
-
     final currentStartHour = int.parse(widget.selectedTime.split(":")[0]);
-    final maxAllowedDuration = 22 - currentStartHour;
-    if (bookingDuration > maxAllowedDuration) {
+    final maxAllowedQuantity = 22 - currentStartHour;
+    if (bookingDuration > maxAllowedQuantity) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -288,9 +292,12 @@ class _BookingPageState extends State<BookingPage> {
         orElse: () => {},
       );
 
+      // Generate orderId sesuai permintaan
+      final orderId =
+          'ORDER-${DateTime.now().millisecondsSinceEpoch}-${user!.uid.substring(0, 5)}';
+
       final bookingData = {
-        'orderId':
-            'ORDER-${user!.uid}-${DateTime.now().millisecondsSinceEpoch}',
+        'orderId': orderId,
         'statusBooking': _isPaidFull
             ? 'Sudah Bayar'
             : _downPaymentAmount > 0
@@ -318,7 +325,7 @@ class _BookingPageState extends State<BookingPage> {
                 currentStartHour + bookingDuration,
               ),
             ),
-            'duration': bookingDuration.toString(),
+            'quantity': bookingDuration.toString(),
             'isMember': isMember,
             'teamName': teamName,
             'usePhotographer': usePhotographer,
@@ -332,7 +339,12 @@ class _BookingPageState extends State<BookingPage> {
         ],
       };
 
-      await FirebaseFirestore.instance.collection('bookings').add(bookingData);
+      // Simpan data booking dengan nama dokumen sesuai `orderId`
+      await FirebaseFirestore.instance
+          .collection('bookings')
+          .doc(orderId)
+          .set(bookingData);
+
       _showSuccessDialog();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -520,31 +532,26 @@ class _BookingPageState extends State<BookingPage> {
                           spacing: 8.0,
                           runSpacing: 8.0,
                           children: List.generate(5, (index) {
-                            final duration = index + 1;
+                            final quantity = index + 1;
                             final int currentStartHour =
                                 int.parse(widget.selectedTime.split(":")[0]);
-                            final int maxAllowedDuration =
+                            final int maxAllowedQuantity =
                                 22 - currentStartHour;
                             final bool isWithinClosingTime =
-                                duration <= maxAllowedDuration;
+                                quantity <= maxAllowedQuantity;
 
-                            bool isDurationAvailable = true;
-                            for (int i = 0; i < duration; i++) {
-                              if (unavailableTimes
-                                  .contains("${currentStartHour + i}:00")) {
-                                isDurationAvailable = false;
-                                break;
-                              }
-                            }
+                            // Periksa apakah durasi tersedia
+                            final bool isQuantityAvailable =
+                                _isDurationAvailable(quantity);
 
                             return ChoiceChip(
-                              label: Text("$duration Jam"),
-                              selected: bookingDuration == duration,
+                              label: Text("$quantity Jam"),
+                              selected: bookingDuration == quantity,
                               onSelected:
-                                  isWithinClosingTime && isDurationAvailable
+                                  isWithinClosingTime && isQuantityAvailable
                                       ? (bool selected) {
                                           setState(() {
-                                            bookingDuration = duration;
+                                            bookingDuration = quantity;
                                             _updateTotalPrice();
                                           });
                                         }
@@ -556,7 +563,7 @@ class _BookingPageState extends State<BookingPage> {
                               ),
                             );
                           }),
-                        ),
+                        )
                       ],
                     ),
                   ),
