@@ -783,46 +783,68 @@ class _DetailPageState extends State<DetailPage> {
               AbsorbPointer(
                   absorbing: !isFormValid || selectedDate == null,
                   child: Opacity(
-                      opacity: isFormValid && selectedDate != null ? 1.0 : 0.5,
-                      child: Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: List.generate(
-                          14,
-                          (index) {
-                            final hour = 8 + index;
-                            final bookingTime = DateTime(
-                              selectedDate?.year ?? DateTime.now().year,
-                              selectedDate?.month ?? DateTime.now().month,
-                              selectedDate?.day ?? DateTime.now().day,
-                              hour,
-                            );
-                            bool isPast = bookingTime.isBefore(DateTime.now());
-                            final isBooked =
-                                unavailableTimes.contains("$hour:00");
+                    opacity: isFormValid && selectedDate != null ? 1.0 : 0.5,
+                    child: Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: List.generate(
+                        14,
+                        (index) {
+                          final hour = 8 + index;
+                          final bookingTime = DateTime(
+                            selectedDate?.year ?? DateTime.now().year,
+                            selectedDate?.month ?? DateTime.now().month,
+                            selectedDate?.day ?? DateTime.now().day,
+                            hour,
+                          );
+                          bool isPast = bookingTime.isBefore(DateTime.now());
+                          final isBooked =
+                              unavailableTimes.contains("$hour:00");
 
-                            return ChoiceChip(
-                              label: Text("$hour:00"),
-                              selected: selectedHour == "$hour:00",
-                              onSelected: (isPast || isBooked)
-                                  ? null
-                                  : (bool selected) {
-                                      setState(() {
-                                        selectedHour = "$hour:00";
-                                      });
-                                    },
-                              backgroundColor: isPast || isBooked
-                                  ? Colors.grey.shade300
-                                  : Colors.grey.shade100,
-                              labelStyle: TextStyle(
-                                color: selectedHour == "$hour:00"
-                                    ? Colors.black
-                                    : Colors.black,
-                              ),
-                            );
-                          },
-                        ),
-                      )))
+                          // Periksa apakah jam ini termasuk dalam durasi yang dipilih
+                          final int startHour = selectedHour.isNotEmpty
+                              ? int.parse(selectedHour.split(":")[0])
+                              : -1;
+                          final bool isWithinSelectedDuration =
+                              selectedHour.isNotEmpty &&
+                                  hour >= startHour &&
+                                  hour <
+                                      startHour +
+                                          (bookingDuration > 0
+                                              ? bookingDuration
+                                              : 1);
+
+                          return ChoiceChip(
+                            label: Text("$hour:00"),
+                            selected: isWithinSelectedDuration,
+                            onSelected: (isPast || isBooked)
+                                ? null
+                                : (bool selected) {
+                                    setState(() {
+                                      selectedHour = "$hour:00";
+                                      bookingDuration =
+                                          1; // Tetapkan durasi default 1 jam
+                                      _updateTotalPrice(); // Perbarui total harga
+                                    });
+                                  },
+                            backgroundColor: isPast
+                                ? Colors.grey.shade300
+                                : isWithinSelectedDuration
+                                    ? Colors.blue
+                                        .shade200 // Warna biru muda untuk durasi terpilih
+                                    : isBooked
+                                        ? Colors.grey.shade300
+                                        : Colors.grey.shade100,
+                            labelStyle: TextStyle(
+                              color: isWithinSelectedDuration
+                                  ? Colors.black
+                                  : Colors.black,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  )),
             ],
           ),
         ),

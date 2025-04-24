@@ -41,8 +41,9 @@ class _BookingPageState extends State<BookingPage> {
   User? user;
   Uint8List? _webImage;
   File? _imageFile;
-  bool _isPaidFull = true;
+  String _paymentStatus = 'Booking'; // 'Booking', 'DP', or 'Sudah Bayar'
   int _downPaymentAmount = 0;
+  int _remainingAmount = 0;
   final TextEditingController _downPaymentController = TextEditingController();
 
   final List<Map<String, dynamic>> lapangData = [
@@ -117,6 +118,7 @@ class _BookingPageState extends State<BookingPage> {
   void _updateDownPayment() {
     setState(() {
       _downPaymentAmount = int.tryParse(_downPaymentController.text) ?? 0;
+      _remainingAmount = totalPrice - _downPaymentAmount;
     });
   }
 
@@ -189,25 +191,21 @@ class _BookingPageState extends State<BookingPage> {
       totalPrice += refereePrice;
     }
 
+    // Update remaining amount based on payment status
+    if (_paymentStatus == 'Sudah Bayar') {
+      _downPaymentAmount = totalPrice;
+      _remainingAmount = 0;
+    } else if (_paymentStatus == 'DP') {
+      _remainingAmount = totalPrice - _downPaymentAmount;
+    } else {
+      _downPaymentAmount = 0;
+      _remainingAmount = totalPrice;
+    }
+
     setState(() {});
   }
 
-  bool _isDurationAvailable(int quantity) {
-    final currentStartHour = int.parse(widget.selectedTime.split(":")[0]);
-
-    for (int i = 0; i < quantity; i++) {
-      final timeToCheck = "${currentStartHour + i}:00";
-      if (unavailableTimes.contains(timeToCheck)) {
-        return false; // Jika waktu bertabrakan dengan booking lain, durasi tidak tersedia
-      }
-    }
-    return true;
-  }
-
-  Future<void> _fetchUnavailableTimes() async {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
-
-    // Ambil data booking dari Firestore untuk lapangan dan tanggal tertentu
+  Future<List<String>> _getUnavailableTimesForDate(String formattedDate) async {
     final bookings = await FirebaseFirestore.instance
         .collection('bookings')
         .where('items', arrayContains: {
@@ -231,7 +229,23 @@ class _BookingPageState extends State<BookingPage> {
         }
       }
     }
+    return times;
+  }
 
+  bool _isDurationAvailable(int duration) {
+    final currentStartHour = int.parse(widget.selectedTime.split(":")[0]);
+    for (int i = 0; i < duration; i++) {
+      final timeToCheck = "${currentStartHour + i}:00";
+      if (unavailableTimes.contains(timeToCheck)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void _fetchUnavailableTimes() async {
+    final formattedDate = DateFormat('yyyy-MM-dd').format(widget.selectedDate);
+    final times = await _getUnavailableTimesForDate(formattedDate);
     setState(() {
       unavailableTimes = times;
     });
@@ -257,18 +271,16 @@ class _BookingPageState extends State<BookingPage> {
       return;
     }
 
-    bool isAvailable = true;
-    for (int i = 0; i < bookingDuration; i++) {
-      final timeToCheck = currentStartHour + i;
-      if (unavailableTimes.contains("$timeToCheck:00")) {
-        isAvailable = false;
-        break;
-      }
-    }
-
-    if (!isAvailable) {
+    if (!_isDurationAvailable(bookingDuration)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Tidak bisa booking di jam tersebut!")),
+      );
+      return;
+    }
+
+    if (_paymentStatus == 'DP' && _downPaymentAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Harap isi jumlah DP yang dibayarkan!")),
       );
       return;
     }
@@ -285,31 +297,28 @@ class _BookingPageState extends State<BookingPage> {
       userName = userData['name'];
       userPhone = userData['phone'] as String?;
 
-      String? paymentProofUrl = await _uploadImage();
+      String? paymentProofUrl =
+          _paymentStatus != 'Booking' ? await _uploadImage() : null;
 
       final selectedLapang = lapangData.firstWhere(
         (lapang) => lapang['name'] == widget.lapangan,
         orElse: () => {},
       );
 
-      // Generate orderId sesuai permintaan
+      // Generate orderId
       final orderId =
           'ORDER-${DateTime.now().millisecondsSinceEpoch}-${user!.uid.substring(0, 5)}';
 
       final bookingData = {
         'orderId': orderId,
-        'statusBooking': _isPaidFull
-            ? 'Sudah Bayar'
-            : _downPaymentAmount > 0
-                ? 'DP'
-                : 'Belum Lunas',
+        'statusBooking': _paymentStatus,
         'userId': user!.uid,
         'userName': userName,
         'userPhone': userPhone ?? "",
         'totalAmount': totalPrice,
-        'paymentStatus': _isPaidFull ? 'Lunas' : 'DP',
-        'downPaymentAmount': _isPaidFull ? totalPrice : _downPaymentAmount,
-        'remainingAmount': _isPaidFull ? 0 : totalPrice - _downPaymentAmount,
+        'paymentStatus': _paymentStatus == 'Sudah Bayar' ? 'Lunas' : 'DP',
+        'downPaymentAmount': _downPaymentAmount,
+        'remainingAmount': _remainingAmount,
         'paymentProofUrl': paymentProofUrl,
         'createdAt': FieldValue.serverTimestamp(),
         'items': [
@@ -339,7 +348,6 @@ class _BookingPageState extends State<BookingPage> {
         ],
       };
 
-      // Simpan data booking dengan nama dokumen sesuai `orderId`
       await FirebaseFirestore.instance
           .collection('bookings')
           .doc(orderId)
@@ -378,7 +386,7 @@ class _BookingPageState extends State<BookingPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (!_isPaidFull) ...[
+            if (_paymentStatus == 'DP') ...[
               const SizedBox(height: 10),
               Text(
                 'DP: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_downPaymentAmount)}',
@@ -386,7 +394,7 @@ class _BookingPageState extends State<BookingPage> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Sisa: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice - _downPaymentAmount)}',
+                'Sisa: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_remainingAmount)}',
                 style: const TextStyle(
                   fontSize: 16,
                   color: Colors.red,
@@ -428,6 +436,9 @@ class _BookingPageState extends State<BookingPage> {
     int pricePerHour = int.parse(selectedLapang['price']);
     if (isMember) pricePerHour = (pricePerHour * 0.6).round();
     _updateTotalPrice();
+
+    final currentStartHour = int.parse(widget.selectedTime.split(":")[0]);
+    final maxAllowedQuantity = 22 - currentStartHour;
 
     return Scaffold(
       appBar: AppBar(
@@ -533,14 +544,8 @@ class _BookingPageState extends State<BookingPage> {
                           runSpacing: 8.0,
                           children: List.generate(5, (index) {
                             final quantity = index + 1;
-                            final int currentStartHour =
-                                int.parse(widget.selectedTime.split(":")[0]);
-                            final int maxAllowedQuantity =
-                                22 - currentStartHour;
                             final bool isWithinClosingTime =
                                 quantity <= maxAllowedQuantity;
-
-                            // Periksa apakah durasi tersedia
                             final bool isQuantityAvailable =
                                 _isDurationAvailable(quantity);
 
@@ -557,7 +562,9 @@ class _BookingPageState extends State<BookingPage> {
                                         }
                                       : null,
                               selectedColor: Colors.grey.shade300,
-                              backgroundColor: Colors.grey.shade100,
+                              backgroundColor: isQuantityAvailable
+                                  ? Colors.grey.shade100
+                                  : Colors.grey.shade300,
                               labelStyle: const TextStyle(
                                 color: Colors.black,
                               ),
@@ -584,11 +591,14 @@ class _BookingPageState extends State<BookingPage> {
                             Expanded(
                               child: ChoiceChip(
                                 label: const Text('Lunas'),
-                                selected: _isPaidFull,
+                                selected: _paymentStatus == 'Sudah Bayar',
                                 onSelected: (selected) {
                                   setState(() {
-                                    _isPaidFull = true;
-                                    _downPaymentController.text = '';
+                                    _paymentStatus = 'Sudah Bayar';
+                                    _downPaymentController.text =
+                                        totalPrice.toString();
+                                    _downPaymentAmount = totalPrice;
+                                    _remainingAmount = 0;
                                   });
                                 },
                               ),
@@ -597,18 +607,36 @@ class _BookingPageState extends State<BookingPage> {
                             Expanded(
                               child: ChoiceChip(
                                 label: const Text('DP'),
-                                selected: !_isPaidFull,
+                                selected: _paymentStatus == 'DP',
                                 onSelected: (selected) {
                                   setState(() {
-                                    _isPaidFull = false;
-                                    _downPaymentController.text = '';
+                                    _paymentStatus = 'DP';
+                                    _downPaymentController.text =
+                                        _downPaymentAmount > 0
+                                            ? _downPaymentAmount.toString()
+                                            : '';
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: ChoiceChip(
+                                label: const Text('Tanpa DP'),
+                                selected: _paymentStatus == 'Booking',
+                                onSelected: (selected) {
+                                  setState(() {
+                                    _paymentStatus = 'Booking';
+                                    _downPaymentController.text = '0';
+                                    _downPaymentAmount = 0;
+                                    _remainingAmount = totalPrice;
                                   });
                                 },
                               ),
                             ),
                           ],
                         ),
-                        if (!_isPaidFull) ...[
+                        if (_paymentStatus == 'DP') ...[
                           const SizedBox(height: 10),
                           TextFormField(
                             controller: _downPaymentController,
@@ -620,12 +648,12 @@ class _BookingPageState extends State<BookingPage> {
                               prefixText: 'Rp ',
                             ),
                             validator: (value) {
-                              if (!_isPaidFull &&
+                              if (_paymentStatus == 'DP' &&
                                   (value == null || value.isEmpty)) {
                                 return 'Harap isi jumlah DP';
                               }
                               final amount = int.tryParse(value ?? '0') ?? 0;
-                              if (!_isPaidFull && amount <= 0) {
+                              if (_paymentStatus == 'DP' && amount <= 0) {
                                 return 'Jumlah DP harus lebih dari 0';
                               }
                               return null;
@@ -650,7 +678,7 @@ class _BookingPageState extends State<BookingPage> {
                   ),
                   const SizedBox(height: 10),
                   GestureDetector(
-                    onTap: _pickImage,
+                    onTap: _paymentStatus != 'Booking' ? _pickImage : null,
                     child: Container(
                       height: 150,
                       decoration: BoxDecoration(
@@ -672,10 +700,10 @@ class _BookingPageState extends State<BookingPage> {
                                 ),
                     ),
                   ),
-                  if (!_isPaidFull) ...[
+                  if (_paymentStatus == 'DP') ...[
                     const SizedBox(height: 10),
                     Text(
-                      'Sisa Pembayaran: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_isPaidFull ? 0 : totalPrice - _downPaymentAmount)}',
+                      'Sisa Pembayaran: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_remainingAmount)}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -760,11 +788,7 @@ class _BookingPageState extends State<BookingPage> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: Colors.black,
                   ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _confirmBooking();
-                    }
-                  },
+                  onPressed: _confirmBooking,
                   child: const Text(
                     "Konfirmasi Booking",
                     style: TextStyle(

@@ -78,6 +78,8 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
     final isPaid = status.contains('Sudah Bayar');
     final isBookingOnSite = status.contains('Booking');
     final totalAmount = data['totalAmount'] ?? 0;
+    final quantity = int.tryParse(firstItem['quantity'] ?? '1') ??
+        1; // Gunakan quantity sebagai durasi
     final downPayment = data['downPaymentAmount'] ?? 0;
     final remainingAmount = data['remainingAmount'] ?? 0;
     final paymentProofUrl = data['paymentProofUrl'] as String?;
@@ -105,7 +107,8 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
               ListTile(
                 leading: Icon(Icons.access_time),
                 title: Text('Jam'),
-                subtitle: Text(firstItem['time'] ?? '-'),
+                subtitle: Text(
+                    '${firstItem['time']} (Durasi: ${firstItem['quantity']} jam)'),
               ),
               ListTile(
                 leading: Icon(Icons.person),
@@ -337,7 +340,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                   return Center(child: CircularProgressIndicator());
                 }
 
-                final bookedTimes = <String>[];
+                final bookedTimes = <String, DocumentSnapshot>{};
                 final filteredBookings = <DocumentSnapshot>[];
 
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
@@ -375,9 +378,17 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
 
                     final firstItem = items[0];
                     final time = firstItem['time'] as String? ?? '';
+                    final quantity =
+                        int.tryParse(firstItem['quantity'] ?? '1') ??
+                            1; // Gunakan quantity sebagai durasi
                     if (time.isNotEmpty) {
-                      final hour = int.parse(time.split(':')[0]);
-                      bookedTimes.add('$hour:00');
+                      final startHour = int.parse(time.split(':')[0]);
+
+                      // Tandai semua jam dalam quantity sebagai sudah dibooking
+                      for (int i = 0; i < quantity; i++) {
+                        final bookedTime = '${startHour + i}:00';
+                        bookedTimes[bookedTime] = booking;
+                      }
                     }
                   }
                 }
@@ -395,27 +406,13 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                     itemBuilder: (context, index) {
                       final hour = 8 + index;
                       final time = '$hour:00';
-                      final isBooked = bookedTimes.contains(time);
+                      final isBooked = bookedTimes.containsKey(time);
                       final isPast = _isTimePast(time);
 
                       return GestureDetector(
                         onTap: isBooked
                             ? () {
-                                final booking =
-                                    filteredBookings.firstWhere((booking) {
-                                  final data =
-                                      booking.data() as Map<String, dynamic>;
-                                  final items =
-                                      data['items'] as List<dynamic>? ?? [];
-                                  if (items.isEmpty) return false;
-                                  final firstItem = items[0];
-                                  final bookingTime =
-                                      firstItem['time'] as String? ?? '';
-                                  final bookingHour = bookingTime.isNotEmpty
-                                      ? int.parse(bookingTime.split(':')[0])
-                                      : -1;
-                                  return bookingHour == hour;
-                                });
+                                final booking = bookedTimes[time]!;
                                 _showBookingDetailPopup(context, booking);
                               }
                             : isPast

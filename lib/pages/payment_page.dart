@@ -148,9 +148,15 @@ class _PaymentPageState extends State<PaymentPage> {
       // Update status to "Sudah Bayar" and save to Firestore
       await updateBookingStatus(orderId, 'Sudah Bayar');
       int earnedPoints = int.parse(cart.cart.first.quantity!) * 10;
+
+      // Ambil imageUrl dari lapangan pertama di keranjang
+      String imageUrl = cart.cart.isNotEmpty
+          ? cart.cart.first.imagePath ?? 'assets/default_image.png'
+          : 'assets/default_image.png';
+
       await _updateUserPoints(userProvider.userId, earnedPoints);
       await _saveUserPointsTransaction(
-          userProvider.userId, earnedPoints, orderId);
+          userProvider.userId, earnedPoints, orderId, imageUrl);
 
       await cart.clearCart();
       await cart.loadCart(userProvider.userId);
@@ -202,7 +208,7 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Future<void> _saveUserPointsTransaction(
-      String userId, int earnedPoints, String orderId) async {
+      String userId, int earnedPoints, String orderId, String imageUrl) async {
     try {
       await FirebaseFirestore.instance.collection('points').doc().set({
         'userId': userId,
@@ -212,7 +218,7 @@ class _PaymentPageState extends State<PaymentPage> {
         'timestamp': FieldValue.serverTimestamp(),
         'description': 'Poin dari pembayaran booking',
         'status': 'Berhasil',
-        'imageUrl': 'assets/earned_points.png', // Gambar default
+        'imageUrl': imageUrl, // Gunakan imageUrl dari lapangan
       });
       print('Points transaction saved successfully');
     } catch (e) {

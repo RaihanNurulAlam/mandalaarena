@@ -96,8 +96,13 @@ class PointsPage extends StatelessWidget {
                               label: const Text('Tukar',
                                   style: TextStyle(color: Colors.white)),
                               onPressed: points >= 100
-                                  ? () => redeemPoints(context, userId, 100,
-                                      'Gratis 1 Jam', 'assets/minisoccer.jpg')
+                                  ? () => showRedeemConfirmationDialog(
+                                        context,
+                                        userId,
+                                        100,
+                                        'Gratis 1 Jam',
+                                        'assets/minisoccer.jpg',
+                                      )
                                   : () => showInsufficientPointsDialog(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue.withOpacity(0.8),
@@ -138,8 +143,12 @@ class PointsPage extends StatelessWidget {
                               label: const Text('Tukar',
                                   style: TextStyle(color: Colors.white)),
                               onPressed: points >= 30
-                                  ? () => redeemPoints(context, userId, 30,
-                                      'Voucher Kopi', 'assets/coffee.jpg')
+                                  ? () => showRedeemConfirmationDialog(
+                                      context,
+                                      userId,
+                                      30,
+                                      'Voucher Kopi',
+                                      'assets/coffee.jpg')
                                   : () => showInsufficientPointsDialog(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange.withOpacity(0.8),
@@ -281,7 +290,14 @@ Future<void> redeemPoints(BuildContext context, String userId, int cost,
       });
     });
 
-    showSuccessDialog(context);
+    showSuccessDialog(context, () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const TransactionHistoryPage(),
+        ),
+      );
+    });
   } catch (e) {
     print('Terjadi kesalahan saat menukarkan poin: $e');
     showDialog(
@@ -304,12 +320,25 @@ void showInsufficientPointsDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Poin Tidak Cukup'),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Poin Tidak Cukup'),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
       content: const Text(
           'Anda tidak memiliki cukup poin untuk melakukan penukaran.'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+          ),
           child: const Text('OK'),
         ),
       ],
@@ -317,16 +346,77 @@ void showInsufficientPointsDialog(BuildContext context) {
   );
 }
 
-void showSuccessDialog(BuildContext context) {
+void showRedeemConfirmationDialog(BuildContext context, String userId, int cost,
+    String reward, String imageUrl) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: const Text('Penukaran Berhasil'),
-      content: const Text('Penukaran poin Anda berhasil!'),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Konfirmasi Penukaran'),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+      content:
+          Text('Apakah Anda yakin ingin menukar $cost poin untuk $reward?'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('OK'),
+          style: TextButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Tidak'),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(context); // Tutup popup konfirmasi
+            await redeemPoints(context, userId, cost, reward, imageUrl);
+          },
+          style: TextButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Ya'),
+        ),
+      ],
+    ),
+  );
+}
+
+void showSuccessDialog(BuildContext context, VoidCallback onClose) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Penukaran Berhasil'),
+          IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () {
+              Navigator.pop(context);
+              onClose();
+            },
+          ),
+        ],
+      ),
+      content: const Text('Selamat! Anda berhasil menukarkan poin.'),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            onClose();
+          },
+          style: TextButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Lihat Riwayat'),
         ),
       ],
     ),
