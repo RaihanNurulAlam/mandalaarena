@@ -21,7 +21,6 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final _costController = TextEditingController();
   File? _imageFile; // Untuk Android/iOS
   Uint8List? _webImage; // Untuk Web
   String? _selectedCategory;
@@ -148,15 +147,6 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         return;
       }
 
-      // Validasi input cost
-      final cost = double.tryParse(_costController.text);
-      if (cost == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Biaya harus berupa angka')),
-        );
-        return;
-      }
-
       String? newImageUrl;
 
       // Jika ada gambar baru, hapus gambar lama dan upload gambar baru
@@ -179,7 +169,6 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         contact: _contactController.text,
         category: _selectedCategory!,
         createdBy: widget.team.createdBy,
-        cost: cost, // Tambahkan cost
         createdAt: widget.team.createdAt, // Tetapkan createdAt yang lama
       );
 
@@ -198,7 +187,6 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
     super.initState();
     _nameController.text = widget.team.name;
     _contactController.text = widget.team.contact;
-    _costController.text = widget.team.cost.toString(); // Inisialisasi cost
     _selectedCategory = widget.team.category;
     _selectedDay = widget.team.availableDays.isNotEmpty
         ? widget.team.availableDays.first
@@ -261,20 +249,6 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                     keyboardType: TextInputType.phone,
                     validator: (value) =>
                         value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: TextFormField(
-                    controller: _costController,
-                    decoration: InputDecoration(
-                      labelText: 'Biaya Sparring',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) =>
-                        value!.isEmpty ? 'Biaya tidak boleh kosong' : null,
                   ),
                 ),
                 SizedBox(height: 20),

@@ -31,7 +31,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   Lapang? selectedLapang;
   int totalPrice = 0;
   String selectedHour = "";
-  int bookingDuration = 1; // Default durasi 1 jam
+  int bookingDuration = 1;
   DateTime? selectedDate;
   List<String> unavailableTimes = [];
   bool isLoved = false;
@@ -47,18 +47,18 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   @override
   void initState() {
     super.initState();
-    selectedDate = DateTime.now();
     _fetchLapangData();
-    _fetchUnavailableTimes();
-    _setInitialBookingTime();
     _loadLovedState();
+    _setInitialBookingTime();
 
-    // Ambil status member dari UserProvider
+    // Get member status from UserProvider
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     isMember = userProvider.isMember;
   }
 
   void _updateTotalPrice() {
+    if (selectedLapang == null) return;
+
     int pricePerHour = int.parse(selectedLapang!.price.toString());
     if (isMember) {
       pricePerHour = (pricePerHour * 0.6).round();
@@ -66,72 +66,118 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
     totalPrice = bookingDuration * pricePerHour;
 
-    // Tambahkan biaya photographer jika dipilih
-    if (usePhotographer) {
-      totalPrice += 200000; // Biaya photographer
+    if (usePhotographer && selectedLapang!.name != "Gokart") {
+      totalPrice += 200000;
     }
 
-    // Tambahkan biaya wasit jika dipilih
-    if (useReferee) {
-      totalPrice += 70000; // Biaya wasit
+    if (useReferee && selectedLapang!.name != "Gokart") {
+      totalPrice += 70000;
     }
 
-    setState(() {}); // Perbarui UI
+    setState(() {});
   }
 
   Future<void> _fetchLapangData() async {
     try {
-      // Ambil data lapang dari lapang.json
       final List<Lapang> lapangList = await Lapang.getLapangFromJson(context);
-
-      // Cari lapang berdasarkan kategori yang dipilih
       final lapang = lapangList.firstWhere(
         (lapang) => lapang.name == widget.lapangCategory,
-        orElse: () => Lapang(), // Return Lapang kosong jika tidak ditemukan
+        orElse: () => Lapang(),
       );
 
       if (lapang.name != null) {
         setState(() {
           selectedLapang = lapang;
-          _updateTotalPrice(); // Hitung ulang total harga
+          _updateTotalPrice();
         });
+        _fetchUnavailableTimes();
       } else {
-        // Jika lapang tidak ditemukan, tampilkan pesan error
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lapang tidak ditemukan!')),
         );
-        Navigator.pop(context); // Kembali ke halaman sebelumnya
+        Navigator.pop(context);
       }
     } catch (e) {
-      // Tangani error jika terjadi kesalahan
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal memuat data lapang: $e')),
       );
-      Navigator.pop(context); // Kembali ke halaman sebelumnya
+      Navigator.pop(context);
     }
   }
 
   Future<void> _fetchUnavailableTimes() async {
-    if (selectedDate != null) {
-      final formattedDate = selectedDate!.toIso8601String().split('T')[0];
+    if (selectedDate == null || selectedLapang == null) return;
+
+    final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
+
+    try {
       final bookings = await FirebaseFirestore.instance
           .collection('bookings')
-          .where('lapangId', isEqualTo: selectedLapang?.id)
-          .where('tanggal', isEqualTo: formattedDate)
+          .where('items', isNotEqualTo: null)
           .get();
 
       List<String> times = [];
       for (var doc in bookings.docs) {
-        final duration = int.tryParse(doc['duration'].toString()) ?? 1;
-        final startHour = int.parse(doc['jamMulai'].split(":")[0]);
-        for (int i = 0; i < duration; i++) {
-          times.add("${startHour + i}:00");
+        final data = doc.data();
+        final items = data['items'] as List<dynamic>?;
+
+        if (items != null) {
+          for (var item in items) {
+            final bookingDate = item['bookingDate'] as String?;
+            final time = item['time'] as String?;
+            final lapangName = item['name'] as String?;
+            final quantity = int.tryParse(item['quantity'] ?? '1') ?? 1;
+
+            if (bookingDate == formattedDate &&
+                time != null &&
+                lapangName == selectedLapang!.name) {
+              final startHour = int.parse(time.split(":")[0]);
+              for (int i = 0; i < quantity; i++) {
+                times.add("${startHour + i}:00");
+              }
+            }
+          }
         }
       }
+
       setState(() {
         unavailableTimes = times;
       });
+    } catch (e) {
+      print("Error fetching unavailable times: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat data ketersediaan jam')),
+      );
     }
+  }
+
+  bool _isTimeSlotAvailable(int hour) {
+    // Check if the hour is in the team's available hours
+    final isTeamAvailable = widget.team.availableHours.contains("$hour:00");
+    // Check if the hour is not booked
+    final isNotBooked = !unavailableTimes.contains("$hour:00");
+    // Check if it's not in the past
+    final now = DateTime.now();
+    final bookingTime = DateTime(
+      selectedDate?.year ?? now.year,
+      selectedDate?.month ?? now.month,
+      selectedDate?.day ?? now.day,
+      hour,
+    );
+    final isNotPast =
+        bookingTime.isAfter(now) || bookingTime.isAtSameMomentAs(now);
+
+    return isTeamAvailable && isNotBooked && isNotPast;
+  }
+
+  bool _isDurationAvailable(int startHour, int duration) {
+    for (int i = 0; i < duration; i++) {
+      final hour = startHour + i;
+      if (!_isTimeSlotAvailable(hour)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> _setInitialBookingTime() async {
@@ -139,74 +185,63 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     final availableDays = widget.team.availableDays;
     final availableHours = widget.team.availableHours;
 
-    // Cari hari terdekat yang tersedia
     DateTime? nearestDate;
-    int weekOffset = 0; // Offset untuk minggu berikutnya
+    int weekOffset = 0;
 
-    while (nearestDate == null) {
+    while (nearestDate == null && weekOffset < 52) {
       for (var day in availableDays) {
         final dayIndex = _getDayIndex(day);
         final date = _currentStartOfWeek
             .add(Duration(days: dayIndex + (7 * weekOffset)));
 
-        // Periksa apakah hari sudah terlewat
         if (date.isAfter(now) ||
             (date.isAtSameMomentAs(now) && _isTimeAvailable(availableHours))) {
-          // Periksa apakah ada booking di hari ini
           final isBooked = await _isDayBooked(date);
           if (!isBooked) {
             nearestDate = date;
             break;
-          } else {
-            final formattedDate =
-                DateFormat('EEEE, dd MMMM yyyy', 'id').format(date);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(
-                      'Hari $formattedDate sudah dibooking. Mencari minggu berikutnya...')),
-            );
           }
         }
       }
-
-      // Jika tidak ditemukan di minggu ini, lanjutkan ke minggu berikutnya
       weekOffset++;
-      if (weekOffset > 52) {
-        // Batasi pencarian hingga 1 tahun
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  'Tidak ada tanggal tersedia untuk booking dalam 1 tahun.')),
-        );
-        return;
-      }
     }
 
-    // Set tanggal dan jam booking
     if (nearestDate != null) {
       setState(() {
         selectedDate = nearestDate;
         selectedHour = availableHours.isNotEmpty ? availableHours.first : "";
+        bookingDuration = 1;
       });
-
-      final formattedDate =
-          DateFormat('EEEE, dd MMMM yyyy', 'id').format(nearestDate);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tanggal tersedia: $formattedDate')),
-      );
+      _fetchUnavailableTimes();
     }
   }
 
   Future<bool> _isDayBooked(DateTime date) async {
-    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    if (selectedLapang == null) return false;
 
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
     final bookings = await FirebaseFirestore.instance
         .collection('bookings')
-        .where('lapangId', isEqualTo: selectedLapang?.id)
-        .where('tanggal', isEqualTo: formattedDate)
+        .where('items', isNotEqualTo: null)
         .get();
 
-    return bookings.docs.isNotEmpty;
+    for (var doc in bookings.docs) {
+      final data = doc.data();
+      final items = data['items'] as List<dynamic>?;
+
+      if (items != null) {
+        for (var item in items) {
+          final bookingDate = item['bookingDate'] as String?;
+          final lapangName = item['name'] as String?;
+
+          if (bookingDate == formattedDate &&
+              lapangName == selectedLapang!.name) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   bool _isTimeAvailable(List<String> availableHours) {
@@ -254,7 +289,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   Future<void> _loadLovedState() async {
     final prefs = await SharedPreferences.getInstance();
     final key = 'isLoved_${selectedLapang?.id}';
-    print("Loading love state for key: $key");
     setState(() {
       isLoved = prefs.getBool(key) ?? false;
     });
@@ -263,7 +297,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   Future<void> _saveLovedState() async {
     final prefs = await SharedPreferences.getInstance();
     final key = 'isLoved_${selectedLapang?.id}';
-    print("Saving love state for key: $key, value: $isLoved");
     await prefs.setBool(key, isLoved);
   }
 
@@ -277,78 +310,104 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       return;
     }
 
-    if (selectedHour.isNotEmpty &&
-        bookingDuration > 0 &&
-        selectedDate != null) {
-      final cart = context.read<Cart>();
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Anda harus login terlebih dahulu!')),
-        );
-        return;
+    if (selectedHour.isEmpty ||
+        bookingDuration <= 0 ||
+        selectedDate == null ||
+        selectedLapang == null) {
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Anda harus login terlebih dahulu!')),
+      );
+      return;
+    }
+
+    final currentStartHour = int.parse(selectedHour.split(":")[0]);
+    final maxAllowedDuration = 22 - currentStartHour;
+    if (bookingDuration > maxAllowedDuration) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Tidak bisa booking pada jam tersebut karena melebihi jam tutup!",
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!_isDurationAvailable(currentStartHour, bookingDuration)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Slot waktu yang dipilih sudah dibooking oleh orang lain!",
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        throw Exception("User data not found in Firestore.");
       }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final userName = userData['name'];
+      final userPhone = userData['phone'] as String?;
 
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
-      final startHour = int.parse(selectedHour.split(":")[0]);
-      final selectedTime = DateTime(
-        selectedDate!.year,
-        selectedDate!.month,
-        selectedDate!.day,
-        startHour,
-      );
-
-      // Cek ketersediaan slot di Firestore untuk seluruh durasi
-      bool isAvailable = true;
-      for (int i = 0; i < bookingDuration; i++) {
-        final timeToCheck = selectedTime.add(Duration(hours: i));
-        final timeToCheckFormatted = DateFormat('HH:mm').format(timeToCheck);
-
-        final bookingSnapshot = await FirebaseFirestore.instance
-            .collection('bookings')
-            .where('lapangId', isEqualTo: selectedLapang?.id)
-            .where('tanggal', isEqualTo: formattedDate)
-            .where('jamMulai', isEqualTo: timeToCheckFormatted)
-            .get();
-
-        if (bookingSnapshot.docs.isNotEmpty) {
-          isAvailable = false;
-          break;
-        }
-      }
-
-      if (!isAvailable) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tidak bisa booking di jam tersebut!')),
-        );
-        return;
-      }
-
-      // Simpan booking ke Firestore
       final bookingData = {
         'lapangan': selectedLapang!.name,
         'tanggal': formattedDate,
         'jamMulai': selectedHour,
         'jamSelesai': DateFormat('HH:mm').format(
-          selectedTime.add(Duration(hours: bookingDuration)),
+          DateTime(
+            selectedDate!.year,
+            selectedDate!.month,
+            selectedDate!.day,
+            currentStartHour + bookingDuration,
+          ),
         ),
         'statusBooking': 'Pending',
         'lapangId': selectedLapang!.id,
         'userId': user.uid,
-        'namaPengguna': user.displayName ?? "",
-        'noWhatsapp': user.phoneNumber ?? "",
+        'namaPengguna': userName,
+        'noWhatsapp': userPhone ?? "",
         'duration': bookingDuration.toString(),
-        'teamName': teamName, // Simpan nama tim
-        'usePhotographer': usePhotographer, // Simpan penggunaan photographer
-        'useReferee': useReferee, // Simpan penggunaan wasit
-        'totalPrice': totalPrice, // Simpan total harga
+        'isMember': isMember,
+        'teamName': teamName,
+        'usePhotographer': usePhotographer,
+        'useReferee': useReferee,
+        'totalPrice': totalPrice,
+        'createdAt': FieldValue.serverTimestamp(),
+        'items': [
+          {
+            'name': selectedLapang!.name,
+            'bookingDate': formattedDate,
+            'time': selectedHour,
+            'quantity': bookingDuration.toString(),
+            'price': selectedLapang!.price,
+            'discountedPrice': isMember ? totalPrice : null,
+            'teamName': teamName,
+            'usePhotographer': usePhotographer,
+            'useReferee': useReferee,
+          }
+        ],
       };
 
       final docRef = await FirebaseFirestore.instance
           .collection('bookings')
           .add(bookingData);
 
-      // Tambahkan ke cart (local)
+      final cart = context.read<Cart>();
       cart.addToCart(
         user.uid,
         docRef.id,
@@ -362,8 +421,12 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         teamName,
       );
 
-      // Tampilkan popup sukses
+      await _fetchUnavailableTimes();
       popUpDialog();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Terjadi kesalahan: $e")),
+      );
     }
   }
 
@@ -458,24 +521,16 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     final userProvider = Provider.of<UserProvider>(context);
     isMember = userProvider.isMember;
 
-    // Hitung harga dengan diskon jika member
+    if (selectedLapang == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Booking Lapang')),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     int pricePerHour = int.parse(selectedLapang!.price.toString());
     if (isMember) {
       pricePerHour = (pricePerHour * 0.6).round();
-    }
-
-    // Hitung totalPrice berdasarkan durasi booking
-    if (bookingDuration > 0) {
-      _updateTotalPrice(); // Perbarui total harga
-    }
-
-    if (selectedLapang == null || selectedLapang!.name == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Booking Lapang'),
-        ),
-        body: Center(child: CircularProgressIndicator()),
-      );
     }
 
     return Scaffold(
@@ -488,7 +543,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         actions: [
           IconButton(
             icon: Icon(
-              isLoved ? Icons.favorite : Icons.favorite_border,
+              isLoved ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
               color: isLoved ? Colors.red : Colors.white,
             ),
             onPressed: () {
@@ -499,37 +554,42 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
             },
           ),
           Consumer<Cart>(
-            builder: (context, cart, child) {
-              return Stack(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      goToCart();
-                    },
-                    icon: const Icon(
-                      CupertinoIcons.bag,
-                      size: 30,
+            builder: (context, value, child) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: Stack(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        goToCart();
+                      },
+                      icon: const Icon(
+                        CupertinoIcons.bag,
+                        size: 30,
+                      ),
                     ),
-                  ),
-                  if (cart.cart.isNotEmpty)
                     Positioned(
                       right: 0,
                       top: 0,
-                      child: CircleAvatar(
-                        radius: 10,
-                        backgroundColor: Colors.yellow,
-                        child: Center(
-                          child: Text(
-                            cart.cart.length.toString(),
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 10,
+                      child: Visibility(
+                        visible: value.cart.isNotEmpty,
+                        child: CircleAvatar(
+                          radius: 10,
+                          backgroundColor: Colors.yellow,
+                          child: Center(
+                            child: Text(
+                              value.cart.length.toString(),
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 10,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                ],
+                  ],
+                ),
               );
             },
           ),
@@ -568,7 +628,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                         Expanded(
                           child: Text(
                             selectedLapang!.name.toString(),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                             ),
@@ -576,73 +636,86 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                         ),
                         Row(
                           children: [
-                            Icon(Icons.star, color: Colors.yellow),
-                            SizedBox(width: 4),
+                            const Icon(Icons.star, color: Colors.yellow),
                             Text(
                               selectedLapang!.rating.toString(),
-                              style: TextStyle(fontSize: 18),
+                              style: const TextStyle(fontSize: 18),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Text(
                       isMember
                           ? "Harga (Diskon 40%): Rp $pricePerHour / jam"
                           : "Harga: Rp ${selectedLapang!.price} / jam",
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
                     ),
-                    SizedBox(height: 16),
-                    Text(
+                    const SizedBox(height: 10),
+                    const Text(
                       "Deskripsi:",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       selectedLapang!.description.toString(),
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                     ),
-                    SizedBox(height: 16),
-                    Text(
+                    const SizedBox(height: 10),
+                    const Text(
                       "Fasilitas:",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     Wrap(
                       spacing: 8.0,
                       runSpacing: 8.0,
                       children: selectedLapang!.facilities?.map((facility) {
+                            IconData iconData;
+                            switch (facility) {
+                              case 'WiFi':
+                                iconData = Icons.wifi;
+                                break;
+                              case 'Parkir':
+                                iconData = Icons.local_parking;
+                                break;
+                              case 'Kantin':
+                                iconData = Icons.restaurant;
+                                break;
+                              case 'Toilet':
+                                iconData = Icons.wc;
+                                break;
+                              default:
+                                iconData = Icons.check;
+                            }
                             return Chip(
+                              avatar: Icon(iconData, color: Colors.white),
                               label: Text(facility),
                               backgroundColor: Colors.black,
-                              labelStyle: TextStyle(color: Colors.white),
+                              labelStyle: const TextStyle(color: Colors.white),
                             );
                           }).toList() ??
                           [],
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             "Nama Tim / Atas Nama:",
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           TextFormField(
                             decoration: InputDecoration(
                               hintText: "Masukkan nama tim atau nama pemesan",
@@ -666,7 +739,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Text(
                       "Pilih Tanggal Booking:",
                       style: TextStyle(
@@ -674,20 +747,26 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    WeeklyCalendar(
-                      currentStartOfWeek: _currentStartOfWeek,
-                      onDateSelected: (date) {
-                        setState(() {
-                          selectedDate = date;
-                        });
-                        _fetchUnavailableTimes();
-                      },
-                      selectedDate: selectedDate,
-                      onCalendarIconPressed: _showDatePicker,
-                      availableDays: widget.team.availableDays,
+                    const SizedBox(height: 10),
+                    AbsorbPointer(
+                      absorbing: !isFormValid,
+                      child: Opacity(
+                        opacity: isFormValid ? 1.0 : 0.5,
+                        child: WeeklyCalendar(
+                          currentStartOfWeek: _currentStartOfWeek,
+                          onDateSelected: (date) {
+                            setState(() {
+                              selectedDate = date;
+                            });
+                            _fetchUnavailableTimes();
+                          },
+                          selectedDate: selectedDate,
+                          onCalendarIconPressed: _showDatePicker,
+                          availableDays: widget.team.availableDays,
+                        ),
+                      ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Text(
                       "Pilih Jam Booking:",
                       style: TextStyle(
@@ -695,51 +774,54 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: List.generate(14, (index) {
-                        final hour = 8 + index;
-                        final bookingTime = DateTime(
-                          selectedDate?.year ?? DateTime.now().year,
-                          selectedDate?.month ?? DateTime.now().month,
-                          selectedDate?.day ?? DateTime.now().day,
-                          hour,
-                        );
-                        bool isPast = bookingTime.isBefore(DateTime.now());
-                        final isUnavailable =
-                            unavailableTimes.contains("$hour:00");
-                        final isOverOperationalTime = hour >= 22;
+                    const SizedBox(height: 10),
+                    AbsorbPointer(
+                      absorbing: !isFormValid || selectedDate == null,
+                      child: Opacity(
+                        opacity:
+                            isFormValid && selectedDate != null ? 1.0 : 0.5,
+                        child: Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: List.generate(14, (index) {
+                            final hour = 8 + index;
+                            final isAvailable = _isTimeSlotAvailable(hour);
+                            final isSelected = selectedHour == "$hour:00";
+                            final isWithinSelectedDuration = selectedHour
+                                    .isNotEmpty &&
+                                hour >= int.parse(selectedHour.split(":")[0]) &&
+                                hour <
+                                    int.parse(selectedHour.split(":")[0]) +
+                                        bookingDuration;
 
-                        return ChoiceChip(
-                          label: Text("$hour:00"),
-                          selected: selectedHour == "$hour:00",
-                          onSelected:
-                              isPast || isUnavailable || isOverOperationalTime
-                                  ? null
-                                  : (bool selected) {
+                            return ChoiceChip(
+                              label: Text("$hour:00"),
+                              selected: isWithinSelectedDuration,
+                              onSelected: isAvailable
+                                  ? (bool selected) {
                                       setState(() {
                                         selectedHour = "$hour:00";
-                                        if (hour == 22) {
-                                          bookingDuration = 1;
-                                          _updateTotalPrice();
-                                        }
+                                        bookingDuration = 1;
+                                        _updateTotalPrice();
                                       });
-                                    },
-                          backgroundColor:
-                              isPast || isUnavailable || isOverOperationalTime
-                                  ? Colors.grey.shade300
-                                  : Colors.grey.shade100,
-                          labelStyle: TextStyle(
-                            color: selectedHour == "$hour:00"
-                                ? Colors.black
-                                : Colors.black,
-                          ),
-                        );
-                      }),
+                                    }
+                                  : null,
+                              backgroundColor: isWithinSelectedDuration
+                                  ? Colors.blue.shade200
+                                  : isAvailable
+                                      ? Colors.grey.shade100
+                                      : Colors.grey.shade300,
+                              labelStyle: TextStyle(
+                                color: isWithinSelectedDuration
+                                    ? Colors.black
+                                    : Colors.black,
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Text(
                       "Pilih Durasi Booking (jam):",
                       style: TextStyle(
@@ -747,77 +829,106 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: List.generate(5, (index) {
-                        final duration = index + 1;
-                        final int currentStartHour = selectedHour.isNotEmpty
-                            ? int.parse(selectedHour.split(":")[0])
-                            : 0;
-                        final int maxAllowedDuration = selectedHour.isNotEmpty
-                            ? (22 - currentStartHour)
-                            : 5;
+                    const SizedBox(height: 10),
+                    AbsorbPointer(
+                      absorbing: !isFormValid ||
+                          selectedDate == null ||
+                          selectedHour.isEmpty,
+                      child: Opacity(
+                        opacity: isFormValid &&
+                                selectedDate != null &&
+                                selectedHour.isNotEmpty
+                            ? 1.0
+                            : 0.5,
+                        child: Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: List.generate(5, (index) {
+                            final duration = index + 1;
+                            final int currentStartHour = selectedHour.isNotEmpty
+                                ? int.parse(selectedHour.split(":")[0])
+                                : 0;
+                            final int maxAllowedDuration =
+                                selectedHour.isNotEmpty
+                                    ? (22 - currentStartHour)
+                                    : 5;
+                            final bool isWithinClosingTime =
+                                duration <= maxAllowedDuration;
+                            final bool isDurationAvailable =
+                                selectedHour.isNotEmpty
+                                    ? _isDurationAvailable(
+                                        currentStartHour, duration)
+                                    : false;
 
-                        final bool isWithinClosingTime =
-                            duration <= maxAllowedDuration;
-
-                        return ChoiceChip(
-                          label: Text("$duration Jam"),
-                          selected: bookingDuration == duration,
-                          onSelected: isWithinClosingTime
-                              ? (bool selected) {
-                                  setState(() {
-                                    bookingDuration = duration;
-                                    _updateTotalPrice();
-                                  });
-                                }
-                              : null,
-                          selectedColor: Colors.grey.shade300,
-                          backgroundColor: Colors.grey.shade100,
-                          labelStyle: TextStyle(
-                            color: bookingDuration == duration
-                                ? Colors.black
-                                : Colors.black,
-                          ),
-                        );
-                      }),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      "Tambahan Layanan:",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                            return ChoiceChip(
+                              label: Text("$duration Jam"),
+                              selected: bookingDuration == duration,
+                              onSelected:
+                                  isDurationAvailable && isWithinClosingTime
+                                      ? (bool selected) {
+                                          setState(() {
+                                            bookingDuration = duration;
+                                            _updateTotalPrice();
+                                          });
+                                        }
+                                      : null,
+                              selectedColor: Colors.grey.shade300,
+                              backgroundColor: isDurationAvailable
+                                  ? Colors.grey.shade100
+                                  : Colors.grey.shade300,
+                              labelStyle: TextStyle(
+                                color: bookingDuration == duration
+                                    ? Colors.black
+                                    : Colors.black,
+                              ),
+                            );
+                          }),
+                        ),
                       ),
                     ),
-                    SizedBox(height: 10),
-                    _buildServiceOption(
-                      icon: Icons.camera_alt,
-                      title: "Photographer",
-                      price: "Rp 200,000",
-                      value: usePhotographer,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          usePhotographer = value ?? false;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    SizedBox(height: 10),
-                    _buildServiceOption(
-                      icon: Icons.sports,
-                      title: "Wasit",
-                      price: "Rp 70,000",
-                      value: useReferee,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          useReferee = value ?? false;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
+                    const SizedBox(height: 20),
+                    if (selectedLapang!.name != "Gokart")
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Tambahan Layanan:",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            _buildServiceOption(
+                              icon: Icons.camera_alt,
+                              title: "Photographer",
+                              price: "Rp 200,000",
+                              value: usePhotographer,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  usePhotographer = value ?? false;
+                                  _updateTotalPrice();
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                            _buildServiceOption(
+                              icon: Icons.sports,
+                              title: "Wasit",
+                              price: "Rp 70,000",
+                              value: useReferee,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  useReferee = value ?? false;
+                                  _updateTotalPrice();
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -841,7 +952,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       'Bayar Sekarang',
                       style: TextStyle(
                         fontSize: 18,
@@ -850,7 +961,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                     ),
                     Text(
                       'Total: Rp. ${NumberFormat.currency(locale: 'id', symbol: '').format(totalPrice)}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -860,64 +971,64 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                 ),
               ),
             )
-          : SizedBox.shrink(),
+          : const SizedBox.shrink(),
     );
   }
-}
 
-Widget _buildServiceOption({
-  required IconData icon,
-  required String title,
-  required String price,
-  required bool value,
-  required Function(bool) onChanged,
-}) {
-  return GestureDetector(
-    onTap: () {
-      onChanged(!value);
-    },
-    child: Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: value ? Colors.black : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: value ? Colors.black : Colors.grey.shade300,
+  Widget _buildServiceOption({
+    required IconData icon,
+    required String title,
+    required String price,
+    required bool value,
+    required Function(bool) onChanged,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        onChanged(!value);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: value ? Colors.black : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: value ? Colors.black : Colors.grey.shade300,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: value ? Colors.white : Colors.black),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: value ? Colors.white : Colors.black,
+                  ),
+                ),
+                Text(
+                  price,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: value ? Colors.white : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Icon(
+              value ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: value ? Colors.white : Colors.black,
+            ),
+          ],
         ),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: value ? Colors.white : Colors.black),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: value ? Colors.white : Colors.black,
-                ),
-              ),
-              Text(
-                price,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: value ? Colors.white : Colors.black,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Icon(
-            value ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: value ? Colors.white : Colors.black,
-          ),
-        ],
-      ),
-    ),
-  );
+    );
+  }
 }
 
 class WeeklyCalendar extends StatelessWidget {
@@ -949,7 +1060,7 @@ class WeeklyCalendar extends StatelessWidget {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
-                  icon: Icon(Icons.calendar_today, size: 24),
+                  icon: const Icon(Icons.calendar_today, size: 24),
                   onPressed: onCalendarIconPressed,
                 ),
               ),
@@ -968,15 +1079,15 @@ class WeeklyCalendar extends StatelessWidget {
                           date.year == selectedDate!.year &&
                           date.month == selectedDate!.month &&
                           date.day == selectedDate!.day;
-                      final isAvailable = availableDays.contains(
-                          DateFormat('EEEE').format(date).substring(0, 3));
+                      final dayName = DateFormat('EEEE').format(date);
+                      final isAvailable = availableDays.contains(dayName);
 
                       return GestureDetector(
                         onTap: isPast || !isAvailable
                             ? null
                             : () => onDateSelected(date),
                         child: Container(
-                          padding: EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? Colors.black
@@ -1016,7 +1127,7 @@ class WeeklyCalendar extends StatelessWidget {
                 ),
                 if (!isIconOnTop)
                   IconButton(
-                    icon: Icon(Icons.calendar_today, size: 24),
+                    icon: const Icon(Icons.calendar_today, size: 24),
                     onPressed: onCalendarIconPressed,
                   ),
               ],

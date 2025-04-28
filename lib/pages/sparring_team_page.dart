@@ -2,7 +2,6 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/edit_sparring_team_page.dart';
@@ -25,7 +24,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     'Tim Basket 3x3',
     'Tim Minisoccer',
   ];
-  final List<String> _sorts = ['Hari', 'Biaya Terendah', 'Biaya Tertinggi'];
+  final List<String> _sorts = ['Hari', 'Abjad A-Z', 'Abjad Z-A'];
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -71,17 +70,17 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             style: TextButton.styleFrom(
-      backgroundColor: Colors.black,
-      foregroundColor: Colors.white,
-    ),
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
             child: Text('Batal'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(
-      backgroundColor: Colors.black,
-      foregroundColor: Colors.white,
-    ),
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
             child: Text('Hapus'),
           ),
         ],
@@ -140,10 +139,11 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                 Navigator.pop(context);
                 lapangCategory = 'Lapang Basket Vynil';
                 _openBookingPage(team, lapangCategory);
-              },style: TextButton.styleFrom(
-      backgroundColor: Colors.black,
-      foregroundColor: Colors.white,
-    ),
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
               child: Text('Vynil'),
             ),
             TextButton(
@@ -151,10 +151,11 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                 Navigator.pop(context);
                 lapangCategory = 'Lapang Basket Karet';
                 _openBookingPage(team, lapangCategory);
-              },style: TextButton.styleFrom(
-      backgroundColor: Colors.black,
-      foregroundColor: Colors.white,
-    ),
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
               child: Text('Karet'),
             ),
           ],
@@ -183,6 +184,20 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
         ),
       ),
     );
+  }
+
+  void _sortTeams(List<SparringTeam> teams) {
+    if (_selectedSort == 'Hari') {
+      teams.sort((a, b) {
+        final aDay = a.availableDays.isNotEmpty ? a.availableDays.first : '';
+        final bDay = b.availableDays.isNotEmpty ? b.availableDays.first : '';
+        return (_dayOrder[aDay] ?? 0).compareTo(_dayOrder[bDay] ?? 0);
+      });
+    } else if (_selectedSort == 'Abjad A-Z') {
+      teams.sort((a, b) => a.name.compareTo(b.name));
+    } else if (_selectedSort == 'Abjad Z-A') {
+      teams.sort((a, b) => b.name.compareTo(a.name));
+    }
   }
 
   @override
@@ -314,20 +329,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                   return categoryMatch && searchMatch;
                 }).toList();
 
-                if (_selectedSort == 'Biaya Terendah') {
-                  filteredTeams.sort((a, b) => a.cost.compareTo(b.cost));
-                } else if (_selectedSort == 'Biaya Tertinggi') {
-                  filteredTeams.sort((a, b) => b.cost.compareTo(a.cost));
-                } else if (_selectedSort == 'Hari') {
-                  filteredTeams.sort((a, b) {
-                    final aDay =
-                        a.availableDays.isNotEmpty ? a.availableDays.first : '';
-                    final bDay =
-                        b.availableDays.isNotEmpty ? b.availableDays.first : '';
-                    return (_dayOrder[aDay] ?? 0)
-                        .compareTo(_dayOrder[bDay] ?? 0);
-                  });
-                }
+                _sortTeams(filteredTeams);
 
                 return Column(
                   children: [
@@ -341,118 +343,162 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                       ),
                     ),
                     Expanded(
-  child: Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        int crossAxisCount = (constraints.maxWidth / 480).floor().clamp(1, 10);
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            int crossAxisCount = (constraints.maxWidth / 480)
+                                .floor()
+                                .clamp(1, 10);
 
-        return GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            childAspectRatio: 2.4, // Menjaga tinggi tetap proporsional
-          ),
-          itemCount: filteredTeams.length,
-          itemBuilder: (context, index) {
-            final team = filteredTeams[index];
-            final isCreator = team.createdBy == user?.uid;
+                            return GridView.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                childAspectRatio:
+                                    2.4, // Menjaga tinggi tetap proporsional
+                              ),
+                              itemCount: filteredTeams.length,
+                              itemBuilder: (context, index) {
+                                final team = filteredTeams[index];
+                                final isCreator = team.createdBy == user?.uid;
 
-            return Card(
-              margin: EdgeInsets.all(8),
-              child: Padding(
-                padding: EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    // Gambar tim
-                    SizedBox(
-                      width: 80,
-                      height: 80,
-                      child: team.imageUrl.isNotEmpty
-                          ? Image.network(
-                              team.imageUrl,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, loadingProgress) {
-                                if (loadingProgress == null) return child;
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress.cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
+                                return Card(
+                                  margin: EdgeInsets.all(8),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: Row(
+                                      children: [
+                                        // Gambar tim
+                                        SizedBox(
+                                          width: 80,
+                                          height: 80,
+                                          child: team.imageUrl.isNotEmpty
+                                              ? Image.network(
+                                                  team.imageUrl,
+                                                  fit: BoxFit.cover,
+                                                  loadingBuilder: (context,
+                                                      child, loadingProgress) {
+                                                    if (loadingProgress == null)
+                                                      return child;
+                                                    return Center(
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        value: loadingProgress
+                                                                    .expectedTotalBytes !=
+                                                                null
+                                                            ? loadingProgress
+                                                                    .cumulativeBytesLoaded /
+                                                                loadingProgress
+                                                                    .expectedTotalBytes!
+                                                            : null,
+                                                      ),
+                                                    );
+                                                  },
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Icon(
+                                                      Icons.image_not_supported,
+                                                      size: 50,
+                                                      color: Colors.grey,
+                                                    );
+                                                  },
+                                                )
+                                              : Icon(
+                                                  Icons.image,
+                                                  size: 50,
+                                                  color: Colors.grey,
+                                                ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        // Informasi tim
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                team.name,
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                  'Hari: ${team.availableDays.join(', ')}'),
+                                              Text(
+                                                  'Jam: ${team.availableHours.join(', ')}'),
+                                              Text(
+                                                  'Kategori: ${team.category}'),
+                                              Text('Kontak: ${team.contact}'),
+                                            ],
+                                          ),
+                                        ),
+                                        // Tombol aksi
+                                        Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                if (isCreator || _isAdmin)
+                                                  IconButton(
+                                                    icon: Icon(Icons.edit,
+                                                        color: Colors.blue),
+                                                    onPressed: () =>
+                                                        _editTeam(team),
+                                                  ),
+                                                IconButton(
+                                                  icon: Image.network(
+                                                    "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
+                                                    width:
+                                                        20, // Sesuaikan ukuran
+                                                    height: 20,
+                                                    color: Colors.green,
+                                                  ),
+                                                  onPressed: () =>
+                                                      _launchWhatsApp(
+                                                          team.contact),
+                                                ),
+                                              ],
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                if (_isAdmin)
+                                                  IconButton(
+                                                    icon: Icon(Icons.delete,
+                                                        color: Colors.red),
+                                                    onPressed: () =>
+                                                        _deleteTeam(team.id),
+                                                  ),
+                                                IconButton(
+                                                  icon: Icon(Icons.book_online,
+                                                      color: Colors.orange),
+                                                  onPressed: () =>
+                                                      _navigateToBookingPage(
+                                                          team),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 );
                               },
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.image_not_supported,
-                                  size: 50,
-                                  color: Colors.grey,
-                                );
-                              },
-                            )
-                          : Icon(
-                              Icons.image,
-                              size: 50,
-                              color: Colors.grey,
-                            ),
-                    ),
-                    SizedBox(width: 12),
-                    // Informasi tim
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            team.name,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text('Hari: ${team.availableDays.join(', ')}'),
-                          Text('Jam: ${team.availableHours.join(', ')}'),
-                          Text('Kategori: ${team.category}'),
-                          Text('Kontak: ${team.contact}'),
-                          Text('Biaya: ${team.cost.toString()}'),
-                        ],
+                            );
+                          },
+                        ),
                       ),
                     ),
-                    // Tombol aksi
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (isCreator || _isAdmin)
-                          IconButton(
-                            icon: Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () => _editTeam(team),
-                          ),
-                        if (_isAdmin)
-                          IconButton(
-                            icon: Icon(CupertinoIcons.trash_circle, color: Colors.black),
-                            onPressed: () => _deleteTeam(team.id),
-                          ),
-                        IconButton(
-                          icon: Icon(Icons.chat, color: Colors.green),
-                          onPressed: () => _launchWhatsApp(team.contact),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.book_online, color: Colors.orange),
-                          onPressed: () => _navigateToBookingPage(team),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    ),
-  ),
-),
                   ],
                 );
               },

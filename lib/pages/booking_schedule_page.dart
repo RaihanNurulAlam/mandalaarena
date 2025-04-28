@@ -200,6 +200,10 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.black, // Warna latar belakang hitam
+              foregroundColor: Colors.white, // Warna teks putih
+            ),
             child: Text('Tutup'),
           ),
           IconButton(
@@ -220,11 +224,21 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
+                      style: TextButton.styleFrom(
+                        backgroundColor:
+                            Colors.black, // Warna latar belakang hitam
+                        foregroundColor: Colors.white, // Warna teks putih
+                      ),
                       child: Text('Batal'),
                     ),
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: Text('Hapus', style: TextStyle(color: Colors.red)),
+                      style: TextButton.styleFrom(
+                        backgroundColor:
+                            Colors.black, // Warna latar belakang hitam
+                        foregroundColor: Colors.white, // Warna teks putih
+                      ),
+                      child: Text('Hapus'),
                     ),
                   ],
                 ),

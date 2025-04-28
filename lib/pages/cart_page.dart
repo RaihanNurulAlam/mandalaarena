@@ -249,10 +249,8 @@ class _CartPageState extends State<CartPage> {
                                     }
                                   }
                                 },
-                                icon: const Icon(
-                                  CupertinoIcons.trash_circle,
-                                  color: Colors.black,
-                                ),
+                                icon:
+                                    const Icon(Icons.delete, color: Colors.red),
                               ),
                             );
                           },

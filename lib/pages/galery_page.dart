@@ -162,45 +162,95 @@ class _GalleryPageState extends State<GalleryPage> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text('Upload Gambar'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(10),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Upload Gambar'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      await _pickImage();
+                      setState(
+                          () {}); // Perbarui tampilan popup setelah memilih gambar
+                    },
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: _imageFile != null
+                          ? Image.file(_imageFile!, fit: BoxFit.cover)
+                          : _webImage != null
+                              ? Image.memory(_webImage!, fit: BoxFit.cover)
+                              : Icon(Icons.add_a_photo, size: 40),
+                    ),
                   ),
-                  child: _imageFile != null
-                      ? Image.file(_imageFile!, fit: BoxFit.cover)
-                      : _webImage != null
-                          ? Image.memory(_webImage!, fit: BoxFit.cover)
-                          : Icon(Icons.add_a_photo, size: 40),
-                ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_imageFile == null && _webImage == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Pilih gambar terlebih dahulu!')),
+                        );
+                        return;
+                      }
+                      Navigator.pop(context); // Tutup popup
+                      _addImage(); // Upload gambar
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white, // Warna teks putih
+                      backgroundColor: Colors.black, // Warna background hitam
+                    ),
+                    child: Text('Upload'),
+                  ),
+                ],
               ),
-              SizedBox(height: 20),
-              ElevatedButton(
-  onPressed: () {
-    Navigator.pop(context); // Tutup popup
-    _addImage(); // Upload gambar
-  },
-  style: ElevatedButton.styleFrom(
-    foregroundColor: Colors.white, // Warna teks putih
-    backgroundColor: Colors.black, // Warna background hitam
-  ),
-  child: Text('Upload'),
-),
-
-            ],
-          ),
+            );
+          },
         );
       },
     );
+  }
+
+  Future<void> _confirmDeleteImage(String docId, String imageUrl) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Konfirmasi Hapus'),
+          content: Text('Apakah Anda yakin ingin menghapus gambar ini?'),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(false), // Tidak jadi hapus
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.black, // Warna latar belakang hitam
+                foregroundColor: Colors.white, // Warna teks putih
+              ),
+              child: Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(true), // Konfirmasi hapus
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.black, // Warna latar belakang hitam
+                foregroundColor: Colors.white, // Warna teks putih
+              ),
+              child: Text('Hapus'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await _deleteImage(docId, imageUrl);
+    }
   }
 
   @override
@@ -273,7 +323,7 @@ class _GalleryPageState extends State<GalleryPage> {
                       right: 0,
                       child: IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deleteImage(doc.id, imageUrl),
+                        onPressed: () => _confirmDeleteImage(doc.id, imageUrl),
                       ),
                     ),
                 ],

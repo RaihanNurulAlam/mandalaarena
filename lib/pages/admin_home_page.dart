@@ -33,6 +33,7 @@ class AdminHomePage extends StatefulWidget {
 class _AdminHomePageState extends State<AdminHomePage> {
   List<Lapang> lapangs = [];
   bool isExpanded = false;
+  bool isHoveredToggle = false;
 
   Future<void> getLapangs() async {
     String dataLapangJson =
@@ -271,12 +272,23 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
 
                   // Tombol Utama (Menu)
-                  FloatingActionButton(
-                    heroTag: "toggle",
-                    onPressed: _toggleMenu,
-                    backgroundColor: Colors.black,
-                    child: Icon(isExpanded ? Icons.close : Icons.add_comment,
-                        color: Colors.white),
+                  MouseRegion(
+                    onEnter: (_) => setState(() {
+                      isHoveredToggle = true;
+                    }),
+                    onExit: (_) => setState(() {
+                      isHoveredToggle = false;
+                    }),
+                    child: FloatingActionButton(
+                      heroTag: "toggle",
+                      onPressed: _toggleMenu,
+                      backgroundColor: Colors.black.withOpacity(
+                          isHoveredToggle ? 1.0 : 0.5), // Transparansi di sini
+                      child: Icon(
+                        isExpanded ? Icons.close : Icons.add_comment,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ],
               ),

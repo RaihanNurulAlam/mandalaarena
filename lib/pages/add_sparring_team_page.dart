@@ -19,7 +19,6 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final _costController = TextEditingController();
   Uint8List? _webImage; // Untuk menyimpan gambar di Web
   File? _imageFile; // Untuk Android/iOS
   String? _selectedCategory;
@@ -138,13 +137,6 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
       return;
     }
 
-    if (_costController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Biaya sparring harus diisi!')),
-      );
-      return;
-    }
-
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Pilih kategori terlebih dahulu!')),
@@ -174,16 +166,12 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
       // 1️⃣ **Upload gambar ke Firebase Storage**
       String? imageUrl = await _uploadImage();
 
-      // 2️⃣ **Konversi biaya ke double**
-      double cost = double.tryParse(_costController.text.trim()) ?? 0.0;
-
       // 3️⃣ **Simpan data tim ke Firestore**
       await FirebaseFirestore.instance.collection('sparring_teams').add({
         'name': _nameController.text.trim(),
         'category': _selectedCategory,
         'imageUrl': imageUrl, // Simpan URL gambar di sini
         'contact': _contactController.text.trim(),
-        'cost': cost, // Simpan sebagai double
         'availableDays': _selectedDay != null ? [_selectedDay!] : [],
         'availableHours': _selectedHour != null ? [_selectedHour!] : [],
         'createdAt': Timestamp.now(),
@@ -259,27 +247,6 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                     keyboardType: TextInputType.phone,
                     validator: (value) =>
                         value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: TextFormField(
-                    controller: _costController,
-                    decoration: InputDecoration(
-                      labelText: 'Biaya Sparring',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Biaya tidak boleh kosong';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return 'Masukkan angka yang valid';
-                      }
-                      return null;
-                    },
                   ),
                 ),
                 SizedBox(height: 20),

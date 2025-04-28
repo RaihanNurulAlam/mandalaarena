@@ -409,6 +409,10 @@ class _BookingPageState extends State<BookingPage> {
               Navigator.of(context).pop();
               Navigator.of(context).pop();
             },
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.black, // Warna latar belakang hitam
+              foregroundColor: Colors.white, // Warna teks putih
+            ),
             child: const Text('Selesai'),
           ),
         ],

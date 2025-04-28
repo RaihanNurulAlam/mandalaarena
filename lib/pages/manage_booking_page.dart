@@ -2,7 +2,6 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/booking_schedule_page.dart';
@@ -69,7 +68,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
           Padding(
             padding: const EdgeInsets.only(right: 20.0),
             child: IconButton(
-              icon: Icon(Icons.calendar_today),
+              icon: Icon(Icons.schedule_rounded),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -155,16 +154,22 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
 
                   // Filter berdasarkan tanggal jika dipilih
                   if (selectedDate != null) {
-                    final createdAt = data['createdAt'] as Timestamp?;
-                    if (createdAt != null) {
-                      final bookingDate = createdAt.toDate();
-                      if (bookingDate.year != selectedDate!.year ||
-                          bookingDate.month != selectedDate!.month ||
-                          bookingDate.day != selectedDate!.day) {
-                        return false;
+                    final items = data['items'] as List<dynamic>? ?? [];
+                    if (items.isNotEmpty) {
+                      final bookingDateStr = items[0]['bookingDate'] ?? '';
+                      if (bookingDateStr.isNotEmpty) {
+                        final bookingDate =
+                            DateFormat('yyyy-MM-dd').parse(bookingDateStr);
+                        if (bookingDate.year != selectedDate!.year ||
+                            bookingDate.month != selectedDate!.month ||
+                            bookingDate.day != selectedDate!.day) {
+                          return false;
+                        }
+                      } else {
+                        return false; // Abaikan jika `bookingDate` tidak tersedia
                       }
                     } else {
-                      return false; // Abaikan jika `createdAt` tidak tersedia
+                      return false; // Abaikan jika `items` kosong
                     }
                   }
 
@@ -291,8 +296,8 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                     ),
                                     IconButton(
                                       icon: Icon(
-                                        CupertinoIcons.trash_circle,
-                                        color: Colors.black,
+                                        Icons.delete,
+                                        color: Colors.red,
                                       ),
                                       onPressed: () async {
                                         final shouldDelete =

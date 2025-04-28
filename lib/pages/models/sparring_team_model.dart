@@ -11,7 +11,6 @@ class SparringTeam {
   final String contact;
   final String category;
   final String createdBy;
-  final double cost; // Tambahkan properti cost
   final Timestamp createdAt; // Tambahkan properti createdAt
 
   SparringTeam({
@@ -23,7 +22,6 @@ class SparringTeam {
     required this.contact,
     required this.category,
     required this.createdBy,
-    required this.cost, // Tambahkan cost ke constructor
     required this.createdAt, // Tambahkan createdAt ke constructor
   });
 
@@ -35,7 +33,6 @@ class SparringTeam {
       category: data['category'] ?? '',
       imageUrl: data['imageUrl'] ?? '',
       contact: data['contact'] ?? '',
-      cost: data['cost'] != null ? double.parse(data['cost'].toString()) : 0.0,
       availableDays: List<String>.from(data['availableDays'] ?? []),
       availableHours: List<String>.from(data['availableHours'] ?? []),
       createdAt: data['createdAt'] ?? Timestamp.now(),
@@ -54,7 +51,6 @@ class SparringTeam {
       'contact': contact,
       'category': category,
       'createdBy': createdBy,
-      'cost': cost, // Tambahkan cost ke map
       'createdAt': createdAt, // Tambahkan createdAt ke map
     };
   }
@@ -77,7 +73,6 @@ class SparringTeam {
       category: category ?? this.category,
       imageUrl: imageUrl ?? this.imageUrl,
       contact: contact ?? this.contact,
-      cost: cost,
       availableDays: availableDays ?? this.availableDays,
       availableHours: availableHours ?? this.availableHours,
       createdAt: createdAt ?? this.createdAt,
@@ -114,7 +109,6 @@ class SparringTeamItem extends StatelessWidget {
             Text('Hari Tersedia: ${team.availableDays.join(", ")}'),
             Text('Jam Tersedia: ${team.availableHours.join(", ")}'),
             Text('Kontak: ${team.contact}'),
-            Text('Biaya: ${team.cost}'), // Tampilkan biaya
             Text(
                 'Dibuat pada: ${team.createdAt.toString()}'), // Tampilkan createdAt
           ],
