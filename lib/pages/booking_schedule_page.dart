@@ -422,41 +422,64 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                       final time = '$hour:00';
                       final isBooked = bookedTimes.containsKey(time);
                       final isPast = _isTimePast(time);
+                      final isRestTime =
+                          hour == 18; // Jam 18:00 adalah jam istirahat
 
                       return GestureDetector(
-                        onTap: isBooked
+                        onTap: isRestTime
                             ? () {
-                                final booking = bookedTimes[time]!;
-                                _showBookingDetailPopup(context, booking);
-                              }
-                            : isPast
-                                ? () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: Text('Maaf'),
-                                        content: Text(
-                                            'Jam sudah terlewat dan tidak bisa dibooking.'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(),
-                                            child: Text('OK'),
-                                          ),
-                                        ],
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: Text('Jam Istirahat'),
+                                    content: Text(
+                                        'Jam 18:00 adalah jam istirahat dan tidak dapat dibooking.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(context).pop(),
+                                        child: Text('OK'),
                                       ),
-                                    );
+                                    ],
+                                  ),
+                                );
+                              }
+                            : isBooked
+                                ? () {
+                                    final booking = bookedTimes[time]!;
+                                    _showBookingDetailPopup(context, booking);
                                   }
-                                : () {
-                                    _navigateToBookingPage(context, time);
-                                  },
+                                : isPast
+                                    ? () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text('Maaf'),
+                                            content: Text(
+                                                'Jam sudah terlewat dan tidak bisa dibooking.'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context).pop(),
+                                                child: Text('OK'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                    : () {
+                                        _navigateToBookingPage(context, time);
+                                      },
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isBooked
-                                ? Colors.grey[300]
-                                : isPast
-                                    ? Colors.grey[100]
-                                    : Colors.white,
+                            color: isRestTime
+                                ? Colors
+                                    .red[200] // Warna merah untuk jam istirahat
+                                : isBooked
+                                    ? Colors.grey[300]
+                                    : isPast
+                                        ? Colors.grey[100]
+                                        : Colors.white,
                             border: Border.all(color: Colors.black),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -464,7 +487,12 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                             child: Text(
                               time,
                               style: TextStyle(
-                                color: isBooked ? Colors.black : Colors.black,
+                                color: isRestTime
+                                    ? Colors
+                                        .red // Warna teks merah untuk jam istirahat
+                                    : isBooked
+                                        ? Colors.black
+                                        : Colors.black,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),

@@ -61,15 +61,26 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
     int pricePerHour = int.parse(selectedLapang!.price.toString());
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.6).round();
+      pricePerHour = (pricePerHour * 0.6).round(); // Diskon 40% untuk member
     }
 
     totalPrice = bookingDuration * pricePerHour;
 
+    // Tambahkan biaya tambahan untuk jam tertentu jika bukan member
+    if (!isMember) {
+      final int startHour = int.parse(selectedHour.split(":")[0]);
+
+      if (startHour >= 13 && startHour < 18) {
+        totalPrice += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
+      } else if (startHour >= 19 && startHour <= 21) {
+        totalPrice += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
+      }
+    }
+
+    // Tambahkan biaya tambahan untuk layanan
     if (usePhotographer && selectedLapang!.name != "Gokart") {
       totalPrice += 200000;
     }
-
     if (useReferee && selectedLapang!.name != "Gokart") {
       totalPrice += 70000;
     }
@@ -152,11 +163,16 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   }
 
   bool _isTimeSlotAvailable(int hour) {
-    // Check if the hour is in the team's available hours
+    // Jam 18:00 tidak bisa dibooking
+    if (hour == 18) {
+      return false;
+    }
+
+    // Periksa apakah jam tersedia dalam daftar tim dan belum dibooking
     final isTeamAvailable = widget.team.availableHours.contains("$hour:00");
-    // Check if the hour is not booked
     final isNotBooked = !unavailableTimes.contains("$hour:00");
-    // Check if it's not in the past
+
+    // Periksa apakah jam tidak berada di masa lalu
     final now = DateTime.now();
     final bookingTime = DateTime(
       selectedDate?.year ?? now.year,
@@ -173,6 +189,12 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   bool _isDurationAvailable(int startHour, int duration) {
     for (int i = 0; i < duration; i++) {
       final hour = startHour + i;
+
+      // Jam 18:00 tidak bisa dibooking
+      if (hour == 18) {
+        return false;
+      }
+
       if (!_isTimeSlotAvailable(hour)) {
         return false;
       }
@@ -785,36 +807,31 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                           runSpacing: 8.0,
                           children: List.generate(14, (index) {
                             final hour = 8 + index;
+                            final timeLabel = "$hour:00";
                             final isAvailable = _isTimeSlotAvailable(hour);
-                            final isSelected = selectedHour == "$hour:00";
-                            final isWithinSelectedDuration = selectedHour
-                                    .isNotEmpty &&
-                                hour >= int.parse(selectedHour.split(":")[0]) &&
-                                hour <
-                                    int.parse(selectedHour.split(":")[0]) +
-                                        bookingDuration;
+                            final isSelected = selectedHour == timeLabel;
 
                             return ChoiceChip(
-                              label: Text("$hour:00"),
-                              selected: isWithinSelectedDuration,
+                              label: Text(timeLabel),
+                              selected: isSelected,
                               onSelected: isAvailable
                                   ? (bool selected) {
-                                      setState(() {
-                                        selectedHour = "$hour:00";
-                                        bookingDuration = 1;
-                                        _updateTotalPrice();
-                                      });
+                                      if (selected) {
+                                        setState(() {
+                                          selectedHour = timeLabel;
+                                          bookingDuration =
+                                              1; // Default durasi 1 jam
+                                          _updateTotalPrice();
+                                        });
+                                      }
                                     }
                                   : null,
-                              backgroundColor: isWithinSelectedDuration
-                                  ? Colors.blue.shade200
-                                  : isAvailable
-                                      ? Colors.grey.shade100
-                                      : Colors.grey.shade300,
+                              backgroundColor: isAvailable
+                                  ? Colors.grey.shade100
+                                  : Colors.grey
+                                      .shade300, // Nonaktifkan warna untuk jam tidak tersedia
                               labelStyle: TextStyle(
-                                color: isWithinSelectedDuration
-                                    ? Colors.black
-                                    : Colors.black,
+                                color: isAvailable ? Colors.black : Colors.grey,
                               ),
                             );
                           }),

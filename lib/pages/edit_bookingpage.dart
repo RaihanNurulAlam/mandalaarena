@@ -151,14 +151,24 @@ class _EditBookingPageState extends State<EditBookingPage> {
   }
 
   void _updateTotalPrice() {
+    int newTotal = basePricePerHour * bookingDuration;
+
+    // Tambahkan biaya tambahan untuk jam tertentu jika bukan member
+    if (!widget.initialData['isMember']) {
+      final int startHour = int.parse(time.split(":")[0]);
+
+      if (startHour >= 13 && startHour < 18) {
+        newTotal += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
+      } else if (startHour >= 19 && startHour <= 21) {
+        newTotal += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
+      }
+    }
+
+    // Tambahkan biaya tambahan untuk layanan
+    if (usePhotographer) newTotal += photographerPrice;
+    if (useReferee) newTotal += refereePrice;
+
     setState(() {
-      // Start with base price
-      int newTotal = basePricePerHour * bookingDuration;
-
-      // Add services if selected
-      if (usePhotographer) newTotal += photographerPrice;
-      if (useReferee) newTotal += refereePrice;
-
       totalAmount = newTotal;
 
       // Update remaining amount

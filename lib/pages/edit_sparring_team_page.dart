@@ -322,14 +322,26 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                         child: Wrap(
                           spacing: 8,
                           children: _timeSlots.map((time) {
+                            final isUnavailable =
+                                time == '18:00'; // Jam 18:00 tidak bisa dipilih
                             return ChoiceChip(
                               label: Text(time),
                               selected: _selectedHour == time,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedHour = selected ? time : null;
-                                });
-                              },
+                              onSelected: isUnavailable
+                                  ? null
+                                  : (selected) {
+                                      setState(() {
+                                        _selectedHour = selected ? time : null;
+                                      });
+                                    },
+                              backgroundColor: isUnavailable
+                                  ? Colors.grey.shade300
+                                  : Colors.grey
+                                      .shade100, // Nonaktifkan warna untuk jam tidak tersedia
+                              labelStyle: TextStyle(
+                                color:
+                                    isUnavailable ? Colors.grey : Colors.black,
+                              ),
                             );
                           }).toList(),
                         ),

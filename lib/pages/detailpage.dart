@@ -53,6 +53,18 @@ class _DetailPageState extends State<DetailPage> {
 
     totalPrice = bookingDuration * pricePerHour;
 
+    // Tambahkan biaya tambahan untuk jam tertentu jika bukan member
+    if (!isMember) {
+      final int startHour =
+          selectedHour.isNotEmpty ? int.parse(selectedHour.split(":")[0]) : 0;
+
+      if (startHour >= 13 && startHour < 18) {
+        totalPrice += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
+      } else if (startHour >= 19 && startHour <= 21) {
+        totalPrice += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
+      }
+    }
+
     // Tambahkan biaya photographer jika dipilih dan bukan lapang Gokart
     if (usePhotographer && widget.lapang.name != "Gokart") {
       totalPrice += 200000; // Tambahkan harga photographer
@@ -64,6 +76,14 @@ class _DetailPageState extends State<DetailPage> {
     }
 
     setState(() {});
+  }
+
+  bool isTimeSlotAvailable(int hour) {
+    // Jam 18:00 tidak bisa dibooking
+    if (hour == 18) {
+      return false;
+    }
+    return !unavailableTimes.contains("$hour:00");
   }
 
   @override
@@ -185,10 +205,6 @@ class _DetailPageState extends State<DetailPage> {
   //     }
   //   }
   // }
-
-  bool isTimeSlotAvailable(int hour) {
-    return !unavailableTimes.contains("$hour:00");
-  }
 
   bool isDurationAvailable(int startHour, int duration) {
     for (int i = 0; i < duration; i++) {
@@ -814,10 +830,13 @@ class _DetailPageState extends State<DetailPage> {
                                               ? bookingDuration
                                               : 1);
 
+                          // Jam 18:00 tidak bisa dibooking
+                          final bool isUnavailable = hour == 18;
+
                           return ChoiceChip(
                             label: Text("$hour:00"),
                             selected: isWithinSelectedDuration,
-                            onSelected: (isPast || isBooked)
+                            onSelected: (isPast || isBooked || isUnavailable)
                                 ? null
                                 : (bool selected) {
                                     setState(() {
@@ -827,7 +846,7 @@ class _DetailPageState extends State<DetailPage> {
                                       _updateTotalPrice(); // Perbarui total harga
                                     });
                                   },
-                            backgroundColor: isPast
+                            backgroundColor: isPast || isUnavailable
                                 ? Colors.grey.shade300
                                 : isWithinSelectedDuration
                                     ? Colors.blue

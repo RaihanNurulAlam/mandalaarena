@@ -285,7 +285,7 @@
     },
     {
       "name": "flutter",
-      "rootUri": "file:///D:/DataRaihan/flutter/flutter/packages/flutter",
+      "rootUri": "file:///E:/dataehan/flutter/packages/flutter",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -411,13 +411,13 @@
     },
     {
       "name": "flutter_test",
-      "rootUri": "file:///D:/DataRaihan/flutter/flutter/packages/flutter_test",
+      "rootUri": "file:///E:/dataehan/flutter/packages/flutter_test",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "flutter_web_plugins",
-      "rootUri": "file:///D:/DataRaihan/flutter/flutter/packages/flutter_web_plugins",
+      "rootUri": "file:///E:/dataehan/flutter/packages/flutter_web_plugins",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -813,7 +813,7 @@
     },
     {
       "name": "sky_engine",
-      "rootUri": "file:///D:/DataRaihan/flutter/flutter/bin/cache/pkg/sky_engine",
+      "rootUri": "file:///E:/dataehan/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -1058,10 +1058,10 @@
       "languageVersion": "3.6"
     }
   ],
-  "generated": "2025-03-27T04:00:49.335110Z",
+  "generated": "2025-05-03T03:03:19.482277Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
-  "flutterRoot": "file:///D:/DataRaihan/flutter/flutter",
+  "flutterRoot": "file:///E:/dataehan/flutter",
   "flutterVersion": "3.29.2",
   "pubCache": "file:///C:/Users/USER/AppData/Local/Pub/Cache"
 }

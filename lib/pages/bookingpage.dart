@@ -183,6 +183,17 @@ class _BookingPageState extends State<BookingPage> {
 
     totalPrice = bookingDuration * pricePerHour;
 
+    // Tambahkan biaya tambahan untuk jam tertentu jika bukan member
+    if (!isMember) {
+      final int startHour = int.parse(widget.selectedTime.split(":")[0]);
+
+      if (startHour >= 13 && startHour < 18) {
+        totalPrice += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
+      } else if (startHour >= 19 && startHour <= 21) {
+        totalPrice += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
+      }
+    }
+
     if (usePhotographer && widget.lapangan != "Gokart") {
       totalPrice += photographerPrice;
     }
@@ -236,6 +247,13 @@ class _BookingPageState extends State<BookingPage> {
     final currentStartHour = int.parse(widget.selectedTime.split(":")[0]);
     for (int i = 0; i < duration; i++) {
       final timeToCheck = "${currentStartHour + i}:00";
+      final hourToCheck = currentStartHour + i;
+
+      // Jam 18:00 tidak bisa dibooking
+      if (hourToCheck == 18) {
+        return false;
+      }
+
       if (unavailableTimes.contains(timeToCheck)) {
         return false;
       }
