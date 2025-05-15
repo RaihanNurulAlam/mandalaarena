@@ -25,12 +25,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Inisialisasi Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   // Inisialisasi format tanggal untuk Indonesia
   await initializeDateFormatting('id_ID', null);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);

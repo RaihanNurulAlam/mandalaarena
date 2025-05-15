@@ -46,24 +46,76 @@ class _DetailPageState extends State<DetailPage> {
       {}; // Map to store booked hours and their durations
 
   void _updateTotalPrice() {
-    int pricePerHour = int.parse(widget.lapang.price.toString());
-    if (isMember) {
-      pricePerHour = (pricePerHour * 0.6).round();
-    }
+    totalPrice = 0; // Reset total harga
 
-    totalPrice = bookingDuration * pricePerHour;
+    if (selectedHour.isNotEmpty && bookingDuration > 0) {
+      final int startHour = int.parse(selectedHour.split(":")[0]);
+      int hoursCounted = 0;
 
-    // Tambahkan biaya photographer jika dipilih dan bukan lapang Gokart
-    if (usePhotographer && widget.lapang.name != "Gokart") {
-      totalPrice += 200000; // Tambahkan harga photographer
-    }
+      for (int i = 0; hoursCounted < bookingDuration; i++) {
+        final int currentHour = startHour + i;
 
-    // Tambahkan biaya wasit jika dipilih dan bukan lapang Gokart
-    if (useReferee && widget.lapang.name != "Gokart") {
-      totalPrice += 70000; // Tambahkan harga wasit
+        // Lewati jam 18
+        if (currentHour == 18) {
+          continue;
+        }
+
+        // Tentukan harga per jam berdasarkan waktu
+        int pricePerHour = int.parse(widget.lapang.price.toString());
+        if (isMember) {
+          pricePerHour =
+              (pricePerHour * 0.6).round(); // Diskon 40% untuk member
+        } else {
+          if (currentHour >= 13 && currentHour < 18) {
+            pricePerHour += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
+          } else if (currentHour >= 19 && currentHour <= 21) {
+            pricePerHour += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
+          }
+        }
+
+        // Tambahkan harga per jam ke total harga
+        totalPrice += pricePerHour;
+        hoursCounted++;
+      }
+
+      // Tambahkan biaya tambahan untuk layanan
+      if (usePhotographer && widget.lapang.name != "Gokart") {
+        totalPrice += photographerPrice;
+      }
+      if (useReferee && widget.lapang.name != "Gokart") {
+        totalPrice += refereePrice;
+      }
     }
 
     setState(() {});
+  }
+
+  bool isDurationAvailable(int startHour, int duration) {
+    int hoursCounted = 0;
+
+    for (int i = 0; hoursCounted < duration; i++) {
+      final int hour = startHour + i;
+
+      // Lewati jam 18
+      if (hour == 18) {
+        continue;
+      }
+
+      if (unavailableTimes.contains("$hour:00")) {
+        return false; // Jika salah satu jam dalam durasi tidak tersedia, return false
+      }
+
+      hoursCounted++;
+    }
+    return true; // Semua jam dalam durasi tersedia
+  }
+
+  bool isTimeSlotAvailable(int hour) {
+    // Jam 18:00 tidak bisa dibooking
+    if (hour == 18) {
+      return false;
+    }
+    return !unavailableTimes.contains("$hour:00");
   }
 
   @override
@@ -186,19 +238,15 @@ class _DetailPageState extends State<DetailPage> {
   //   }
   // }
 
-  bool isTimeSlotAvailable(int hour) {
-    return !unavailableTimes.contains("$hour:00");
-  }
-
-  bool isDurationAvailable(int startHour, int duration) {
-    for (int i = 0; i < duration; i++) {
-      final hour = startHour + i;
-      if (unavailableTimes.contains("$hour:00")) {
-        return false; // Jika salah satu jam dalam durasi tidak tersedia, return false
-      }
-    }
-    return true; // Semua jam dalam durasi tersedia
-  }
+  // bool isDurationAvailable(int startHour, int duration) {
+  //   for (int i = 0; i < duration; i++) {
+  //     final hour = startHour + i;
+  //     if (unavailableTimes.contains("$hour:00")) {
+  //       return false; // Jika salah satu jam dalam durasi tidak tersedia, return false
+  //     }
+  //   }
+  //   return true; // Semua jam dalam durasi tersedia
+  // }
 
   Future<void> addToCart() async {
     if (!_formKey.currentState!.validate()) {
@@ -810,14 +858,17 @@ class _DetailPageState extends State<DetailPage> {
                                   hour >= startHour &&
                                   hour <
                                       startHour +
-                                          (bookingDuration > 0
-                                              ? bookingDuration
-                                              : 1);
+                                          bookingDuration +
+                                          (hour > 18 ? 1 : 0) &&
+                                  hour != 18; // Lewati jam 18
+
+                          // Jam 18:00 tidak bisa dibooking
+                          final bool isUnavailable = hour == 18;
 
                           return ChoiceChip(
                             label: Text("$hour:00"),
                             selected: isWithinSelectedDuration,
-                            onSelected: (isPast || isBooked)
+                            onSelected: (isPast || isBooked || isUnavailable)
                                 ? null
                                 : (bool selected) {
                                     setState(() {
@@ -827,7 +878,7 @@ class _DetailPageState extends State<DetailPage> {
                                       _updateTotalPrice(); // Perbarui total harga
                                     });
                                   },
-                            backgroundColor: isPast
+                            backgroundColor: isPast || isUnavailable
                                 ? Colors.grey.shade300
                                 : isWithinSelectedDuration
                                     ? Colors.blue
@@ -883,33 +934,39 @@ class _DetailPageState extends State<DetailPage> {
                         final int currentStartHour = selectedHour.isNotEmpty
                             ? int.parse(selectedHour.split(":")[0])
                             : 0;
+
+                        // Hitung durasi maksimal dengan melewati jam 18
                         final int maxAllowedDuration = selectedHour.isNotEmpty
-                            ? (22 - currentStartHour)
+                            ? (22 -
+                                currentStartHour -
+                                (currentStartHour < 18 &&
+                                        currentStartHour + duration > 18
+                                    ? 1
+                                    : 0))
                             : 5;
 
                         final bool isWithinClosingTime =
                             duration <= maxAllowedDuration;
 
                         bool isDurationAvailable = selectedHour.isNotEmpty
-                            ? this
-                                .isDurationAvailable(currentStartHour, duration)
+                            ? this.isDurationAvailable(
+                                currentStartHour,
+                                duration +
+                                    (currentStartHour + duration > 18 ? 1 : 0))
                             : true;
 
                         return ChoiceChip(
                           label: Text("$duration Jam"),
                           selected: bookingDuration == duration,
-                          onSelected: (isFormValid &&
-                                  selectedDate != null &&
-                                  selectedHour.isNotEmpty &&
-                                  isWithinClosingTime &&
-                                  isDurationAvailable)
-                              ? (bool selected) {
-                                  setState(() {
-                                    bookingDuration = duration;
-                                    _updateTotalPrice();
-                                  });
-                                }
-                              : null,
+                          onSelected:
+                              (isWithinClosingTime && isDurationAvailable)
+                                  ? (bool selected) {
+                                      setState(() {
+                                        bookingDuration = duration;
+                                        _updateTotalPrice();
+                                      });
+                                    }
+                                  : null,
                           selectedColor: Colors.grey.shade300,
                           backgroundColor: isDurationAvailable
                               ? Colors.grey.shade100

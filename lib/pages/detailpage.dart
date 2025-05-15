@@ -60,16 +60,24 @@ class _DetailPageState extends State<DetailPage> {
           continue;
         }
 
+        // Pastikan tidak melebihi jam tutup
+        if (currentHour >= 22) {
+          break;
+        }
+
         // Tentukan harga per jam berdasarkan waktu
         int pricePerHour = int.parse(widget.lapang.price.toString());
         if (isMember) {
           pricePerHour =
               (pricePerHour * 0.6).round(); // Diskon 40% untuk member
         } else {
-          if (currentHour >= 13 && currentHour < 18) {
-            pricePerHour += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
-          } else if (currentHour >= 19 && currentHour <= 21) {
-            pricePerHour += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
+          if (widget.lapang.name != "Gokart") {
+            if (currentHour >= 13 && currentHour < 18) {
+              pricePerHour += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
+            } else if (currentHour >= 19 && currentHour <= 21) {
+              pricePerHour +=
+                  100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
+            }
           }
         }
 
@@ -94,20 +102,26 @@ class _DetailPageState extends State<DetailPage> {
     int hoursCounted = 0;
 
     for (int i = 0; hoursCounted < duration; i++) {
-      final int hour = startHour + i;
+      final int currentHour = startHour + i;
 
       // Lewati jam 18
-      if (hour == 18) {
+      if (currentHour == 18) {
         continue;
       }
 
-      if (unavailableTimes.contains("$hour:00")) {
-        return false; // Jika salah satu jam dalam durasi tidak tersedia, return false
+      // Periksa apakah melebihi jam tutup (22:00)
+      if (currentHour >= 22) {
+        return false;
+      }
+
+      // Periksa apakah jam ini sudah dibooking
+      if (unavailableTimes.contains("$currentHour:00")) {
+        return false;
       }
 
       hoursCounted++;
     }
-    return true; // Semua jam dalam durasi tersedia
+    return true;
   }
 
   bool isTimeSlotAvailable(int hour) {
@@ -829,73 +843,75 @@ class _DetailPageState extends State<DetailPage> {
                 ),
               const SizedBox(height: 10),
               AbsorbPointer(
-                  absorbing: !isFormValid || selectedDate == null,
-                  child: Opacity(
-                    opacity: isFormValid && selectedDate != null ? 1.0 : 0.5,
-                    child: Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: List.generate(
-                        14,
-                        (index) {
-                          final hour = 8 + index;
-                          final bookingTime = DateTime(
-                            selectedDate?.year ?? DateTime.now().year,
-                            selectedDate?.month ?? DateTime.now().month,
-                            selectedDate?.day ?? DateTime.now().day,
-                            hour,
-                          );
-                          bool isPast = bookingTime.isBefore(DateTime.now());
-                          final isBooked =
-                              unavailableTimes.contains("$hour:00");
+                absorbing: !isFormValid || selectedDate == null,
+                child: Opacity(
+                  opacity: isFormValid && selectedDate != null ? 1.0 : 0.5,
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: List.generate(
+                      14,
+                      (index) {
+                        final hour = 8 + index;
+                        final bookingTime = DateTime(
+                          selectedDate?.year ?? DateTime.now().year,
+                          selectedDate?.month ?? DateTime.now().month,
+                          selectedDate?.day ?? DateTime.now().day,
+                          hour,
+                        );
+                        bool isPast = bookingTime.isBefore(DateTime.now());
+                        final isBooked = unavailableTimes.contains("$hour:00");
 
-                          // Periksa apakah jam ini termasuk dalam durasi yang dipilih
-                          final int startHour = selectedHour.isNotEmpty
-                              ? int.parse(selectedHour.split(":")[0])
-                              : -1;
-                          final bool isWithinSelectedDuration =
-                              selectedHour.isNotEmpty &&
-                                  hour >= startHour &&
-                                  hour <
-                                      startHour +
-                                          bookingDuration +
-                                          (hour > 18 ? 1 : 0) &&
-                                  hour != 18; // Lewati jam 18
+                        // Periksa apakah jam ini termasuk dalam durasi yang dipilih
+                        final int startHour = selectedHour.isNotEmpty
+                            ? int.parse(selectedHour.split(":")[0])
+                            : -1;
+                        final bool isWithinSelectedDuration =
+                            selectedHour.isNotEmpty &&
+                                hour >= startHour &&
+                                hour <
+                                    startHour +
+                                        bookingDuration +
+                                        (startHour < 18 &&
+                                                startHour + bookingDuration > 18
+                                            ? 1
+                                            : 0) &&
+                                hour != 18;
 
-                          // Jam 18:00 tidak bisa dibooking
-                          final bool isUnavailable = hour == 18;
+                        // Jam 18:00 tidak bisa dibooking
+                        final bool isUnavailable = hour == 18 || hour >= 22;
 
-                          return ChoiceChip(
-                            label: Text("$hour:00"),
-                            selected: isWithinSelectedDuration,
-                            onSelected: (isPast || isBooked || isUnavailable)
-                                ? null
-                                : (bool selected) {
-                                    setState(() {
-                                      selectedHour = "$hour:00";
-                                      bookingDuration =
-                                          1; // Tetapkan durasi default 1 jam
-                                      _updateTotalPrice(); // Perbarui total harga
-                                    });
-                                  },
-                            backgroundColor: isPast || isUnavailable
-                                ? Colors.grey.shade300
-                                : isWithinSelectedDuration
-                                    ? Colors.blue
-                                        .shade200 // Warna biru muda untuk durasi terpilih
-                                    : isBooked
-                                        ? Colors.grey.shade300
-                                        : Colors.grey.shade100,
-                            labelStyle: TextStyle(
-                              color: isWithinSelectedDuration
-                                  ? Colors.black
-                                  : Colors.black,
-                            ),
-                          );
-                        },
-                      ),
+                        return ChoiceChip(
+                          label: Text("$hour:00"),
+                          selected: isWithinSelectedDuration,
+                          onSelected: (isPast || isBooked || isUnavailable)
+                              ? null
+                              : (bool selected) {
+                                  setState(() {
+                                    selectedHour = "$hour:00";
+                                    bookingDuration = 1;
+                                    _updateTotalPrice();
+                                  });
+                                },
+                          backgroundColor: isPast || isUnavailable
+                              ? Colors.grey.shade300
+                              : isBooked
+                                  ? Colors.grey.shade300
+                                  : Colors.grey.shade100,
+                          selectedColor:
+                              Colors.black, // Background hitam saat dipilih
+                          labelStyle: TextStyle(
+                            color: isWithinSelectedDuration
+                                ? Colors.white
+                                : Colors.black, // Font putih saat dipilih
+                          ),
+                          checkmarkColor: Colors.white, // Simbol ceklis putih
+                        );
+                      },
                     ),
-                  )),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -935,31 +951,30 @@ class _DetailPageState extends State<DetailPage> {
                             ? int.parse(selectedHour.split(":")[0])
                             : 0;
 
-                        // Hitung durasi maksimal dengan melewati jam 18
-                        final int maxAllowedDuration = selectedHour.isNotEmpty
-                            ? (22 -
-                                currentStartHour -
-                                (currentStartHour < 18 &&
-                                        currentStartHour + duration > 18
-                                    ? 1
-                                    : 0))
-                            : 5;
+                        // Hitung durasi maksimal yang diperbolehkan
+                        int maxAllowedDuration = 0;
+                        int tempHour = currentStartHour;
+                        int tempDuration = 0;
 
-                        final bool isWithinClosingTime =
-                            duration <= maxAllowedDuration;
+                        while (tempDuration < 5 && tempHour < 22) {
+                          if (tempHour != 18) {
+                            // Lewati jam 18:00
+                            tempDuration++;
+                          }
+                          tempHour++;
+                        }
 
-                        bool isDurationAvailable = selectedHour.isNotEmpty
-                            ? this.isDurationAvailable(
-                                currentStartHour,
-                                duration +
-                                    (currentStartHour + duration > 18 ? 1 : 0))
-                            : true;
+                        maxAllowedDuration = tempDuration;
+
+                        // Periksa ketersediaan durasi
+                        bool isAvailable =
+                            isDurationAvailable(currentStartHour, duration);
 
                         return ChoiceChip(
                           label: Text("$duration Jam"),
                           selected: bookingDuration == duration,
                           onSelected:
-                              (isWithinClosingTime && isDurationAvailable)
+                              (duration <= maxAllowedDuration && isAvailable)
                                   ? (bool selected) {
                                       setState(() {
                                         bookingDuration = duration;
@@ -967,16 +982,18 @@ class _DetailPageState extends State<DetailPage> {
                                       });
                                     }
                                   : null,
-                          selectedColor: Colors.grey.shade300,
-                          backgroundColor: isDurationAvailable
-                              ? Colors.grey.shade100
-                              : Colors.grey
-                                  .shade300, // Nonaktifkan jika tidak tersedia
+                          backgroundColor:
+                              (duration <= maxAllowedDuration && isAvailable)
+                                  ? Colors.grey.shade100
+                                  : Colors.grey.shade300,
+                          selectedColor:
+                              Colors.black, // Background hitam saat dipilih
                           labelStyle: TextStyle(
                             color: bookingDuration == duration
-                                ? Colors.black
-                                : Colors.black,
+                                ? Colors.white
+                                : Colors.black, // Font putih saat dipilih
                           ),
+                          checkmarkColor: Colors.white, // Simbol ceklis putih
                         );
                       },
                     ),
