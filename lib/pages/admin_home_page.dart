@@ -3,10 +3,12 @@
 import 'dart:convert';
 
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/cubit/navigation_cubit.dart';
 // import 'package:mandalaarenaapp/pages/about_page.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
@@ -17,7 +19,7 @@ import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/points_page.dart';
 // import 'package:mandalaarenaapp/pages/payment_page.dart';
 import 'package:mandalaarenaapp/pages/profile_navigation.dart';
-import 'package:mandalaarenaapp/pages/search_page.dart';
+// import 'package:mandalaarenaapp/pages/search_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 // import 'package:mandalaarenaapp/widgets/drawer_widget.dart';
@@ -83,265 +85,325 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
     final userProvider = Provider.of<UserProvider>(context);
     return BlocProvider(
       create: (context) => NavigationCubit(),
-      child: Scaffold(
-        appBar: AppBar(
-          toolbarHeight: 80,
-          title: Padding(
-            padding: const EdgeInsets.only(left: 15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Halaman Admin',
-                  style: TextStyle(color: Colors.black, fontSize: 20),
+      child: Builder(builder: (BuildContext newContext) {
+        return Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            toolbarHeight: 80,
+            title: Padding(
+              padding: const EdgeInsets.only(left: 15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Halaman Admin',
+                    style: TextStyle(color: Colors.black, fontSize: 20),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton.icon(
+                onPressed: user != null
+                    ? () {
+                        // 2. Gunakan 'newContext' dari Builder untuk memanggil Cubit
+                        newContext.read<NavigationCubit>().navigateToIndex(3);
+                      }
+                    : null,
+                icon: const Icon(Icons.star, color: Colors.orange, size: 22),
+                label: Text(
+                  userProvider.points.toString(),
+                  style: const TextStyle(
+                      color: Colors.black, fontWeight: FontWeight.bold),
                 ),
-              ],
-            ),
-          ),
-          actions: [
-            IconButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => AlamatPage()));
-              },
-              icon: Icon(
-                Icons.location_on,
-                size: 30,
               ),
-            ),
-            IconButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => SearchPage()));
-              },
-              icon: Icon(
-                CupertinoIcons.search,
-                size: 30,
+              IconButton(
+                onPressed: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => AlamatPage()));
+                },
+                icon: const Icon(Icons.location_on, size: 30),
               ),
-            ),
-            Consumer<Cart>(
-              builder: (context, value, child) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 14, left: 10),
-                  child: Stack(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          goToCart();
-                        },
-                        icon: Icon(
-                          CupertinoIcons.bag,
-                          size: 30,
+              // Search button
+              // IconButton(
+              //   onPressed: () {
+              //     Navigator.push(context,
+              //         MaterialPageRoute(builder: (context) => SearchPage()));
+              //   },
+              //   icon: Icon(
+              //     CupertinoIcons.search,
+              //     size: 30,
+              //   ),
+              // ),
+              Consumer<Cart>(
+                builder: (context, value, child) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 14, left: 5),
+                    child: Stack(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            goToCart();
+                          },
+                          icon: Icon(
+                            CupertinoIcons.bag,
+                            size: 30,
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Visibility(
-                          visible: value.cart.isNotEmpty ? true : false,
-                          child: CircleAvatar(
-                            radius: 10,
-                            backgroundColor: Colors.yellow,
-                            child: Center(
-                              child: Text(
-                                value.cart.length.toString(),
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 10,
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Visibility(
+                            visible: value.cart.isNotEmpty ? true : false,
+                            child: CircleAvatar(
+                              radius: 10,
+                              backgroundColor: Colors.yellow,
+                              child: Center(
+                                child: Text(
+                                  value.cart.length.toString(),
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 10,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              // Tombol Login atau Avatar Profil (Posisi Paling Kanan)
+              if (user == null)
+                // --- AWAL PERUBAHAN ---
+                // Jika user BELUM login
+                Padding(
+                  // Padding di kanan (14px) agar sejajar dengan cart
+                  padding: const EdgeInsets.fromLTRB(4, 18, 16, 18),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.login, size: 18),
+                    label: const Text("Login"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
+                    ),
                   ),
-                );
-              },
-            )
-          ],
-        ),
-        // drawer: DrawerWidget(),
-        body: Stack(
-          children: [
-            BlocBuilder<NavigationCubit, NavigationState>(
-              builder: (context, state) {
-                switch (state) {
-                  // case NavigationState.gallery:
-                  //   return GalleryPage();
-                  // case NavigationState.information:
-                  //   return InformationPage();
-                  // case NavigationState.about:
-                  //   return AboutPage();
-                  // case NavigationState.payment:
-                  //   return PaymentPage();
-                  case NavigationState.sparring:
-                    return SparringTeamPage();
-                  case NavigationState.profile:
-                    return ProfilePageNavigation();
-                  case NavigationState.points:
-                    return PointsPage();
-                  default:
-                    return _buildHomeContent(context);
-                }
-              },
-            ),
-            // Floating Social Media Button
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // WhatsApp
-                  Visibility(
-                    visible: isExpanded,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: FloatingActionButton(
-                        heroTag: "whatsapp",
-                        onPressed: () =>
-                            _launchURL('https://wa.me/6281111122525'),
-                        backgroundColor: Colors.green,
-                        child: Image.network(
-                          "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
-                          width: 25, // Sesuaikan ukuran
-                          height: 25,
+                )
+              // --- AKHIR PERUBAHAN ---
+              else
+                // Jika SUDAH login
+                Consumer<UserProvider>(
+                  builder: (context, provider, child) {
+                    return GestureDetector(
+                      onTap: () {
+                        // 2. Gunakan 'newContext' juga di sini
+                        newContext.read<NavigationCubit>().navigateToIndex(2);
+                      },
+                      child: Padding(
+                        // Padding di kanan (14px) agar sejajar
+                        padding: const EdgeInsets.only(right: 16.0, left: 4.0),
+                        child: CircleAvatar(
+                          radius: 18,
+                          backgroundImage: NetworkImage(
+                            userProvider.profileImageUrl.isNotEmpty
+                                ? userProvider.profileImageUrl
+                                : "https://via.placeholder.com/150",
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-
-                  // Facebook
-                  Visibility(
-                    visible: isExpanded,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: FloatingActionButton(
-                        heroTag: "facebook",
-                        onPressed: () => _launchURL(
-                            'https://www.facebook.com/mandala.arena'),
-                        backgroundColor: Colors.blue,
-                        child: const Icon(Icons.facebook, color: Colors.white),
-                      ),
-                    ),
-                  ),
-
-                  // Instagram
-                  Visibility(
-                    visible: isExpanded,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: FloatingActionButton(
-                          heroTag: "instagram",
-                          onPressed: () => _launchURL(
-                              'https://www.instagram.com/mandalaarena'),
-                          backgroundColor: Colors.purple,
+                    );
+                  },
+                ),
+            ],
+          ),
+          body: Stack(
+            children: [
+              BlocBuilder<NavigationCubit, NavigationState>(
+                builder: (context, state) {
+                  switch (state) {
+                    case NavigationState.sparring:
+                      return SparringTeamPage();
+                    case NavigationState.profile:
+                      return ProfilePageNavigation();
+                    case NavigationState.points:
+                      return PointsPage();
+                    default:
+                      return _buildHomeContent(context);
+                  }
+                },
+              ),
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // WhatsApp
+                    Visibility(
+                      visible: isExpanded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: FloatingActionButton(
+                          heroTag: "whatsapp",
+                          onPressed: () =>
+                              _launchURL('https://wa.me/6281111122525'),
+                          backgroundColor: Colors.green,
                           child: Image.network(
-                            "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                            "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
                             width: 25, // Sesuaikan ukuran
                             height: 25,
-                          )),
-                    ),
-                  ),
-
-                  // Email
-                  Visibility(
-                    visible: isExpanded,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: FloatingActionButton(
-                        heroTag: "email",
-                        onPressed: () =>
-                            _launchURL('mailto:mandalaarena@gmail.com'),
-                        backgroundColor: Colors.red,
-                        child: Image.network(
-                          "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
-                          width: 25, // Sesuaikan ukuran
-                          height: 25,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // Tombol Utama (Menu)
-                  MouseRegion(
-                    onEnter: (_) => setState(() {
-                      isHoveredToggle = true;
-                    }),
-                    onExit: (_) => setState(() {
-                      isHoveredToggle = false;
-                    }),
-                    child: FloatingActionButton(
-                      heroTag: "toggle",
-                      onPressed: _toggleMenu,
-                      backgroundColor: Colors.black.withOpacity(
-                          isHoveredToggle ? 1.0 : 0.5), // Transparansi di sini
-                      child: Icon(
-                        isExpanded ? Icons.close : Icons.add_comment,
-                        color: Colors.white,
+                    // Facebook
+                    Visibility(
+                      visible: isExpanded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: FloatingActionButton(
+                          heroTag: "facebook",
+                          onPressed: () => _launchURL(
+                              'https://www.facebook.com/mandala.arena'),
+                          backgroundColor: Colors.blue,
+                          child:
+                              const Icon(Icons.facebook, color: Colors.white),
+                        ),
                       ),
                     ),
+
+                    // Instagram
+                    Visibility(
+                      visible: isExpanded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: FloatingActionButton(
+                            heroTag: "instagram",
+                            onPressed: () => _launchURL(
+                                'https://www.instagram.com/mandalaarena'),
+                            backgroundColor: Colors.purple,
+                            child: Image.network(
+                              "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                              width: 25, // Sesuaikan ukuran
+                              height: 25,
+                            )),
+                      ),
+                    ),
+
+                    // Email
+                    Visibility(
+                      visible: isExpanded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: FloatingActionButton(
+                          heroTag: "email",
+                          onPressed: () =>
+                              _launchURL('mailto:mandalaarena@gmail.com'),
+                          backgroundColor: Colors.red,
+                          child: Image.network(
+                            "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
+                            width: 25, // Sesuaikan ukuran
+                            height: 25,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Tombol Utama (Menu)
+                    MouseRegion(
+                      onEnter: (_) => setState(() {
+                        isHoveredToggle = true;
+                      }),
+                      onExit: (_) => setState(() {
+                        isHoveredToggle = false;
+                      }),
+                      child: FloatingActionButton(
+                        heroTag: "toggle",
+                        onPressed: _toggleMenu,
+                        backgroundColor: Colors.black.withOpacity(
+                            isHoveredToggle
+                                ? 1.0
+                                : 0.5), // Transparansi di sini
+                        child: Icon(
+                          isExpanded ? Icons.close : Icons.add_comment,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
+            builder: (context, state) {
+              return BottomNavigationBar(
+                currentIndex: state.index,
+                selectedItemColor: Colors.black,
+                unselectedItemColor: Colors.black,
+                onTap: (index) {
+                  context.read<NavigationCubit>().navigateToIndex(index);
+                },
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.home),
+                    label: 'Beranda',
+                  ),
+                  // BottomNavigationBarItem(
+                  //   icon: Icon(Icons.photo_library),
+                  //   label: 'Galeri',
+                  // ),
+                  // BottomNavigationBarItem(
+                  //   icon: Icon(Icons.article),
+                  //   label: 'Informasi',
+                  // ),
+                  // BottomNavigationBarItem(
+                  //   icon: Icon(Icons.info),
+                  //   label: 'Tentang',
+                  // ),
+                  // BottomNavigationBarItem(
+                  //   icon: Icon(Icons.payment),
+                  //   label: 'Checkout',
+                  // ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.group),
+                    label: 'Sparring',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.person),
+                    label: 'Profile',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.star),
+                    label: 'Points',
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
-          builder: (context, state) {
-            return BottomNavigationBar(
-              currentIndex: state.index,
-              selectedItemColor: Colors.black,
-              unselectedItemColor: Colors.black,
-              onTap: (index) {
-                context.read<NavigationCubit>().navigateToIndex(index);
-              },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'Beranda',
-                ),
-                // BottomNavigationBarItem(
-                //   icon: Icon(Icons.photo_library),
-                //   label: 'Galeri',
-                // ),
-                // BottomNavigationBarItem(
-                //   icon: Icon(Icons.article),
-                //   label: 'Informasi',
-                // ),
-                // BottomNavigationBarItem(
-                //   icon: Icon(Icons.info),
-                //   label: 'Tentang',
-                // ),
-                // BottomNavigationBarItem(
-                //   icon: Icon(Icons.payment),
-                //   label: 'Checkout',
-                // ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.group),
-                  label: 'Sparring',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'Profile',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.star),
-                  label: 'Points',
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+              );
+            },
+          ),
+        );
+      }),
     );
   }
 

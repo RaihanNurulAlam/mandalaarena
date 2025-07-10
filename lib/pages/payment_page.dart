@@ -147,7 +147,7 @@ class _PaymentPageState extends State<PaymentPage> {
     try {
       // Update status to "Sudah Bayar" and save to Firestore
       await updateBookingStatus(orderId, 'Sudah Bayar');
-      int earnedPoints = int.parse(cart.cart.first.quantity!) * 10;
+      int earnedPoints = int.parse(cart.cart.first.quantity!) * 1;
 
       // Ambil imageUrl dari lapangan pertama di keranjang
       String imageUrl = cart.cart.isNotEmpty

@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use, library_private_types_in_public_api
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
@@ -90,8 +90,7 @@ class _WelcomePageState extends State<WelcomePage> {
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(
-                              builder: (context) => LoginScreen()),
+                          MaterialPageRoute(builder: (context) => HomePage()),
                           (route) => false,
                         );
                       },

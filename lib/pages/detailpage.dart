@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/pages/cart_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
@@ -576,7 +577,42 @@ class _DetailPageState extends State<DetailPage> {
               selectedDate != null)
           ? GestureDetector(
               onTap: () {
-                addToCart();
+                // Cek apakah user sudah login atau belum
+                if (user == null) {
+                  // Jika belum login, tampilkan dialog
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('Login Diperlukan'),
+                      content: Text(
+                          'Harap login terlebih dahulu untuk booking jadwal'),
+                      actions: [
+                        TextButton(
+                          style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.black),
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text('Batal'),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.black),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const LoginScreen()));
+                          },
+                          child: Text('Login'),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  addToCart();
+                }
               },
               child: Container(
                 margin: const EdgeInsets.all(8.0),

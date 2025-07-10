@@ -12,6 +12,7 @@ class PointsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final userId = userProvider.userId;
+    final points = userProvider.points;
 
     return Scaffold(
       appBar: AppBar(
@@ -36,134 +37,117 @@ class PointsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text('Data tidak ditemukan.'));
-          }
-
-          Map<String, dynamic>? userData =
-              snapshot.data?.data() as Map<String, dynamic>?;
-          int points = userData?['points'] ?? 0;
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  children: [
-                    Text(
-                      'Total Poin: $points',
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 20),
-                    // Banner Penukaran 100 Poin
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Card(
-                        elevation: 4,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/minisoccer.jpg'),
-                              fit: BoxFit.cover,
-                              colorFilter: ColorFilter.mode(
-                                Colors.black.withOpacity(0.5),
-                                BlendMode.darken,
-                              ),
-                            ),
-                          ),
-                          child: ListTile(
-                            title: const Text(
-                              'Tukar 100 Poin - Gratis 1 Jam',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            trailing: ElevatedButton.icon(
-                              icon: const Icon(Icons.card_giftcard,
-                                  color: Colors.white),
-                              label: const Text('Tukar',
-                                  style: TextStyle(color: Colors.white)),
-                              onPressed: points >= 100
-                                  ? () => showRedeemConfirmationDialog(
-                                        context,
-                                        userId,
-                                        100,
-                                        'Gratis 1 Jam',
-                                        'assets/minisoccer.jpg',
-                                      )
-                                  : () => showInsufficientPointsDialog(context),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue.withOpacity(0.8),
-                              ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  Text(
+                    'Total Poin: $points', // Gunakan data poin dari provider
+                    style: const TextStyle(
+                        fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  // Banner Penukaran 10 Poin
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Card(
+                      elevation: 4,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/minisoccer.jpg'),
+                            fit: BoxFit.cover,
+                            colorFilter: ColorFilter.mode(
+                              Colors.black.withOpacity(0.5),
+                              BlendMode.darken,
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Banner Penukaran 30 Poin
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Card(
-                        elevation: 4,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/coffee.jpg'),
-                              fit: BoxFit.cover,
-                              colorFilter: ColorFilter.mode(
-                                Colors.black.withOpacity(0.5),
-                                BlendMode.darken,
-                              ),
+                        child: ListTile(
+                          title: const Text(
+                            'Tukar 10 Poin - Gratis 1 Jam',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          child: ListTile(
-                            title: const Text(
-                              'Tukar 30 Poin - Voucher Kopi',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            trailing: ElevatedButton.icon(
-                              icon: const Icon(Icons.card_giftcard,
-                                  color: Colors.white),
-                              label: const Text('Tukar',
-                                  style: TextStyle(color: Colors.white)),
-                              onPressed: points >= 30
-                                  ? () => showRedeemConfirmationDialog(
+                          trailing: ElevatedButton.icon(
+                            icon: const Icon(Icons.card_giftcard,
+                                color: Colors.white),
+                            label: const Text('Tukar',
+                                style: TextStyle(color: Colors.white)),
+                            // Logika penukaran tetap sama
+                            onPressed: points >= 10
+                                ? () => showRedeemConfirmationDialog(
                                       context,
                                       userId,
-                                      30,
-                                      'Voucher Kopi',
-                                      'assets/coffee.jpg')
-                                  : () => showInsufficientPointsDialog(context),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orange.withOpacity(0.8),
-                              ),
+                                      10,
+                                      'Gratis 1 Jam',
+                                      'assets/minisoccer.jpg',
+                                    )
+                                : () => showInsufficientPointsDialog(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.withOpacity(0.8),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Banner Penukaran 3 Poin
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Card(
+                      elevation: 4,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/coffee.jpg'),
+                            fit: BoxFit.cover,
+                            colorFilter: ColorFilter.mode(
+                              Colors.black.withOpacity(0.5),
+                              BlendMode.darken,
+                            ),
+                          ),
+                        ),
+                        child: ListTile(
+                          title: const Text(
+                            'Tukar 3 Poin - Voucher Kopi',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          trailing: ElevatedButton.icon(
+                            icon: const Icon(Icons.card_giftcard,
+                                color: Colors.white),
+                            label: const Text('Tukar',
+                                style: TextStyle(color: Colors.white)),
+                            onPressed: points >= 3
+                                ? () => showRedeemConfirmationDialog(
+                                    context,
+                                    userId,
+                                    3,
+                                    'Voucher Kopi',
+                                    'assets/coffee.jpg')
+                                : () => showInsufficientPointsDialog(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange.withOpacity(0.8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }

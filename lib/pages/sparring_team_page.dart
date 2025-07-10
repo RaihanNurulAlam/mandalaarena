@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/edit_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
@@ -481,9 +482,64 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                                                 IconButton(
                                                   icon: Icon(Icons.book_online,
                                                       color: Colors.orange),
-                                                  onPressed: () =>
+                                                  onPressed: () {
+                                                    // Cek apakah pengguna sudah login atau belum
+                                                    if (user == null) {
+                                                      // Jika belum login, tampilkan dialog
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (context) =>
+                                                            AlertDialog(
+                                                          title: Text(
+                                                              'Login Diperlukan'),
+                                                          content: Text(
+                                                              'Harap login terlebih dahulu untuk booking jadwal sparring'),
+                                                          actions: [
+                                                            TextButton(
+                                                              style: TextButton.styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .black),
+                                                              onPressed: () =>
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop(),
+                                                              child: Text('OK'),
+                                                            ),
+                                                            TextButton(
+                                                              style: TextButton.styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white,
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .black),
+                                                              onPressed: () {
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop();
+                                                                Navigator.push(
+                                                                    context,
+                                                                    MaterialPageRoute(
+                                                                        builder:
+                                                                            (context) =>
+                                                                                const LoginScreen()));
+                                                              },
+                                                              child:
+                                                                  Text('Login'),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    } else {
+                                                      // Jika sudah login, lanjutkan ke halaman booking
                                                       _navigateToBookingPage(
-                                                          team),
+                                                          team);
+                                                    }
+                                                  },
                                                 ),
                                               ],
                                             ),

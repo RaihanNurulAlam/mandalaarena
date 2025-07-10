@@ -9,12 +9,10 @@ import 'package:mandalaarenaapp/Password%20Forgot/forgot_password.dart';
 import 'package:mandalaarenaapp/Phone%20Auth/phone_login.dart';
 import 'package:mandalaarenaapp/pages/admin_home_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
-import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import 'package:mandalaarenaapp/pages/help_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
-
 import '../Services/authentication.dart';
 import '../Widget/snackbar.dart';
 import '../Widget/text_field.dart';
@@ -85,16 +83,20 @@ class _LoginScreenState extends State<LoginScreen> {
             final cartProvider = Provider.of<Cart>(context, listen: false);
             await cartProvider.loadCart(currentUser.uid);
 
-            Navigator.pushReplacement(
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => targetPage),
+              (route) => false,
             );
 
             final userData = userDoc.data() as Map<String, dynamic>;
             final String userName = userData['name'] ?? "Nama User";
-            final String userEmail = userData['email'] ?? "Email tidak ditemukan";
-            final String profileImageUrl = userData['profileImageUrl'] ?? "https://via.placeholder.com/150";
+            final String userEmail =
+                userData['email'] ?? "Email tidak ditemukan";
+            final String profileImageUrl = userData['profileImageUrl'] ??
+                "https://via.placeholder.com/150";
             final String userPhone = userData['phone'] ?? "";
+            final int userPoints = userData['points'] ?? 0;
 
             if (mounted) {
               Provider.of<UserProvider>(context, listen: false).setUserData(
@@ -104,6 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 profileImageUrl: profileImageUrl,
                 userPhone: userPhone,
                 isMember: isMember,
+                points: userPoints,
               );
             }
           } else {
@@ -131,10 +134,14 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: SingleChildScrollView(
                 child: SizedBox(
-                  width: MediaQuery.of(context).size.width > 500 ? 500 : double.infinity,
+                  width: MediaQuery.of(context).size.width > 500
+                      ? 500
+                      : double.infinity,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center, // Konten berada di tengah secara vertikal
-                    crossAxisAlignment: CrossAxisAlignment.center, // Konten berada di tengah secara horizontal
+                    mainAxisAlignment: MainAxisAlignment
+                        .center, // Konten berada di tengah secara vertikal
+                    crossAxisAlignment: CrossAxisAlignment
+                        .center, // Konten berada di tengah secara horizontal
                     children: [
                       SizedBox(
                         height: height / 4, // Sesuaikan tinggi gambar
@@ -174,7 +181,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                               child: Text(
-                                isPasswordVisible ? "Sembunyikan Password" : "Tampilkan Password",
+                                isPasswordVisible
+                                    ? "Sembunyikan Password"
+                                    : "Tampilkan Password",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blue,
@@ -195,14 +204,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Row(
                           children: [
                             Expanded(
-                              child: Container(height: 1, color: Colors.black26),
+                              child:
+                                  Container(height: 1, color: Colors.black26),
                             ),
                             const Padding(
                               padding: EdgeInsets.symmetric(horizontal: 10),
                               child: Text("atau"),
                             ),
                             Expanded(
-                              child: Container(height: 1, color: Colors.black26),
+                              child:
+                                  Container(height: 1, color: Colors.black26),
                             ),
                           ],
                         ),
@@ -217,24 +228,34 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 10),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: Colors.grey.shade300),
+                                    side:
+                                        BorderSide(color: Colors.grey.shade300),
                                   ),
                                 ),
                                 onPressed: () async {
-                                  final user = await FirebaseServices().signInWithGoogle(context);
+                                  final user = await FirebaseServices()
+                                      .signInWithGoogle(context);
                                   if (user != null) {
-                                    final String userName = user.displayName ?? "Nama User";
-                                    final String userEmail = user.email ?? "Email tidak ditemukan";
-                                    final String profileImageUrl = user.photoURL ?? "https://via.placeholder.com/150";
-                                    final String userPhone = user.phoneNumber ?? "Nomor telepon tidak ditemukan";
+                                    final String userName =
+                                        user.displayName ?? "Nama User";
+                                    final String userEmail =
+                                        user.email ?? "Email tidak ditemukan";
+                                    final String profileImageUrl =
+                                        user.photoURL ??
+                                            "https://via.placeholder.com/150";
+                                    final String userPhone = user.phoneNumber ??
+                                        "Nomor telepon tidak ditemukan";
 
-                                    DocumentReference userRef = FirebaseFirestore.instance
-                                        .collection('users')
-                                        .doc(user.uid);
-                                    DocumentSnapshot userDoc = await userRef.get();
+                                    DocumentReference userRef =
+                                        FirebaseFirestore.instance
+                                            .collection('users')
+                                            .doc(user.uid);
+                                    DocumentSnapshot userDoc =
+                                        await userRef.get();
 
                                     if (!userDoc.exists) {
                                       await userRef.set({
@@ -249,23 +270,28 @@ class _LoginScreenState extends State<LoginScreen> {
                                       });
                                     }
 
-                                    bool isMember = userDoc.get('member') ?? false;
+                                    bool isMember =
+                                        userDoc.get('member') ?? false;
 
                                     if (mounted) {
-                                      Provider.of<UserProvider>(context, listen: false).setUserData(
+                                      Provider.of<UserProvider>(context,
+                                              listen: false)
+                                          .setUserData(
                                         userId: user.uid,
                                         userName: userName,
                                         userEmail: userEmail,
                                         profileImageUrl: profileImageUrl,
                                         userPhone: userPhone,
                                         isMember: isMember,
+                                        points: userDoc.get('points') ?? 0,
                                       );
 
-                                      Navigator.pushReplacement(
+                                      Navigator.pushAndRemoveUntil(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) => HomePage(),
                                         ),
+                                        (route) => false,
                                       );
                                     }
                                   }
@@ -311,19 +337,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            // Tombol kembali ke WelcomePage
+            // Tombol kembali yang dinamis
             Positioned(
               top: 10,
               left: 10,
               child: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const WelcomePage(),
-                    ),
-                  );
+                  // Gunakan ini untuk kembali ke halaman sebelumnya
+                  Navigator.pop(context);
                 },
               ),
             ),

@@ -30,6 +30,7 @@ class DrawerWidget extends StatelessWidget {
             profileImageUrl: userData['profileImageUrl'] ?? '',
             userPhone: userData['phone'] ?? '',
             isMember: isMember,
+            points: userData['points'] ?? 0,
           );
         }
       }

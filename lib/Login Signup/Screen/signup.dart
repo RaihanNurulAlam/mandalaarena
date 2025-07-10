@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Widget/button.dart';
 import 'package:mandalaarenaapp/pages/help_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
-import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import '../Services/authentication.dart';
 import '../Widget/snackbar.dart';
 import '../Widget/text_field.dart';
@@ -96,10 +95,14 @@ class _SignupScreenState extends State<SignupScreen> {
             Center(
               child: SingleChildScrollView(
                 child: SizedBox(
-                  width: MediaQuery.of(context).size.width > 500 ? 500 : double.infinity,
+                  width: MediaQuery.of(context).size.width > 500
+                      ? 500
+                      : double.infinity,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center, // Konten di tengah vertikal
-                    crossAxisAlignment: CrossAxisAlignment.center, // Konten di tengah horizontal
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // Konten di tengah vertikal
+                    crossAxisAlignment: CrossAxisAlignment
+                        .center, // Konten di tengah horizontal
                     children: [
                       SizedBox(
                         height: height / 4, // Ukuran gambar
@@ -147,7 +150,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                 });
                               },
                               child: Text(
-                                isPasswordVisible ? "Sembunyikan Password" : "Tampilkan Password",
+                                isPasswordVisible
+                                    ? "Sembunyikan Password"
+                                    : "Tampilkan Password",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blue,
@@ -201,19 +206,15 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
             ),
-            // Tombol kembali ke WelcomePage
+            // Tombol kembali yang dinamis
             Positioned(
               top: 10,
               left: 10,
               child: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const WelcomePage(),
-                    ),
-                  );
+                  // Gunakan ini untuk kembali ke halaman sebelumnya
+                  Navigator.pop(context);
                 },
               ),
             ),
