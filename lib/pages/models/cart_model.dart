@@ -13,8 +13,9 @@ class CartModel {
   String? noWhatsapp;
   bool? usePhotographer;
   bool? useReferee;
+  bool? useIceBath; // --- [MODIFIKASI] Tambahkan field useIceBath
   int? totalPrice;
-  String? teamName; // Tambahkan field teamName
+  String? teamName;
 
   CartModel({
     this.userId,
@@ -31,8 +32,9 @@ class CartModel {
     this.noWhatsapp,
     this.usePhotographer,
     this.useReferee,
+    this.useIceBath, // --- [MODIFIKASI] Tambahkan di constructor
     this.totalPrice,
-    this.teamName, // Tambahkan field teamName
+    this.teamName,
   });
 
   // Konversi dari JSON Firebase ke CartModel
@@ -51,8 +53,9 @@ class CartModel {
     noWhatsapp = json['noWhatsapp'];
     usePhotographer = json['usePhotographer'];
     useReferee = json['useReferee'];
+    useIceBath = json['useIceBath']; // --- [MODIFIKASI] Ambil dari JSON
     totalPrice = json['totalPrice'];
-    teamName = json['teamName']; // Ambil teamName dari JSON
+    teamName = json['teamName'];
   }
 
   // Konversi dari CartModel ke JSON Firebase
@@ -71,8 +74,9 @@ class CartModel {
       'noWhatsapp': noWhatsapp,
       'usePhotographer': usePhotographer,
       'useReferee': useReferee,
+      'useIceBath': useIceBath, // --- [MODIFIKASI] Sertakan dalam JSON
       'totalPrice': totalPrice,
-      'teamName': teamName, // Sertakan teamName dalam JSON
+      'teamName': teamName,
     };
   }
 }

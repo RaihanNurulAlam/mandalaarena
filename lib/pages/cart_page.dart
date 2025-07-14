@@ -48,7 +48,7 @@ class _CartPageState extends State<CartPage> {
         double totalPrice = cart.cart.fold(0, (previousValue, cartModel) {
           double price = double.tryParse(cartModel.price ?? '0') ?? 0;
           if (userProvider.isMember) {
-            price = price * 0.6;
+            price = price * 0.9;
           }
           final int quantity = int.tryParse(cartModel.quantity ?? '1') ?? 1;
           double itemTotal = price * quantity;
@@ -61,6 +61,11 @@ class _CartPageState extends State<CartPage> {
           // Tambahkan biaya wasit jika digunakan
           if (cartModel.useReferee ?? false) {
             itemTotal += 70000; // Biaya tambahan wasit
+          }
+
+          // --- [MODIFIKASI] Tambahkan biaya icebath jika digunakan ---
+          if (cartModel.useIceBath ?? false) {
+            itemTotal += 50000; // Biaya tambahan icebath
           }
 
           return previousValue + itemTotal;
@@ -202,6 +207,9 @@ class _CartPageState extends State<CartPage> {
                                     Text('Photographer: Rp 200,000'),
                                   if (item.useReferee ?? false)
                                     Text('Wasit: Rp 70,000'),
+                                  // --- [MODIFIKASI] Tampilkan detail Ice Bath ---
+                                  if (item.useIceBath ?? false)
+                                    Text('Ice Bath: Rp 50,000'),
                                 ],
                               ),
                               trailing: IconButton(

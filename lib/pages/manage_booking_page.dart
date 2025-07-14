@@ -1,4 +1,4 @@
-// ignore_for_file: unnecessary_to_list_in_spreads
+// ignore_for_file: unnecessary_to_list_in_spreads, avoid_print
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -15,8 +15,12 @@ class ManageBookingsPage extends StatefulWidget {
 
 class _ManageBookingsPageState extends State<ManageBookingsPage> {
   String? selectedLapangan;
+  String? selectedMonthYear; // Format: "YYYY-MM"
   DateTime? selectedDate;
+
   List<String> lapanganList = ['Semua Lapangan'];
+  List<String> availableMonths = ['Semua Bulan'];
+  bool _isFetchingMonths = false; // State untuk loading indicator
 
   @override
   void initState() {
@@ -25,11 +29,8 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
   }
 
   Future<void> _fetchLapanganList() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('bookings')
-        // .where('items', isNotEqualTo: null)
-        .get();
-
+    final snapshot =
+        await FirebaseFirestore.instance.collection('bookings').get();
     final lapanganSet = <String>{};
 
     for (var doc in snapshot.docs) {
@@ -42,9 +43,91 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
         }
       }
     }
-
+    final sortedLapangan = lapanganSet.toList()..sort();
     setState(() {
-      lapanganList = ['Semua Lapangan', ...lapanganSet.toList()];
+      lapanganList = ['Semua Lapangan', ...sortedLapangan];
+    });
+  }
+
+  // == FUNGSI YANG DIPERBAIKI ==
+  Future<void> _updateAvailableMonths(String? lapanganName) async {
+    // Reset filter & aktifkan loading
+    setState(() {
+      selectedMonthYear = null;
+      selectedDate = null;
+      _isFetchingMonths = true;
+      availableMonths = []; // Kosongkan list untuk diisi ulang
+    });
+
+    if (lapanganName == null || lapanganName == 'Semua Lapangan') {
+      setState(() {
+        availableMonths = ['Semua Bulan'];
+        _isFetchingMonths = false;
+      });
+      return;
+    }
+
+    try {
+      final monthSet = <String>{};
+      final snapshot =
+          await FirebaseFirestore.instance.collection('bookings').get();
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final items = data['items'] as List<dynamic>?;
+        if (items != null && items.isNotEmpty) {
+          // Ambil nama lapangan dari data dan dari pilihan dropdown
+          final String namaLapanganDiData =
+              (items[0]['name'] as String? ?? '').trim().toLowerCase();
+          final String namaLapanganDipilih =
+              (lapanganName).trim().toLowerCase();
+
+          // Bandingkan setelah diseragamkan
+          if (namaLapanganDiData == namaLapanganDipilih) {
+            final bookingDateStr = items[0]['bookingDate'] as String?;
+            if (bookingDateStr != null && bookingDateStr.length >= 7) {
+              monthSet.add(bookingDateStr.substring(0, 7));
+            }
+          }
+        }
+      }
+
+      final sortedMonths = monthSet.toList()..sort((a, b) => b.compareTo(a));
+      setState(() {
+        availableMonths = ['Semua Bulan', ...sortedMonths];
+      });
+    } catch (e) {
+      // Handle error jika ada
+      print("Error fetching months: $e");
+      setState(() {
+        availableMonths = ['Gagal memuat'];
+      });
+    } finally {
+      // Pastikan loading indicator berhenti
+      setState(() {
+        _isFetchingMonths = false;
+      });
+    }
+  }
+
+  String _formatMonthYear(String monthYear) {
+    if (monthYear == 'Semua Bulan' || monthYear == 'Gagal memuat') {
+      return monthYear;
+    }
+    try {
+      final date = DateFormat('yyyy-MM').parse(monthYear);
+      return DateFormat.yMMMM('id_ID').format(date);
+    } catch (e) {
+      return monthYear;
+    }
+  }
+
+  void _clearFilters() {
+    setState(() {
+      selectedLapangan = null;
+      selectedMonthYear = null;
+      selectedDate = null;
+      availableMonths = ['Semua Bulan'];
     });
   }
 
@@ -87,8 +170,10 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
             padding:
                 const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
+                  flex: 2,
                   child: DropdownButtonFormField<String>(
                     value: selectedLapangan,
                     hint: Text('Pilih Lapangan'),
@@ -102,30 +187,87 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                       setState(() {
                         selectedLapangan = value;
                       });
+                      _updateAvailableMonths(value);
                     },
                   ),
                 ),
+                SizedBox(width: 16.0),
+                Expanded(
+                  flex: 2,
+                  child: DropdownButtonFormField<String>(
+                    value: selectedMonthYear,
+                    // Tampilkan hint berdasarkan status fetching
+                    hint: _isFetchingMonths
+                        ? Row(
+                            children: [
+                              SizedBox(
+                                width: 15,
+                                height: 15,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              SizedBox(width: 8),
+                              Text('Mencari...'),
+                            ],
+                          )
+                        : Text('Pilih Bulan'),
+                    // Nonaktifkan dropdown saat loading
+                    disabledHint:
+                        _isFetchingMonths ? null : Text('Pilih lapangan dulu'),
+                    items: availableMonths.map((String monthYear) {
+                      return DropdownMenuItem<String>(
+                        value: monthYear == 'Semua Bulan' ||
+                                monthYear == 'Gagal memuat'
+                            ? null
+                            : monthYear,
+                        child: Text(_formatMonthYear(monthYear)),
+                      );
+                    }).toList(),
+                    onChanged: _isFetchingMonths
+                        ? null // Nonaktifkan onchanged saat loading
+                        : (String? value) {
+                            setState(() {
+                              selectedMonthYear = value;
+                              selectedDate = null;
+                            });
+                          },
+                  ),
+                ),
                 SizedBox(width: 8.0),
-                IconButton(
-                  icon: Icon(Icons.calendar_today),
-                  onPressed: () async {
-                    final DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate ?? DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now().add(Duration(days: 365)),
-                    );
-                    if (pickedDate != null) {
-                      setState(() {
-                        selectedDate = pickedDate;
-                      });
-                    }
-                  },
+                Tooltip(
+                  message: 'Pilih Tanggal Spesifik',
+                  child: IconButton(
+                    icon: Icon(Icons.calendar_today),
+                    onPressed: () async {
+                      final DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(Duration(days: 365)),
+                      );
+                      if (pickedDate != null) {
+                        setState(() {
+                          selectedDate = pickedDate;
+                          final monthFromDate =
+                              DateFormat('yyyy-MM').format(pickedDate);
+                          if (availableMonths.contains(monthFromDate)) {
+                            selectedMonthYear = monthFromDate;
+                          }
+                        });
+                      }
+                    },
+                  ),
+                ),
+                Tooltip(
+                  message: 'Hapus Semua Filter',
+                  child: IconButton(
+                    icon: Icon(Icons.clear),
+                    onPressed: _clearFilters,
+                  ),
                 ),
               ],
             ),
           ),
-          // Perbaikan pada StreamBuilder untuk sinkronisasi filter lapangan dan tanggal
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -133,6 +275,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
+                // ... (KODE STREAMBUILDER ANDA DARI SINI KE BAWAH TIDAK ADA PERUBAHAN) ...
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
@@ -140,242 +283,308 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                   return Center(child: Text('Tidak ada booking.'));
                 }
 
+                double totalIncome = 0.0;
+
                 final bookings = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
+                  final items = data['items'] as List<dynamic>? ?? [];
 
-                  // Filter berdasarkan lapangan jika dipilih
+                  if (items.isEmpty) return false;
+                  final bookingDateStr = items[0]['bookingDate'] ?? '';
+                  if (bookingDateStr.isEmpty) return false;
+
+                  // --- Logika Filter Bertingkat ---
+                  // 1. Filter Lapangan
                   if (selectedLapangan != null &&
-                      selectedLapangan != 'Semua Lapangan') {
-                    final items = data['items'] as List<dynamic>? ?? [];
-                    if (items.isEmpty || items[0]['name'] != selectedLapangan) {
+                      items[0]['name'] != selectedLapangan) {
+                    return false;
+                  }
+
+                  // 2. Filter Bulan
+                  if (selectedMonthYear != null &&
+                      !bookingDateStr.startsWith(selectedMonthYear!)) {
+                    return false;
+                  }
+
+                  // 3. Filter Tanggal (paling spesifik)
+                  if (selectedDate != null) {
+                    final bookingDate =
+                        DateFormat('yyyy-MM-dd').parse(bookingDateStr);
+                    if (bookingDate.year != selectedDate!.year ||
+                        bookingDate.month != selectedDate!.month ||
+                        bookingDate.day != selectedDate!.day) {
                       return false;
                     }
                   }
 
-                  // Filter berdasarkan tanggal jika dipilih
-                  if (selectedDate != null) {
-                    final items = data['items'] as List<dynamic>? ?? [];
-                    if (items.isNotEmpty) {
-                      final bookingDateStr = items[0]['bookingDate'] ?? '';
-                      if (bookingDateStr.isNotEmpty) {
-                        final bookingDate =
-                            DateFormat('yyyy-MM-dd').parse(bookingDateStr);
-                        if (bookingDate.year != selectedDate!.year ||
-                            bookingDate.month != selectedDate!.month ||
-                            bookingDate.day != selectedDate!.day) {
-                          return false;
-                        }
-                      } else {
-                        return false; // Abaikan jika `bookingDate` tidak tersedia
-                      }
-                    } else {
-                      return false; // Abaikan jika `items` kosong
-                    }
-                  }
-
-                  return true;
+                  return true; // Lolos semua filter
                 }).toList();
 
                 if (bookings.isEmpty) {
                   return Center(
-                      child: Text(
-                          'Tidak ada booking dengan filter yang dipilih.'));
+                    child:
+                        Text('Tidak ada booking dengan filter yang dipilih.'),
+                  );
                 }
 
-                return GridView.builder(
-                  padding: EdgeInsets.all(20),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 20,
-                    mainAxisSpacing: 20,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: bookings.length,
-                  itemBuilder: (context, index) {
-                    final bookingData =
-                        bookings[index].data() as Map<String, dynamic>;
-                    final bookingId = bookings[index].id;
-                    final items = bookingData['items'] as List<dynamic>? ?? [];
-                    final firstItem = items.isNotEmpty ? items[0] : {};
+                for (var doc in bookings) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  if (data['statusBooking'] != null &&
+                      data['statusBooking']
+                          .toString()
+                          .contains('Sudah Bayar')) {
+                    totalIncome += (data['totalAmount'] as num).toDouble();
+                  }
+                }
 
-                    // Extract data dari items
-                    final lapangan =
-                        firstItem['name'] ?? 'Lapangan Tidak Diketahui';
-                    final bookingDate = firstItem['bookingDate'] ?? '';
-                    final time = firstItem['time'] ?? '';
-                    final status = bookingData['statusBooking'] ?? 'Pending';
-                    final totalAmount = bookingData['totalAmount'] ?? 0;
-                    final namaPengguna =
-                        bookingData['userName'] ?? 'Tidak Diketahui';
-                    final noWhatsapp = bookingData['userPhone'] ?? '-';
-                    final imagePath = firstItem['imagePath'] ?? '';
-                    final teamName = firstItem['teamName'] ?? '';
-                    final usePhotographer =
-                        firstItem['usePhotographer'] ?? false;
-                    final useReferee = firstItem['useReferee'] ?? false;
+                return Column(
+                  children: [
+                    Expanded(
+                      child: GridView.builder(
+                        padding: EdgeInsets.all(20),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: 1.5,
+                        ),
+                        itemCount: bookings.length,
+                        itemBuilder: (context, index) {
+                          final bookingData =
+                              bookings[index].data() as Map<String, dynamic>;
+                          final bookingId = bookings[index].id;
+                          final items =
+                              bookingData['items'] as List<dynamic>? ?? [];
+                          final firstItem = items.isNotEmpty ? items[0] : {};
 
-                    Color statusColor = Colors.grey;
-                    IconData statusIcon = Icons.access_time;
+                          // Extract data dari items
+                          final lapangan =
+                              firstItem['name'] ?? 'Lapangan Tidak Diketahui';
+                          final bookingDate = firstItem['bookingDate'] ?? '';
+                          final time = firstItem['time'] ?? '';
+                          final status =
+                              bookingData['statusBooking'] ?? 'Pending';
+                          final totalAmount = bookingData['totalAmount'] ?? 0;
+                          final namaPengguna =
+                              bookingData['userName'] ?? 'Tidak Diketahui';
+                          final noWhatsapp = bookingData['userPhone'] ?? '-';
+                          final imagePath = firstItem['imagePath'] ?? '';
+                          final teamName = firstItem['teamName'] ?? '';
+                          final usePhotographer =
+                              firstItem['usePhotographer'] ?? false;
+                          final useReferee = firstItem['useReferee'] ?? false;
 
-                    if (status.contains('Sudah Bayar')) {
-                      statusColor = Colors.green;
-                      statusIcon = Icons.check_circle;
-                    } else if (status.contains('Booking')) {
-                      statusColor = Colors.blue;
-                      statusIcon = Icons.calendar_today;
-                    } else if (status.contains('Gagal') ||
-                        status.contains('expire')) {
-                      statusColor = Colors.red;
-                      statusIcon = Icons.error;
-                    }
+                          Color statusColor = Colors.grey;
+                          IconData statusIcon = Icons.access_time;
 
-                    return Card(
-                      margin: EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: imagePath.isNotEmpty
-                                ? Image.network(
-                                    imagePath,
-                                    width: double.infinity,
-                                    height: 150,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Icon(Icons.image_not_supported, size: 50),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                left: 20, top: 10, bottom: 10),
+                          if (status.contains('Sudah Bayar')) {
+                            statusColor = Colors.green;
+                            statusIcon = Icons.check_circle;
+                          } else if (status.contains('Booking')) {
+                            statusColor = Colors.blue;
+                            statusIcon = Icons.calendar_today;
+                          } else if (status.contains('Gagal') ||
+                              status.contains('expire')) {
+                            statusColor = Colors.red;
+                            statusIcon = Icons.error;
+                          }
+
+                          return Card(
+                            margin: EdgeInsets.all(8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                Expanded(
+                                  child: imagePath.isNotEmpty
+                                      ? Image.network(
+                                          imagePath,
+                                          width: double.infinity,
+                                          height: 150,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Icon(Icons.image_not_supported,
+                                          size: 50),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 20, top: 10, bottom: 10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text('Lapangan: $lapangan',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                          Text('Tanggal: $bookingDate'),
-                                          Text('Jam: $time'),
-                                          Row(
-                                            children: [
-                                              Icon(statusIcon,
-                                                  size: 16, color: statusColor),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                status,
-                                                style: TextStyle(
-                                                  color: statusColor,
-                                                  fontWeight: FontWeight.bold,
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text('Lapangan: $lapangan',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold)),
+                                                Text('Tanggal: $bookingDate'),
+                                                Text('Jam: $time'),
+                                                Row(
+                                                  children: [
+                                                    Icon(statusIcon,
+                                                        size: 16,
+                                                        color: statusColor),
+                                                    SizedBox(width: 4),
+                                                    Text(
+                                                      status,
+                                                      style: TextStyle(
+                                                        color: statusColor,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                              ),
-                                            ],
+                                                Text('Nama: $namaPengguna'),
+                                                Text(
+                                                    'No WhatsApp: $noWhatsapp'),
+                                                if (teamName.isNotEmpty)
+                                                  Text('Atas Nama: $teamName'),
+                                                if (usePhotographer)
+                                                  Text(
+                                                      'Photographer: Rp 200,000'),
+                                                if (useReferee)
+                                                  Text('Wasit: Rp 70,000'),
+                                                Text(
+                                                  'Total Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '', decimalDigits: 0).format(totalAmount)}',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          Text('Nama: $namaPengguna'),
-                                          Text('No WhatsApp: $noWhatsapp'),
-                                          if (teamName.isNotEmpty)
-                                            Text('Atas Nama: $teamName'),
-                                          if (usePhotographer)
-                                            Text('Photographer: Rp 200,000'),
-                                          if (useReferee)
-                                            Text('Wasit: Rp 70,000'),
-                                          Text(
-                                            'Total Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold),
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                            ),
+                                            onPressed: () async {
+                                              // ... KODE HAPUS ANDA TIDAK BERUBAH ...
+                                              final shouldDelete =
+                                                  await showDialog<bool>(
+                                                context: context,
+                                                builder: (context) =>
+                                                    AlertDialog(
+                                                  title:
+                                                      Text('Konfirmasi Hapus'),
+                                                  content: Text(
+                                                      'Yakin ingin menghapus booking ini?'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(false),
+                                                      style:
+                                                          TextButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.black,
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                      ),
+                                                      child: Text('Batal'),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(true),
+                                                      style:
+                                                          TextButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.black,
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                      ),
+                                                      child: Text('Hapus'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+
+                                              if (shouldDelete == true) {
+                                                try {
+                                                  await FirebaseFirestore
+                                                      .instance
+                                                      .collection('bookings')
+                                                      .doc(bookingId)
+                                                      .delete();
+
+                                                  final cart =
+                                                      Provider.of<Cart>(context,
+                                                          listen: false);
+                                                  cart.removeItemByDocId(
+                                                      bookingId);
+
+                                                  final User? user =
+                                                      FirebaseAuth
+                                                          .instance.currentUser;
+                                                  if (user != null) {
+                                                    await cart
+                                                        .loadCart(user.uid);
+                                                  }
+
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                        content: Text(
+                                                            'Booking berhasil dihapus.')),
+                                                  );
+                                                } catch (e) {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                        content: Text(
+                                                            'Gagal menghapus booking.')),
+                                                  );
+                                                }
+                                              }
+                                            },
                                           ),
                                         ],
                                       ),
-                                    ),
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                      ),
-                                      onPressed: () async {
-                                        final shouldDelete =
-                                            await showDialog<bool>(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: Text('Konfirmasi Hapus'),
-                                            content: Text(
-                                                'Yakin ingin menghapus booking ini?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context)
-                                                        .pop(false),
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor: Colors.black,
-                                                  foregroundColor: Colors.white,
-                                                ),
-                                                child: Text('Batal'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context)
-                                                        .pop(true),
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor: Colors.black,
-                                                  foregroundColor: Colors.white,
-                                                ),
-                                                child: Text('Hapus'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-
-                                        if (shouldDelete == true) {
-                                          try {
-                                            await FirebaseFirestore.instance
-                                                .collection('bookings')
-                                                .doc(bookingId)
-                                                .delete();
-
-                                            final cart = Provider.of<Cart>(
-                                                context,
-                                                listen: false);
-                                            cart.removeItemByDocId(bookingId);
-
-                                            final User? user = FirebaseAuth
-                                                .instance.currentUser;
-                                            if (user != null) {
-                                              await cart.loadCart(user.uid);
-                                            }
-
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(
-                                                      'Booking berhasil dihapus.')),
-                                            );
-                                          } catch (e) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(
-                                                      'Gagal menghapus booking.')),
-                                            );
-                                          }
-                                        }
-                                      },
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Card(
+                        elevation: 4,
+                        child: ListTile(
+                          leading: Icon(Icons.attach_money,
+                              color: Colors.green, size: 36),
+                          title: Text(
+                            'Total Pendapatan (Sesuai Filter)',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            NumberFormat.currency(
+                                    locale: 'id_ID',
+                                    symbol: 'Rp ',
+                                    decimalDigits: 0)
+                                .format(totalIncome),
+                            style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),

@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, deprecated_member_use, unnecessary_null_comparison
+// ignore_for_file: avoid_print, deprecated_member_use, unnecessary_null_comparison, unused_element
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +43,8 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   String teamName = "";
   final _formKey = GlobalKey<FormState>();
   bool isFormValid = false;
+  bool useIceBath = false;
+  int iceBathPrice = 50000;
 
   @override
   void initState() {
@@ -83,6 +85,48 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     }
     if (useReferee && selectedLapang!.name != "Gokart") {
       totalPrice += 70000;
+      void updateTotalPrice() {
+        if (selectedLapang == null) return;
+
+        int pricePerHour = int.parse(selectedLapang!.price.toString());
+        if (isMember) {
+          pricePerHour =
+              (pricePerHour * 0.6).round(); // Diskon 40% untuk member
+        }
+
+        totalPrice = bookingDuration * pricePerHour;
+
+        // Tambahkan biaya tambahan untuk jam tertentu jika bukan member
+        if (!isMember) {
+          final int startHour = int.parse(selectedHour.split(":")[0]);
+
+          if (startHour >= 13 && startHour < 18) {
+            totalPrice += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
+          } else if (startHour >= 19 && startHour <= 21) {
+            totalPrice += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
+          }
+        }
+
+        // Tambahkan biaya tambahan untuk layanan
+        if (usePhotographer && selectedLapang!.name != "Gokart") {
+          totalPrice += 200000;
+        }
+        if (useReferee && selectedLapang!.name != "Gokart") {
+          totalPrice += 70000;
+        }
+        // Add Ice Bath price for Mini Soccer members
+        if (useIceBath &&
+            isMember &&
+            selectedLapang!.name == "Lapang Minisoccer") {
+          totalPrice += iceBathPrice;
+        }
+
+        setState(() {});
+      }
+    }
+    // Add Ice Bath price for Mini Soccer members
+    if (useIceBath && isMember && selectedLapang!.name == "Lapang Minisoccer") {
+      totalPrice += iceBathPrice;
     }
 
     setState(() {});
@@ -421,6 +465,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
             'teamName': teamName,
             'usePhotographer': usePhotographer,
             'useReferee': useReferee,
+            'useIceBath': useIceBath,
           }
         ],
       };
@@ -441,6 +486,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         usePhotographer,
         useReferee,
         teamName,
+        useIceBath,
       );
 
       await _fetchUnavailableTimes();
@@ -943,6 +989,23 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                                 });
                               },
                             ),
+                            if (isMember &&
+                                selectedLapang!.name == "Lapang Minisoccer")
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10.0),
+                                child: _buildServiceOption(
+                                  icon: Icons.ac_unit,
+                                  title: "Ice Bath",
+                                  price: "Rp 50,000",
+                                  value: useIceBath,
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      useIceBath = value ?? false;
+                                      _updateTotalPrice();
+                                    });
+                                  },
+                                ),
+                              ),
                           ],
                         ),
                       ),

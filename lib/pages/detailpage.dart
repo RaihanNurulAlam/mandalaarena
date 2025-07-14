@@ -29,6 +29,7 @@ class _DetailPageState extends State<DetailPage> {
   int totalPrice = 0;
   int photographerPrice = 200000;
   int refereePrice = 70000;
+  int iceBathPrice = 50000;
   String selectedHour = "";
   int bookingDuration = 0;
   DateTime? selectedDate;
@@ -40,11 +41,48 @@ class _DetailPageState extends State<DetailPage> {
   bool isMember = false;
   bool usePhotographer = false;
   bool useReferee = false;
+  bool useIceBath = false;
   String teamName = "";
   final _formKey = GlobalKey<FormState>();
   bool isFormValid = false;
-  Map<String, int> bookedSlots =
-      {}; // Map to store booked hours and their durations
+  Map<String, int> bookedSlots = {};
+
+  int _getPriceForHour(int hour) {
+    int basePrice = int.tryParse(widget.lapang.price ?? '0') ?? 0;
+    String lapangName = widget.lapang.name.toString();
+
+    // Time slots: Pagi (7-13), Siang (14-17), Malam (18-22)
+    if (lapangName == "Lapang Minisoccer") {
+      if (hour >= 7 && hour < 14) return basePrice; // Pagi: 450k
+      if (hour >= 14 && hour < 18) return basePrice + 100000; // Siang: 550k
+      if (hour >= 18 && hour < 23) return basePrice + 200000; // Malam: 650k
+    } else if (lapangName == "Lapang Basket Vynil") {
+      if (hour >= 7 && hour < 14) return basePrice; // Pagi: 150k
+      if (hour >= 14 && hour < 18) return basePrice + 50000; // Siang: 200k
+      if (hour >= 18 && hour < 23) return basePrice + 100000; // Malam: 250k
+    } else if (lapangName == "Lapang Basket Karet") {
+      if (hour >= 7 && hour < 14) return basePrice; // Pagi: 75k
+      if (hour >= 14 && hour < 18) return basePrice + 25000; // Siang: 100k
+      if (hour >= 18 && hour < 23) return basePrice + 50000; // Malam: 125k
+    }
+
+    // Fallback untuk lapang lain (Gokart, 3x3) menggunakan harga dasar
+    return basePrice;
+  }
+
+  String _getPriceRangeString() {
+    int pagiPrice = _getPriceForHour(8); // Contoh jam pagi
+    int malamPrice = _getPriceForHour(19); // Contoh jam malam
+
+    final formatCurrency =
+        NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
+
+    if (pagiPrice == malamPrice) {
+      return "${formatCurrency.format(pagiPrice)} / jam";
+    } else {
+      return "${formatCurrency.format(pagiPrice)} - ${formatCurrency.format(malamPrice)} / jam";
+    }
+  }
 
   void _updateTotalPrice() {
     totalPrice = 0; // Reset total harga
@@ -52,50 +90,41 @@ class _DetailPageState extends State<DetailPage> {
     if (selectedHour.isNotEmpty && bookingDuration > 0) {
       final int startHour = int.parse(selectedHour.split(":")[0]);
       int hoursCounted = 0;
+      double cumulativePrice = 0;
 
       for (int i = 0; hoursCounted < bookingDuration; i++) {
         final int currentHour = startHour + i;
 
-        // Lewati jam 18
-        if (currentHour == 18) {
-          continue;
-        }
-
-        // Pastikan tidak melebihi jam tutup
-        if (currentHour >= 22) {
+        // Validasi jam operasional (7 pagi - 10 malam)
+        if (currentHour >= 23) {
           break;
         }
 
-        // Tentukan harga per jam berdasarkan waktu
-        int pricePerHour = int.parse(widget.lapang.price.toString());
+        // Dapatkan harga untuk jam spesifik
+        double priceForThisHour = _getPriceForHour(currentHour).toDouble();
+
+        // Terapkan diskon 10% untuk member
         if (isMember) {
-          pricePerHour =
-              (pricePerHour * 0.6).round(); // Diskon 40% untuk member
-        } else {
-          if (widget.lapang.name != "Gokart") {
-            if (currentHour >= 13 && currentHour < 18) {
-              pricePerHour += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
-            } else if (currentHour >= 19 && currentHour <= 21) {
-              pricePerHour +=
-                  100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
-            }
-          }
+          priceForThisHour *= 0.9;
         }
 
-        // Tambahkan harga per jam ke total harga
-        totalPrice += pricePerHour;
+        cumulativePrice += priceForThisHour;
         hoursCounted++;
       }
 
-      // Tambahkan biaya tambahan untuk layanan
-      if (usePhotographer && widget.lapang.name != "Gokart") {
+      totalPrice = cumulativePrice.round();
+
+      // Tambahkan biaya tambahan untuk layanan (di luar loop)
+      if (usePhotographer) {
         totalPrice += photographerPrice;
       }
-      if (useReferee && widget.lapang.name != "Gokart") {
+      if (useReferee) {
         totalPrice += refereePrice;
       }
+      if (useIceBath && isMember && widget.lapang.name == "Lapang Minisoccer") {
+        totalPrice += iceBathPrice;
+      }
     }
-
     setState(() {});
   }
 
@@ -105,13 +134,8 @@ class _DetailPageState extends State<DetailPage> {
     for (int i = 0; hoursCounted < duration; i++) {
       final int currentHour = startHour + i;
 
-      // Lewati jam 18
-      if (currentHour == 18) {
-        continue;
-      }
-
-      // Periksa apakah melebihi jam tutup (22:00)
-      if (currentHour >= 22) {
+      // Periksa apakah melebihi jam tutup (23:00)
+      if (currentHour >= 23) {
         return false;
       }
 
@@ -126,8 +150,8 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   bool isTimeSlotAvailable(int hour) {
-    // Jam 18:00 tidak bisa dibooking
-    if (hour == 18) {
+    // Jam di luar operasional tidak bisa dibooking
+    if (hour < 7 || hour >= 23) {
       return false;
     }
     return !unavailableTimes.contains("$hour:00");
@@ -179,7 +203,6 @@ class _DetailPageState extends State<DetailPage> {
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
 
       try {
-        // Ambil data booking dari Firestore berdasarkan lapangId, tanggal, dan nama lapangan
         final bookings = await FirebaseFirestore.instance
             .collection('bookings')
             .where('items', isNotEqualTo: null)
@@ -197,13 +220,11 @@ class _DetailPageState extends State<DetailPage> {
               final lapangName = item['name'] as String?;
               final quantity = int.tryParse(item['quantity'] ?? '1') ?? 1;
 
-              // Periksa apakah tanggal, jam, dan nama lapangan cocok
               if (bookingDate == formattedDate &&
                   time != null &&
                   lapangName == widget.lapang.name) {
                 final startHour = int.parse(time.split(":")[0]);
 
-                // Tambahkan semua jam yang sudah dibooking ke dalam daftar unavailableTimes
                 for (int i = 0; i < quantity; i++) {
                   times.add("${startHour + i}:00");
                 }
@@ -221,48 +242,6 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  // Future<void> _fetchBookedSlots() async {
-  //   if (selectedDate != null) {
-  //     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
-
-  //     try {
-  //       // Ambil data booking dari Firestore berdasarkan lapangId dan tanggal
-  //       final bookings = await FirebaseFirestore.instance
-  //           .collection('bookings')
-  //           .where('lapangId', isEqualTo: widget.lapang.id)
-  //           .where('tanggal', isEqualTo: formattedDate)
-  //           .get();
-
-  //       bookedSlots.clear();
-
-  //       for (var doc in bookings.docs) {
-  //         final startHourStr = doc['jamMulai'].toString().split(':')[0];
-  //         final startHour = int.tryParse(startHourStr) ?? 0;
-  //         final duration = int.tryParse(doc['duration'].toString()) ?? 1;
-
-  //         for (int i = 0; i < duration; i++) {
-  //           final hour = startHour + i;
-  //           bookedSlots[hour.toString()] = duration - i;
-  //         }
-  //       }
-
-  //       setState(() {});
-  //     } catch (e) {
-  //       print("Error fetching booked slots: $e");
-  //     }
-  //   }
-  // }
-
-  // bool isDurationAvailable(int startHour, int duration) {
-  //   for (int i = 0; i < duration; i++) {
-  //     final hour = startHour + i;
-  //     if (unavailableTimes.contains("$hour:00")) {
-  //       return false; // Jika salah satu jam dalam durasi tidak tersedia, return false
-  //     }
-  //   }
-  //   return true; // Semua jam dalam durasi tersedia
-  // }
-
   Future<void> addToCart() async {
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -277,40 +256,33 @@ class _DetailPageState extends State<DetailPage> {
         bookingDuration > 0 &&
         selectedDate != null &&
         user != null) {
-      int pricePerHour = int.parse(widget.lapang.price.toString());
-      if (isMember) {
-        pricePerHour = (pricePerHour * 0.6).round();
-      }
+      // --- [MODIFIKASI 4] Perhitungan total harga sudah dilakukan oleh _updateTotalPrice
+      // jadi tidak perlu dihitung ulang di sini. Cukup gunakan state `totalPrice`.
 
-      int totalPrice = bookingDuration * pricePerHour;
+      final cart = context.read<Cart>();
+      final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
 
-      if (usePhotographer && widget.lapang.name != "Gokart") {
-        totalPrice += 200000;
-      }
+      final bool isAlreadyInCart = cart.cart.any((item) =>
+          item.id == widget.lapang.id &&
+          item.bookingDate == formattedDate &&
+          item.time == selectedHour);
 
-      if (useReferee && widget.lapang.name != "Gokart") {
-        totalPrice += 70000;
+      if (isAlreadyInCart) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Jadwal ini sudah ada di keranjang Anda."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return; // Hentikan fungsi jika item sudah ada
       }
 
       final int currentStartHour = int.parse(selectedHour.split(":")[0]);
-      final int maxAllowedDuration = 22 - currentStartHour;
-      if (bookingDuration > maxAllowedDuration) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Tidak bisa booking pada jam tersebut karena melebihi jam tutup!",
-            ),
-          ),
-        );
-        return;
-      }
-
-      // Check availability only against confirmed bookings
       if (!isDurationAvailable(currentStartHour, bookingDuration)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              "Slot waktu yang dipilih sudah dibooking oleh orang lain!",
+              "Slot waktu yang dipilih sudah dibooking atau melebihi jam operasional!",
             ),
           ),
         );
@@ -322,57 +294,26 @@ class _DetailPageState extends State<DetailPage> {
             .collection('users')
             .doc(user!.uid)
             .get();
-
-        if (!userDoc.exists) {
-          throw Exception("User data not found in Firestore.");
-        }
-
         final userData = userDoc.data() as Map<String, dynamic>;
         userName = userData['name'];
         userPhone = userData['phone'] as String?;
 
-        final bookingData = {
-          'lapangan': widget.lapang.name,
-          'tanggal': DateFormat('yyyy-MM-dd').format(selectedDate!),
-          'jamMulai': selectedHour,
-          'jamSelesai': DateFormat('HH:mm').format(
-            DateTime(
-              selectedDate!.year,
-              selectedDate!.month,
-              selectedDate!.day,
-              int.parse(selectedHour.split(":")[0]) + bookingDuration,
-            ),
-          ),
-          'statusBooking': 'Pending',
-          'lapangId': widget.lapang.id,
-          'userId': user!.uid,
-          'namaPengguna': userName,
-          'noWhatsapp': userPhone ?? "",
-          'duration': bookingDuration.toString(),
-          'isMember': isMember,
-          'teamName': teamName,
-          'usePhotographer': usePhotographer,
-          'useReferee': useReferee,
-          'totalPrice': totalPrice,
-          'createdAt': FieldValue.serverTimestamp(), // Add created timestamp
-        };
-
-        final docRef = await FirebaseFirestore.instance
-            .collection('bookings')
-            .add(bookingData);
-
         final cart = context.read<Cart>();
+        // Note: `totalPrice` from state is now used, which is calculated dynamically.
         cart.addToCart(
           user!.uid,
-          docRef.id,
+          DateTime.now()
+              .millisecondsSinceEpoch
+              .toString(), // Unique ID for cart item
           widget.lapang,
           bookingDuration,
           DateFormat('yyyy-MM-dd').format(selectedDate!),
           selectedHour,
-          totalPrice,
+          totalPrice, // Menggunakan `totalPrice` dari state
           usePhotographer,
           useReferee,
           teamName,
+          useIceBath,
         );
 
         await _fetchUnavailableTimes();
@@ -710,15 +651,25 @@ class _DetailPageState extends State<DetailPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                isMember
-                    ? "Harga (Diskon 40%): Rp $pricePerHour / jam"
-                    : "Harga: Rp ${widget.lapang.price} / jam",
+                _getPriceRangeString(), // Gunakan fungsi baru di sini
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
               ),
+              if (isMember)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    "Harga di atas belum termasuk diskon member 10%",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
               const SizedBox(height: 10),
               const Text(
                 "Deskripsi:",
@@ -830,11 +781,11 @@ class _DetailPageState extends State<DetailPage> {
                     const Padding(
                       padding: EdgeInsets.only(left: 10),
                       // child: Text(
-                      //   "(Isi nama tim/nama pemesan terlebih dahulu)",
-                      //   style: TextStyle(
-                      //     fontSize: 14,
-                      //     color: Colors.red,
-                      //   ),
+                      //  "(Isi nama tim/nama pemesan terlebih dahulu)",
+                      //  style: TextStyle(
+                      //   fontSize: 14,
+                      //   color: Colors.red,
+                      //  ),
                       // ),
                     ),
                 ],
@@ -888,7 +839,7 @@ class _DetailPageState extends State<DetailPage> {
                     children: List.generate(
                       14,
                       (index) {
-                        final hour = 8 + index;
+                        final hour = 7 + index;
                         final bookingTime = DateTime(
                           selectedDate?.year ?? DateTime.now().year,
                           selectedDate?.month ?? DateTime.now().month,
@@ -1057,9 +1008,9 @@ class _DetailPageState extends State<DetailPage> {
                   title: "Photographer",
                   price: "Rp 200,000",
                   value: usePhotographer,
-                  onChanged: (bool? value) {
+                  onChanged: (bool value) {
                     setState(() {
-                      usePhotographer = value ?? false;
+                      usePhotographer = value;
                       _updateTotalPrice(); // Panggil fungsi ini
                     });
                   },
@@ -1070,13 +1021,30 @@ class _DetailPageState extends State<DetailPage> {
                   title: "Wasit",
                   price: "Rp 70,000",
                   value: useReferee,
-                  onChanged: (bool? value) {
+                  onChanged: (bool value) {
                     setState(() {
-                      useReferee = value ?? false;
+                      useReferee = value;
                       _updateTotalPrice(); // Panggil fungsi ini
                     });
                   },
                 ),
+                // --- [MODIFIKASI] Tampilkan Opsi Ice Bath jika kondisi terpenuhi ---
+                if (isMember && widget.lapang.name == "Lapang Minisoccer")
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: _buildServiceOption(
+                      icon: Icons.ac_unit, // Contoh ikon untuk ice bath
+                      title: "Ice Bath",
+                      price: "Rp 50,000",
+                      value: useIceBath,
+                      onChanged: (bool value) {
+                        setState(() {
+                          useIceBath = value;
+                          _updateTotalPrice();
+                        });
+                      },
+                    ),
+                  ),
               ],
             ),
           ),
