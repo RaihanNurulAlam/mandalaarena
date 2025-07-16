@@ -1,3 +1,6 @@
+// ignore_for_file: avoid_print
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class UserProvider with ChangeNotifier {
@@ -37,6 +40,42 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> fetchUserData(String uid) async {
+    if (uid.isEmpty) {
+      // Reset data jika user logout atau uid tidak valid
+      _userId = '';
+      _userName = '';
+      _userEmail = '';
+      _userPhone = '';
+      _isMember = false;
+      _points = 0;
+      notifyListeners();
+      return;
+    }
+
+    try {
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        _userId = uid;
+        _userName = data['name'] ?? 'No Name';
+        _userEmail = data['email'] ?? 'No Email';
+        _userPhone = data['phone'] ?? 'No Phone';
+        _isMember = data['isMember'] ?? false;
+        _points = data['points'] ?? 0;
+      }
+    } catch (e) {
+      print("Gagal mengambil data user: $e");
+      // Handle error, mungkin dengan mereset data
+      _userId = '';
+      _points = 0;
+    }
+
+    // Beri tahu semua widget yang mendengarkan bahwa data telah berubah.
+    notifyListeners();
+  }
+
   // Method untuk memperbarui sebagian data pengguna
   void updateUserData({
     required String userName,
@@ -50,6 +89,12 @@ class UserProvider with ChangeNotifier {
     _userPhone = userPhone;
     // _isMember tidak diubah di sini karena tidak termasuk dalam parameter
     notifyListeners();
+  }
+
+  void updateUserPoints(int newPoints) {
+    _points = newPoints;
+    notifyListeners(); // <-- Kunci utama agar UI bisa refresh
+    print("UserProvider: Poin diperbarui menjadi $_points");
   }
 
   /// Membersihkan data pengguna saat logout.

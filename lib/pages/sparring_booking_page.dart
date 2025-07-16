@@ -1,5 +1,4 @@
 // ignore_for_file: avoid_print, deprecated_member_use, unnecessary_null_comparison, unused_element
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -52,7 +51,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     _fetchLapangData();
     _loadLovedState();
     _setInitialBookingTime();
-
     // Get member status from UserProvider
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     isMember = userProvider.isMember;
@@ -60,18 +58,15 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
   void _updateTotalPrice() {
     if (selectedLapang == null) return;
-
     int pricePerHour = int.parse(selectedLapang!.price.toString());
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.6).round(); // Diskon 40% untuk member
+      pricePerHour = (pricePerHour * 0.9).round(); // Diskon 10% untuk member
     }
-
     totalPrice = bookingDuration * pricePerHour;
 
     // Tambahkan biaya tambahan untuk jam tertentu jika bukan member
     if (!isMember) {
       final int startHour = int.parse(selectedHour.split(":")[0]);
-
       if (startHour >= 13 && startHour < 18) {
         totalPrice += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
       } else if (startHour >= 19 && startHour <= 21) {
@@ -85,50 +80,12 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     }
     if (useReferee && selectedLapang!.name != "Gokart") {
       totalPrice += 70000;
-      void updateTotalPrice() {
-        if (selectedLapang == null) return;
-
-        int pricePerHour = int.parse(selectedLapang!.price.toString());
-        if (isMember) {
-          pricePerHour =
-              (pricePerHour * 0.6).round(); // Diskon 40% untuk member
-        }
-
-        totalPrice = bookingDuration * pricePerHour;
-
-        // Tambahkan biaya tambahan untuk jam tertentu jika bukan member
-        if (!isMember) {
-          final int startHour = int.parse(selectedHour.split(":")[0]);
-
-          if (startHour >= 13 && startHour < 18) {
-            totalPrice += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
-          } else if (startHour >= 19 && startHour <= 21) {
-            totalPrice += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
-          }
-        }
-
-        // Tambahkan biaya tambahan untuk layanan
-        if (usePhotographer && selectedLapang!.name != "Gokart") {
-          totalPrice += 200000;
-        }
-        if (useReferee && selectedLapang!.name != "Gokart") {
-          totalPrice += 70000;
-        }
-        // Add Ice Bath price for Mini Soccer members
-        if (useIceBath &&
-            isMember &&
-            selectedLapang!.name == "Lapang Minisoccer") {
-          totalPrice += iceBathPrice;
-        }
-
-        setState(() {});
-      }
     }
+
     // Add Ice Bath price for Mini Soccer members
     if (useIceBath && isMember && selectedLapang!.name == "Lapang Minisoccer") {
       totalPrice += iceBathPrice;
     }
-
     setState(() {});
   }
 
@@ -139,7 +96,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         (lapang) => lapang.name == widget.lapangCategory,
         orElse: () => Lapang(),
       );
-
       if (lapang.name != null) {
         setState(() {
           selectedLapang = lapang;
@@ -162,9 +118,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
   Future<void> _fetchUnavailableTimes() async {
     if (selectedDate == null || selectedLapang == null) return;
-
     final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
-
     try {
       final bookings = await FirebaseFirestore.instance
           .collection('bookings')
@@ -175,14 +129,12 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       for (var doc in bookings.docs) {
         final data = doc.data();
         final items = data['items'] as List<dynamic>?;
-
         if (items != null) {
           for (var item in items) {
             final bookingDate = item['bookingDate'] as String?;
             final time = item['time'] as String?;
             final lapangName = item['name'] as String?;
             final quantity = int.tryParse(item['quantity'] ?? '1') ?? 1;
-
             if (bookingDate == formattedDate &&
                 time != null &&
                 lapangName == selectedLapang!.name) {
@@ -194,7 +146,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
           }
         }
       }
-
       setState(() {
         unavailableTimes = times;
       });
@@ -211,11 +162,9 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     if (hour == 18) {
       return false;
     }
-
     // Periksa apakah jam tersedia dalam daftar tim dan belum dibooking
     final isTeamAvailable = widget.team.availableHours.contains("$hour:00");
     final isNotBooked = !unavailableTimes.contains("$hour:00");
-
     // Periksa apakah jam tidak berada di masa lalu
     final now = DateTime.now();
     final bookingTime = DateTime(
@@ -226,19 +175,16 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     );
     final isNotPast =
         bookingTime.isAfter(now) || bookingTime.isAtSameMomentAs(now);
-
     return isTeamAvailable && isNotBooked && isNotPast;
   }
 
   bool _isDurationAvailable(int startHour, int duration) {
     for (int i = 0; i < duration; i++) {
       final hour = startHour + i;
-
       // Jam 18:00 tidak bisa dibooking
       if (hour == 18) {
         return false;
       }
-
       if (!_isTimeSlotAvailable(hour)) {
         return false;
       }
@@ -250,7 +196,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     final now = DateTime.now();
     final availableDays = widget.team.availableDays;
     final availableHours = widget.team.availableHours;
-
     DateTime? nearestDate;
     int weekOffset = 0;
 
@@ -259,7 +204,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         final dayIndex = _getDayIndex(day);
         final date = _currentStartOfWeek
             .add(Duration(days: dayIndex + (7 * weekOffset)));
-
         if (date.isAfter(now) ||
             (date.isAtSameMomentAs(now) && _isTimeAvailable(availableHours))) {
           final isBooked = await _isDayBooked(date);
@@ -284,7 +228,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
   Future<bool> _isDayBooked(DateTime date) async {
     if (selectedLapang == null) return false;
-
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
     final bookings = await FirebaseFirestore.instance
         .collection('bookings')
@@ -294,12 +237,10 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     for (var doc in bookings.docs) {
       final data = doc.data();
       final items = data['items'] as List<dynamic>?;
-
       if (items != null) {
         for (var item in items) {
           final bookingDate = item['bookingDate'] as String?;
           final lapangName = item['name'] as String?;
-
           if (bookingDate == formattedDate &&
               lapangName == selectedLapang!.name) {
             return true;
@@ -313,7 +254,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   bool _isTimeAvailable(List<String> availableHours) {
     final now = DateTime.now();
     final currentHour = now.hour;
-
     for (var hour in availableHours) {
       final bookingHour = int.parse(hour.split(":")[0]);
       if (bookingHour > currentHour) {
@@ -343,7 +283,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
-
     if (date != null) {
       setState(() {
         selectedDate = date;
@@ -397,8 +336,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            "Tidak bisa booking pada jam tersebut karena melebihi jam tutup!",
-          ),
+              "Tidak bisa booking pada jam tersebut karena melebihi jam tutup!"),
         ),
       );
       return;
@@ -407,9 +345,8 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     if (!_isDurationAvailable(currentStartHour, bookingDuration)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            "Slot waktu yang dipilih sudah dibooking oleh orang lain!",
-          ),
+          content:
+              Text("Slot waktu yang dipilih sudah dibooking oleh orang lain!"),
         ),
       );
       return;
@@ -500,7 +437,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
   void popUpDialog() {
     final formattedDate = DateFormat('dd MMMM yyyy').format(selectedDate!);
-
     showModalBottomSheet(
       context: context,
       isDismissible: false,
@@ -598,7 +534,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
     int pricePerHour = int.parse(selectedLapang!.price.toString());
     if (isMember) {
-      pricePerHour = (pricePerHour * 0.6).round();
+      pricePerHour = (pricePerHour * 0.9).round();
     }
 
     return Scaffold(
@@ -716,7 +652,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                     const SizedBox(height: 10),
                     Text(
                       isMember
-                          ? "Harga (Diskon 40%): Rp $pricePerHour / jam"
+                          ? "Harga (Diskon 10%): Rp $pricePerHour / jam"
                           : "Harga: Rp ${selectedLapang!.price} / jam",
                       style: const TextStyle(
                         fontSize: 20,
@@ -856,7 +792,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                             final timeLabel = "$hour:00";
                             final isAvailable = _isTimeSlotAvailable(hour);
                             final isSelected = selectedHour == timeLabel;
-
                             return ChoiceChip(
                               label: Text(timeLabel),
                               selected: isSelected,
@@ -874,8 +809,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                                   : null,
                               backgroundColor: isAvailable
                                   ? Colors.grey.shade100
-                                  : Colors.grey
-                                      .shade300, // Nonaktifkan warna untuk jam tidak tersedia
+                                  : Colors.grey.shade300,
                               labelStyle: TextStyle(
                                 color: isAvailable ? Colors.black : Colors.grey,
                               ),
@@ -922,7 +856,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                                     ? _isDurationAvailable(
                                         currentStartHour, duration)
                                     : false;
-
                             return ChoiceChip(
                               label: Text("$duration Jam"),
                               selected: bookingDuration == duration,
@@ -1132,7 +1065,6 @@ class WeeklyCalendar extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool isIconOnTop = constraints.maxWidth < 300;
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1161,7 +1093,6 @@ class WeeklyCalendar extends StatelessWidget {
                           date.day == selectedDate!.day;
                       final dayName = DateFormat('EEEE').format(date);
                       final isAvailable = availableDays.contains(dayName);
-
                       return GestureDetector(
                         onTap: isPast || !isAvailable
                             ? null
