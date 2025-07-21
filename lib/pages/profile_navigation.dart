@@ -96,7 +96,7 @@ class _ProfilePageNavigationState extends State<ProfilePageNavigation> {
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                icon: const Icon(Icons.login),
+                icon: const Icon(Icons.login, color: Colors.white),
                 label: const Text("Login Sekarang"),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,

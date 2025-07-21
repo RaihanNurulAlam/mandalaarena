@@ -11,6 +11,7 @@ class UserProvider with ChangeNotifier {
   String _userPhone = "";
   bool _isMember = false;
   int _points = 0;
+  DateTime? _memberUntil;
 
   String get userId => _userId;
   String get userName => _userName;
@@ -19,6 +20,7 @@ class UserProvider with ChangeNotifier {
   String get userPhone => _userPhone;
   bool get isMember => _isMember;
   int get points => _points;
+  DateTime? get memberUntil => _memberUntil;
 
   // Method untuk mengatur data pengguna saat login
   void setUserData({
@@ -40,16 +42,17 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  bool get isMembershipActive {
+    if (!_isMember || _memberUntil == null) {
+      return false;
+    }
+    // Cek apakah tanggal 'memberUntil' masih di masa depan
+    return _memberUntil!.isAfter(DateTime.now());
+  }
+
   Future<void> fetchUserData(String uid) async {
     if (uid.isEmpty) {
-      // Reset data jika user logout atau uid tidak valid
-      _userId = '';
-      _userName = '';
-      _userEmail = '';
-      _userPhone = '';
-      _isMember = false;
-      _points = 0;
-      notifyListeners();
+      clearUserData(); // Panggil clearUserData untuk mereset semua
       return;
     }
 
@@ -64,15 +67,19 @@ class UserProvider with ChangeNotifier {
         _userPhone = data['phone'] ?? 'No Phone';
         _isMember = data['isMember'] ?? false;
         _points = data['points'] ?? 0;
+        // 4. MODIFIKASI: Ambil data 'memberUntil' dari Firestore
+        _memberUntil = (data['memberUntil'] as Timestamp?)?.toDate();
       }
     } catch (e) {
       print("Gagal mengambil data user: $e");
-      // Handle error, mungkin dengan mereset data
-      _userId = '';
-      _points = 0;
+      clearUserData();
     }
+    notifyListeners();
+  }
 
-    // Beri tahu semua widget yang mendengarkan bahwa data telah berubah.
+  void updateMembershipStatus(bool newIsMember, DateTime newMemberUntil) {
+    _isMember = newIsMember;
+    _memberUntil = newMemberUntil;
     notifyListeners();
   }
 
@@ -107,6 +114,7 @@ class UserProvider with ChangeNotifier {
     _userPhone = "";
     _isMember = false;
     _points = 0;
+    _memberUntil = null;
     notifyListeners();
   }
 }

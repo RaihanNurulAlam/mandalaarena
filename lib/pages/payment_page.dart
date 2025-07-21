@@ -1,4 +1,4 @@
-// ignore_for_file: use_key_in_widget_constructors, use_build_context_synchronously, avoid_print, deprecated_member_use
+// ignore_for_file: use_key_in_widget_constructors, use_build_context_synchronously, avoid_print, deprecated_member_use, unnecessary_brace_in_string_interps
 
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';

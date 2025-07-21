@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:mandalaarenaapp/pages/cart_page.dart';
+import 'package:mandalaarenaapp/pages/booking_summary_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
@@ -516,7 +516,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   void goToCart() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => CartPage()),
+      MaterialPageRoute(builder: (context) => BookingSummaryPage()),
     );
   }
 

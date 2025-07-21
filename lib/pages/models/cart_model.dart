@@ -13,7 +13,7 @@ class CartModel {
   String? noWhatsapp;
   bool? usePhotographer;
   bool? useReferee;
-  bool? useIceBath; // --- [MODIFIKASI] Tambahkan field useIceBath
+  bool? useIceBath;
   int? totalPrice;
   String? teamName;
 
@@ -32,37 +32,41 @@ class CartModel {
     this.noWhatsapp,
     this.usePhotographer,
     this.useReferee,
-    this.useIceBath, // --- [MODIFIKASI] Tambahkan di constructor
+    this.useIceBath,
     this.totalPrice,
     this.teamName,
   });
 
-  // Konversi dari JSON Firebase ke CartModel
-  CartModel.fromJson(Map<String, dynamic> json, {String? documentId}) {
-    docId = documentId;
-    userId = json['userId'];
-    id = json['lapangId'];
-    name = json['name'];
-    price = json['price'];
-    imagePath = json['imagePath'];
-    quantity = json['quantity'];
-    bookingDate = json['bookingDate'];
-    time = json['time'];
-    duration = json['duration'];
-    namaPengguna = json['namaPengguna'];
-    noWhatsapp = json['noWhatsapp'];
-    usePhotographer = json['usePhotographer'];
-    useReferee = json['useReferee'];
-    useIceBath = json['useIceBath']; // --- [MODIFIKASI] Ambil dari JSON
-    totalPrice = json['totalPrice'];
-    teamName = json['teamName'];
+  // Konversi dari Map Firestore ke CartModel
+  // Nama diubah menjadi fromMap untuk konsistensi
+  factory CartModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
+    return CartModel(
+      docId: documentId,
+      userId: map['userId'],
+      id: map['lapangId'], // Menggunakan 'lapangId' sesuai kode Anda
+      name: map['name'],
+      price: map['price'],
+      imagePath: map['imagePath'],
+      quantity: map['quantity'],
+      bookingDate: map['bookingDate'],
+      time: map['time'],
+      duration: map['duration'],
+      namaPengguna: map['namaPengguna'],
+      noWhatsapp: map['noWhatsapp'],
+      usePhotographer: map['usePhotographer'],
+      useReferee: map['useReferee'],
+      useIceBath: map['useIceBath'],
+      totalPrice: map['totalPrice'],
+      teamName: map['teamName'],
+    );
   }
 
-  // Konversi dari CartModel ke JSON Firebase
-  Map<String, dynamic> toJson() {
+  // Konversi dari CartModel ke Map untuk Firestore
+  // Nama diubah menjadi toMap untuk memperbaiki error
+  Map<String, dynamic> toMap() {
     return {
       'userId': userId,
-      'lapangId': id,
+      'lapangId': id, // Menggunakan 'lapangId' sesuai kode Anda
       'name': name,
       'price': price,
       'imagePath': imagePath,
@@ -74,7 +78,7 @@ class CartModel {
       'noWhatsapp': noWhatsapp,
       'usePhotographer': usePhotographer,
       'useReferee': useReferee,
-      'useIceBath': useIceBath, // --- [MODIFIKASI] Sertakan dalam JSON
+      'useIceBath': useIceBath,
       'totalPrice': totalPrice,
       'teamName': teamName,
     };

@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
+import 'package:mandalaarenaapp/pages/booking_summary_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
 // import 'package:mandalaarenaapp/pages/galery_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
@@ -109,7 +111,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void goToCart() {
-    Navigator.pushNamed(context, '/cart');
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => BookingSummaryPage()));
   }
 
   void _toggleMenu() {
@@ -259,7 +262,8 @@ class _HomePageState extends State<HomePage> {
                             builder: (context) => const LoginScreen()),
                       );
                     },
-                    icon: const Icon(Icons.login, size: 18),
+                    icon:
+                        const Icon(Icons.login, size: 18, color: Colors.white),
                     label: const Text("Login"),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
@@ -497,7 +501,6 @@ class _HomePageState extends State<HomePage> {
         children: [
           _buildDiscountBanner(context),
           // bestSellerWidget(context),
-          // SizedBox(height: 20),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Align(
@@ -512,9 +515,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          SizedBox(height: 20),
           _buildGridLapangs(context),
-          SizedBox(height: 20),
           // _buildFAQSection(),
         ],
       ),
@@ -581,86 +582,26 @@ class _HomePageState extends State<HomePage> {
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 20, vertical: 10), // Padding di sekeliling GridView
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: MediaQuery.of(context).size.width > 1650
-            ? 5 // Jika lebar layar lebih dari 1650px, tampilkan 5 kolom
+            ? 5
             : MediaQuery.of(context).size.width > 1200
-                ? 4 // Jika lebar layar lebih dari 1200px, tampilkan 4 kolom
+                ? 4
                 : MediaQuery.of(context).size.width > 750
-                    ? 3 // Jika layar lebih dari 750px, tampilkan 3 kolom (tablet)
-                    : 2, // Selain itu (mobile), tampilkan 2 kolom
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
+                    ? 3
+                    : 2,
+        mainAxisSpacing: 20, // Sedikit perbesar jarak
+        crossAxisSpacing: 20, // Sedikit perbesar jarak
         childAspectRatio: 4 / 5,
       ),
       itemCount: lapangs.length,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
       itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () {
-            goToDetailLapang(index);
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: AssetImage(
-                    lapangs[index].imagePath ?? 'assets/default_image.jpg'),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.2),
-                  BlendMode.darken,
-                ),
-              ),
-            ),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: const BoxDecoration(
-                  color: Colors.white60,
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      lapangs[index].name ?? 'Lapang Tanpa Nama',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Rp. ${lapangs[index].price}',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(Icons.star, color: Colors.yellow, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          '${lapangs[index].rating ?? 0.0}',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+        // Panggil widget item yang sudah kita buat
+        return LapangGridItem(
+          lapang: lapangs[index],
+          onTap: () => goToDetailLapang(index),
         );
       },
     );
@@ -700,56 +641,69 @@ class _HomePageState extends State<HomePage> {
         ),
         itemBuilder: (context, index, realIndex) {
           final discount = discountBanners[index];
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Stack(
-              children: [
-                // Gambar sebagai latar belakang
-                Positioned.fill(
-                  child: Image.asset(
+          return Container(
+            margin: const EdgeInsets.symmetric(
+                horizontal: 5.0), // Beri sedikit jarak antar banner
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                fit: StackFit.expand, // Pastikan Stack memenuhi seluruh area
+                children: [
+                  // Gambar Latar Belakang
+                  Image.asset(
                     discount["image"]!,
                     fit: BoxFit.cover,
-                    color: Colors.black.withOpacity(0.3),
-                    colorBlendMode: BlendMode.darken,
                   ),
-                ),
-                // Lapisan putih untuk deskripsi
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
-                    decoration: const BoxDecoration(
-                      color: Colors.white60,
-                      borderRadius: BorderRadius.vertical(
-                        bottom: Radius.circular(20),
-                      ),
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        discount["title"]!,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(
-                        discount["description"]!,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                        ),
-                      ),
-                      trailing: const Icon(
-                        CupertinoIcons.arrow_right,
-                        size: 28,
-                        color: Colors.black,
+                  // Lapisan Gradasi untuk Teks
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.center,
+                        colors: [
+                          Colors.black.withOpacity(0.8),
+                          Colors.transparent,
+                        ],
                       ),
                     ),
                   ),
-                ),
-              ],
+                  // Konten Teks
+                  Positioned(
+                    bottom: 20.0,
+                    left: 20.0,
+                    right: 20.0,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          discount["title"]!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              // Tambahkan shadow agar teks lebih terbaca
+                              Shadow(
+                                blurRadius: 10.0,
+                                color: Colors.black54,
+                                offset: Offset(2.0, 2.0),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8.0),
+                        Text(
+                          discount["description"]!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -934,6 +888,272 @@ class ProfilePage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class LapangGridItem extends StatefulWidget {
+  final Lapang lapang; // Ganti 'Lapang' dengan nama model Anda
+  final VoidCallback onTap;
+
+  const LapangGridItem({
+    Key? key,
+    required this.lapang,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  _LapangGridItemState createState() => _LapangGridItemState();
+}
+
+class _LapangGridItemState extends State<LapangGridItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          // --- Animasi saat hover ---
+          transform: _isHovered
+              ? (Matrix4.identity()..scale(1.05))
+              : Matrix4.identity(),
+          transformAlignment: FractionalOffset.center,
+          child: Card(
+            // --- Efek shadow dan corner radius ---
+            elevation: _isHovered ? 10 : 5,
+            shadowColor: Colors.black.withOpacity(0.3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            clipBehavior:
+                Clip.antiAlias, // Penting agar gambar mengikuti corner radius
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Gambar Latar
+                Image.asset(
+                  widget.lapang.imagePath ?? 'assets/default_image.jpg',
+                  fit: BoxFit.cover,
+                ),
+
+                // --- Efek Gradien ---
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.1),
+                        Colors.black.withOpacity(0.7),
+                      ],
+                      stops: const [0.5, 0.7, 1.0],
+                    ),
+                  ),
+                ),
+
+                // Konten Teks
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.lapang.name ?? 'Lapang Tanpa Nama',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 4.0,
+                                color: Colors.black54,
+                                offset: Offset(1.0, 1.0),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Mulai dari Rp. ${widget.lapang.price}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BannerModel {
+  final String imageUrl;
+  final String title;
+  final String description;
+
+  BannerModel({
+    required this.imageUrl,
+    required this.title,
+    required this.description,
+  });
+
+  // Factory constructor untuk membuat instance dari Firestore document
+  factory BannerModel.fromFirestore(DocumentSnapshot doc) {
+    Map data = doc.data() as Map<String, dynamic>;
+    return BannerModel(
+      imageUrl: data['imageUrl'] ?? '',
+      title: data['title'] ?? 'Judul Tidak Tersedia',
+      description: data['description'] ?? 'Deskripsi tidak tersedia.',
+    );
+  }
+}
+
+// 2. Buat Widget yang dinamis
+class DiscountBanner extends StatefulWidget {
+  const DiscountBanner({super.key});
+
+  @override
+  State<DiscountBanner> createState() => _DiscountBannerState();
+}
+
+class _DiscountBannerState extends State<DiscountBanner> {
+  // Fungsi untuk mengambil data dari koleksi 'banners' di Firestore
+  Future<List<BannerModel>> _fetchBanners() async {
+    QuerySnapshot snapshot =
+        await FirebaseFirestore.instance.collection('banners').get();
+
+    // Filter dokumen yang aktif saja (opsional)
+    // QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('banners').where('isActive', isEqualTo: true).get();
+
+    return snapshot.docs.map((doc) => BannerModel.fromFirestore(doc)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<BannerModel>>(
+      future: _fetchBanners(),
+      builder: (context, snapshot) {
+        // Saat data sedang dimuat
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // Jika terjadi error
+        if (snapshot.hasError) {
+          return const Center(child: Text("Gagal memuat banner promo."));
+        }
+
+        // Jika tidak ada data atau data kosong
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const SizedBox.shrink(); // Tidak menampilkan apa-apa
+        }
+
+        // Jika data berhasil dimuat
+        final banners = snapshot.data!;
+
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 10),
+          child: CarouselSlider.builder(
+            itemCount: banners.length,
+            options: CarouselOptions(
+              height: 220, // Sesuaikan tinggi
+              autoPlay: true,
+              autoPlayInterval: const Duration(seconds: 5),
+              enlargeCenterPage: true,
+              viewportFraction: 0.9, // Menampilkan sedikit banner di samping
+              aspectRatio: 16 / 9,
+            ),
+            itemBuilder: (context, index, realIndex) {
+              final banner = banners[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Ganti Image.asset menjadi Image.network
+                      Image.network(
+                        banner.imageUrl,
+                        fit: BoxFit.cover,
+                        // Loading builder untuk menampilkan progress saat gambar di-load
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.error, color: Colors.red);
+                        },
+                      ),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.center,
+                            colors: [
+                              Colors.black.withOpacity(0.8),
+                              Colors.transparent
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 20.0,
+                        left: 20.0,
+                        right: 20.0,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              banner.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                shadows: [
+                                  Shadow(
+                                      blurRadius: 10.0, color: Colors.black54)
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 8.0),
+                            Text(
+                              banner.description,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

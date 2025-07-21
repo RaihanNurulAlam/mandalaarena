@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, unused_element, deprecated_member_use
+// ignore_for_file: use_build_context_synchronously, unused_element, deprecated_member_use, use_super_parameters
 
 import 'dart:convert';
 
@@ -12,6 +12,7 @@ import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/cubit/navigation_cubit.dart';
 // import 'package:mandalaarenaapp/pages/about_page.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
+import 'package:mandalaarenaapp/pages/booking_summary_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
 // import 'package:mandalaarenaapp/pages/galery_page.dart';
 // import 'package:mandalaarenaapp/pages/information_page.dart';
@@ -61,7 +62,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   void goToCart() {
-    Navigator.pushNamed(context, '/cart');
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => BookingSummaryPage()));
   }
 
   void _toggleMenu() {
@@ -441,86 +443,26 @@ class _AdminHomePageState extends State<AdminHomePage> {
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 20, vertical: 10), // Padding di sekeliling GridView
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: MediaQuery.of(context).size.width > 1650
-            ? 5 // Jika lebar layar lebih dari 1650px, tampilkan 5 kolom
+            ? 5
             : MediaQuery.of(context).size.width > 1200
-                ? 4 // Jika lebar layar lebih dari 1200px, tampilkan 4 kolom
+                ? 4
                 : MediaQuery.of(context).size.width > 750
-                    ? 3 // Jika layar lebih dari 750px, tampilkan 3 kolom (tablet)
-                    : 2, // Selain itu (mobile), tampilkan 2 kolom
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
+                    ? 3
+                    : 2,
+        mainAxisSpacing: 20, // Sedikit perbesar jarak
+        crossAxisSpacing: 20, // Sedikit perbesar jarak
         childAspectRatio: 4 / 5,
       ),
       itemCount: lapangs.length,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
       itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () {
-            goToDetailLapang(index);
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: AssetImage(
-                    lapangs[index].imagePath ?? 'assets/default_image.jpg'),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.2),
-                  BlendMode.darken,
-                ),
-              ),
-            ),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: const BoxDecoration(
-                  color: Colors.white60,
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      lapangs[index].name ?? 'Lapang Tanpa Nama',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      'Rp. ${lapangs[index].price}',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(Icons.star, color: Colors.yellow, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          '${lapangs[index].rating ?? 0.0}',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+        // Panggil widget item yang sudah kita buat
+        return LapangGridItem(
+          lapang: lapangs[index],
+          onTap: () => goToDetailLapang(index),
         );
       },
     );
@@ -669,6 +611,120 @@ class ProfilePage extends StatelessWidget {
               child: const Text("Kembali ke beranda"),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class LapangGridItem extends StatefulWidget {
+  final Lapang lapang; // Ganti 'Lapang' dengan nama model Anda
+  final VoidCallback onTap;
+
+  const LapangGridItem({
+    Key? key,
+    required this.lapang,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  _LapangGridItemState createState() => _LapangGridItemState();
+}
+
+class _LapangGridItemState extends State<LapangGridItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          // --- Animasi saat hover ---
+          transform: _isHovered
+              ? (Matrix4.identity()..scale(1.05))
+              : Matrix4.identity(),
+          transformAlignment: FractionalOffset.center,
+          child: Card(
+            // --- Efek shadow dan corner radius ---
+            elevation: _isHovered ? 10 : 5,
+            shadowColor: Colors.black.withOpacity(0.3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            clipBehavior:
+                Clip.antiAlias, // Penting agar gambar mengikuti corner radius
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Gambar Latar
+                Image.asset(
+                  widget.lapang.imagePath ?? 'assets/default_image.jpg',
+                  fit: BoxFit.cover,
+                ),
+
+                // --- Efek Gradien ---
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.1),
+                        Colors.black.withOpacity(0.7),
+                      ],
+                      stops: const [0.5, 0.7, 1.0],
+                    ),
+                  ),
+                ),
+
+                // Konten Teks
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.lapang.name ?? 'Lapang Tanpa Nama',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 4.0,
+                                color: Colors.black54,
+                                offset: Offset(1.0, 1.0),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Mulai dari Rp. ${widget.lapang.price}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
