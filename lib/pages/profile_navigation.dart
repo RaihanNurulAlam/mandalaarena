@@ -42,6 +42,7 @@ class _ProfilePageNavigationState extends State<ProfilePageNavigation> {
             userPhone: userData['phone'] ?? '',
             isMember: isMember,
             points: userData['points'] ?? 0,
+            memberUntil: (userData['memberUntil'] as Timestamp?)?.toDate(),
           );
         }
       }

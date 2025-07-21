@@ -23,16 +23,16 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
             ),
 
-            MyButtons(
-                onTap: () async {
-                  await FirebaseServices().googleSignOut();
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
-                  );
-                },
-                text: "Log Out"),
+            // MyButtons(
+            //     onTap: () async {
+            //       await FirebaseServices().googleSignOut();
+            //       Navigator.of(context).pushReplacement(
+            //         MaterialPageRoute(
+            //           builder: (context) => const LoginScreen(),
+            //         ),
+            //       );
+            //     },
+            //     text: "Log Out"),
             // for google sign in ouser detail
             // Image.network("${FirebaseAuth.instance.currentUser!.photoURL}"),
             // Text("${FirebaseAuth.instance.currentUser!.email}"),

@@ -1,4 +1,6 @@
-// ignore_for_file: avoid_print
+// login_page.dart
+
+// ignore_for_file: use_build_context_synchronously, avoid_print, deprecated_member_use
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -38,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     passwordController.dispose();
   }
 
-  // Email and password auth method
+  /// Fungsi untuk login menggunakan Email & Password.
   void loginUser() async {
     setState(() {
       isLoading = true;
@@ -49,76 +51,90 @@ class _LoginScreenState extends State<LoginScreen> {
       password: passwordController.text,
     );
 
-    setState(() {
-      isLoading = false;
-    });
-
     if (res == "Berhasil") {
       try {
         User? currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
-          DocumentReference userRef = FirebaseFirestore.instance
+          // 1. Pasang listener UserProvider untuk sinkronisasi data real-time.
+          Provider.of<UserProvider>(context, listen: false)
+              .listenToUserData(currentUser.uid);
+
+          // 2. Muat data keranjang belanja.
+          final cartProvider = Provider.of<Cart>(context, listen: false);
+          await cartProvider.loadCart(currentUser.uid);
+
+          // 3. Cek peran user (Admin/Bukan) untuk navigasi.
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
               .collection('users')
-              .doc(currentUser.uid);
+              .doc(currentUser.uid)
+              .get();
 
-          DocumentSnapshot userDoc = await userRef.get();
+          bool isAdmin =
+              (userDoc.data() as Map<String, dynamic>)['isAdmin'] ?? false;
+          Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
 
-          if (userDoc.exists) {
-            if (!userDoc.data().toString().contains('member')) {
-              await userRef.update({'member': false});
-              print("Field `member` berhasil ditambahkan ke Firestore.");
-            }
-            if (!userDoc.data().toString().contains('points')) {
-              await userRef.update({'points': 0});
-              print("Field `points` berhasil ditambahkan ke Firestore.");
-            }
-            bool isAdmin = userDoc.get('isAdmin') ?? false;
-            bool isMember = userDoc.get('member') ?? false;
-            Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
-
-            print("User is admin: $isAdmin");
-            print("User is member: $isMember");
-            print("Navigating to: ${targetPage.runtimeType}");
-
-            final cartProvider = Provider.of<Cart>(context, listen: false);
-            await cartProvider.loadCart(currentUser.uid);
-
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => targetPage),
-              (route) => false,
-            );
-
-            final userData = userDoc.data() as Map<String, dynamic>;
-            final String userName = userData['name'] ?? "Nama User";
-            final String userEmail =
-                userData['email'] ?? "Email tidak ditemukan";
-            final String profileImageUrl = userData['profileImageUrl'] ??
-                "https://via.placeholder.com/150";
-            final String userPhone = userData['phone'] ?? "";
-            final int userPoints = userData['points'] ?? 0;
-
-            if (mounted) {
-              Provider.of<UserProvider>(context, listen: false).setUserData(
-                userId: currentUser.uid,
-                userName: userName,
-                userEmail: userEmail,
-                profileImageUrl: profileImageUrl,
-                userPhone: userPhone,
-                isMember: isMember,
-                points: userPoints,
-              );
-            }
-          } else {
-            showSnackBar(context, "Data pengguna tidak ditemukan.");
-          }
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => targetPage),
+            (route) => false,
+          );
         }
       } catch (e) {
-        print("Error Firestore: $e");
-        showSnackBar(context, "Terjadi kesalahan. Silakan coba lagi.");
+        showSnackBar(context, "Terjadi kesalahan saat mengambil data: $e");
       }
     } else {
       showSnackBar(context, res);
+    }
+
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  /// Fungsi untuk login menggunakan Google.
+  void loginWithGoogle() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final user = await FirebaseServices().signInWithGoogle(context);
+
+    if (user != null) {
+      try {
+        // 1. Pasang listener UserProvider.
+        Provider.of<UserProvider>(context, listen: false)
+            .listenToUserData(user.uid);
+
+        // 2. Muat data keranjang.
+        final cartProvider = Provider.of<Cart>(context, listen: false);
+        await cartProvider.loadCart(user.uid);
+
+        // 3. Cek peran user untuk navigasi.
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        bool isAdmin =
+            (userDoc.data() as Map<String, dynamic>)['isAdmin'] ?? false;
+        Widget targetPage = isAdmin ? AdminHomePage() : HomePage();
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => targetPage),
+          (route) => false,
+        );
+      } catch (e) {
+        showSnackBar(context, "Terjadi kesalahan: $e");
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -138,13 +154,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ? 500
                       : double.infinity,
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment
-                        .center, // Konten berada di tengah secara vertikal
-                    crossAxisAlignment: CrossAxisAlignment
-                        .center, // Konten berada di tengah secara horizontal
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(
-                        height: height / 4, // Sesuaikan tinggi gambar
+                        height: height / 4,
                         child: Image.asset('images/login.jpg'),
                       ),
                       Padding(
@@ -199,21 +213,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: MyButtons(onTap: loginUser, text: "Masuk"),
                       ),
                       const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 30),
                         child: Row(
                           children: [
                             Expanded(
-                              child:
-                                  Container(height: 1, color: Colors.black26),
+                              child: Divider(color: Colors.black26),
                             ),
-                            const Padding(
+                            Padding(
                               padding: EdgeInsets.symmetric(horizontal: 10),
                               child: Text("atau"),
                             ),
                             Expanded(
-                              child:
-                                  Container(height: 1, color: Colors.black26),
+                              child: Divider(color: Colors.black26),
                             ),
                           ],
                         ),
@@ -236,66 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         BorderSide(color: Colors.grey.shade300),
                                   ),
                                 ),
-                                onPressed: () async {
-                                  final user = await FirebaseServices()
-                                      .signInWithGoogle(context);
-                                  if (user != null) {
-                                    final String userName =
-                                        user.displayName ?? "Nama User";
-                                    final String userEmail =
-                                        user.email ?? "Email tidak ditemukan";
-                                    final String profileImageUrl =
-                                        user.photoURL ??
-                                            "https://via.placeholder.com/150";
-                                    final String userPhone = user.phoneNumber ??
-                                        "Nomor telepon tidak ditemukan";
-
-                                    DocumentReference userRef =
-                                        FirebaseFirestore.instance
-                                            .collection('users')
-                                            .doc(user.uid);
-                                    DocumentSnapshot userDoc =
-                                        await userRef.get();
-
-                                    if (!userDoc.exists) {
-                                      await userRef.set({
-                                        'name': userName,
-                                        'email': userEmail,
-                                        'profileImageUrl': profileImageUrl,
-                                        'phone': userPhone,
-                                        'uid': user.uid,
-                                        'points': 0,
-                                        'isAdmin': false,
-                                        'member': false,
-                                      });
-                                    }
-
-                                    bool isMember =
-                                        userDoc.get('member') ?? false;
-
-                                    if (mounted) {
-                                      Provider.of<UserProvider>(context,
-                                              listen: false)
-                                          .setUserData(
-                                        userId: user.uid,
-                                        userName: userName,
-                                        userEmail: userEmail,
-                                        profileImageUrl: profileImageUrl,
-                                        userPhone: userPhone,
-                                        isMember: isMember,
-                                        points: userDoc.get('points') ?? 0,
-                                      );
-
-                                      Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => HomePage(),
-                                        ),
-                                        (route) => false,
-                                      );
-                                    }
-                                  }
-                                },
+                                onPressed: isLoading ? null : loginWithGoogle,
                                 child: Image.network(
                                   "https://ouch-cdn2.icons8.com/VGHyfDgzIiyEwg3RIll1nYupfj653vnEPRLr0AeoJ8g/rs:fit:456:456/czM6Ly9pY29uczgu/b3VjaC1wcm9kLmFz/c2V0cy9wbmcvODg2/LzRjNzU2YThjLTQx/MjgtNGZlZS04MDNl/LTAwMTM0YzEwOTMy/Ny5wbmc.png",
                                   height: 32,
@@ -303,8 +256,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: const PhoneAuthentication(),
+                            const Expanded(
+                              child: PhoneAuthentication(),
                             ),
                           ],
                         ),
@@ -337,19 +290,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-            // Tombol kembali yang dinamis
+            // Tampilkan loading indicator di tengah layar jika isLoading true
+            if (isLoading)
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             Positioned(
               top: 10,
               left: 10,
               child: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  // Gunakan ini untuk kembali ke halaman sebelumnya
                   Navigator.pop(context);
                 },
               ),
             ),
-            // Tombol bantuan (HelpPage)
             Positioned(
               top: 10,
               right: 10,
@@ -367,27 +327,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Container socialIcon(image) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 32,
-        vertical: 15,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFedf0f8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.black45,
-          width: 2,
-        ),
-      ),
-      child: Image.network(
-        image,
-        height: 40,
       ),
     );
   }

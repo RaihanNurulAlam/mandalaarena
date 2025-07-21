@@ -1,9 +1,15 @@
+// signup.dart
+
+// ignore_for_file: use_build_context_synchronously, avoid_print
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Widget/button.dart';
 import 'package:mandalaarenaapp/pages/help_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
+import 'package:mandalaarenaapp/provider/user_provider.dart'; // <-- 1. TAMBAHKAN IMPORT
+import 'package:provider/provider.dart'; // <-- 2. TAMBAHKAN IMPORT
 import '../Services/authentication.dart';
 import '../Widget/snackbar.dart';
 import '../Widget/text_field.dart';
@@ -38,6 +44,7 @@ class _SignupScreenState extends State<SignupScreen> {
       isLoading = true;
     });
 
+    // Membuat user di Firebase Authentication
     String res = await AuthMethod().signupUser(
       email: emailController.text,
       password: passwordController.text,
@@ -46,13 +53,11 @@ class _SignupScreenState extends State<SignupScreen> {
     );
 
     if (res == "Berhasil") {
-      setState(() {
-        isLoading = false;
-      });
-
       try {
         String userId = FirebaseAuth.instance.currentUser!.uid;
 
+        // --- PERUBAHAN DI SINI ---
+        // Menambahkan field 'memberUntil' saat membuat user baru di Firestore
         await FirebaseFirestore.instance.collection('users').doc(userId).set({
           'name': nameController.text,
           'email': emailController.text,
@@ -62,24 +67,39 @@ class _SignupScreenState extends State<SignupScreen> {
           'points': 0,
           'isAdmin': false,
           'member': false,
+          'memberUntil': null, // <-- 3. TAMBAHKAN FIELD INI
         });
 
-        Navigator.of(context).pushReplacement(
+        // --- PERUBAHAN DI SINI ---
+        // Panggil listener di UserProvider agar state aplikasi ter-update
+        // dengan data pengguna yang baru daftar.
+        Provider.of<UserProvider>(context, listen: false)
+            .listenToUserData(userId); // <-- 4. TAMBAHKAN BARIS INI
+
+        // Navigasi ke HomePage setelah semua proses selesai
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (context) => HomePage(),
           ),
+          (route) => false,
         );
       } catch (e) {
+        showSnackBar(context, 'Gagal menyimpan data: ${e.toString()}');
+      } finally {
+        // Pastikan loading indicator berhenti meskipun ada error
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+        }
+      }
+    } else {
+      showSnackBar(context, res);
+      if (mounted) {
         setState(() {
           isLoading = false;
         });
-        showSnackBar(context, 'Gagal menyimpan ke firebase: ${e.toString()}');
       }
-    } else {
-      setState(() {
-        isLoading = false;
-      });
-      showSnackBar(context, res);
     }
   }
 
@@ -99,13 +119,11 @@ class _SignupScreenState extends State<SignupScreen> {
                       ? 500
                       : double.infinity,
                   child: Column(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center, // Konten di tengah vertikal
-                    crossAxisAlignment: CrossAxisAlignment
-                        .center, // Konten di tengah horizontal
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(
-                        height: height / 4, // Ukuran gambar
+                        height: height / 4,
                         child: Image.asset('images/signup.jpeg'),
                       ),
                       Padding(
@@ -124,7 +142,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           icon: Icons.email,
                           textEditingController: emailController,
                           hintText: 'Masukan email anda',
-                          textInputType: TextInputType.text,
+                          textInputType: TextInputType.emailAddress,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -134,7 +152,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           icon: Icons.lock,
                           textEditingController: passwordController,
                           hintText: 'Masukan password anda',
-                          textInputType: TextInputType.text,
+                          textInputType: TextInputType.visiblePassword,
                           isPass: !isPasswordVisible,
                         ),
                       ),
@@ -200,25 +218,22 @@ class _SignupScreenState extends State<SignupScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20), // Jarak bawah
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
             ),
-            // Tombol kembali yang dinamis
             Positioned(
               top: 10,
               left: 10,
               child: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  // Gunakan ini untuk kembali ke halaman sebelumnya
                   Navigator.pop(context);
                 },
               ),
             ),
-            // Tombol bantuan (HelpPage)
             Positioned(
               top: 10,
               right: 10,

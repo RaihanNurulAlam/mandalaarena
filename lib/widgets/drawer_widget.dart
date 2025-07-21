@@ -31,6 +31,8 @@ class DrawerWidget extends StatelessWidget {
             userPhone: userData['phone'] ?? '',
             isMember: isMember,
             points: userData['points'] ?? 0,
+            memberUntil: (userData['memberUntil'] as Timestamp?)
+                ?.toDate(), // Tambahkan memberUntil
           );
         }
       }
