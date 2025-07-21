@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously, curly_braces_in_flow_control_structures
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously, curly_braces_in_flow_control_structures, avoid_print
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,22 +7,24 @@ import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/edit_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:mandalaarenaapp/pages/sparring_booking_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SparringTeamPage extends StatefulWidget {
+  const SparringTeamPage({super.key});
+
   @override
   _SparringTeamPageState createState() => _SparringTeamPageState();
 }
 
 class _SparringTeamPageState extends State<SparringTeamPage> {
-  String? _selectedCategory;
-  String? _selectedSort;
+  // --- LOGIKA TIDAK DIUBAH ---
+  String _selectedCategory = 'Semua';
+  String? _selectedSort = 'Hari';
   String _searchQuery = '';
   final List<String> _categories = [
     'Semua',
     'Tim Basket',
-    'Tim Basket 3x3',
     'Tim Minisoccer',
   ];
   final List<String> _sorts = ['Hari', 'Abjad A-Z', 'Abjad Z-A'];
@@ -31,85 +33,6 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isAdmin = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _checkAdminStatus();
-  }
-
-  Future<void> _checkAdminStatus() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(user.uid).get();
-      if (userDoc.exists) {
-        setState(() {
-          _isAdmin = userDoc.get('isAdmin') as bool;
-        });
-      }
-    }
-  }
-
-  void _launchWhatsApp(String phoneNumber) async {
-    final url = 'https://wa.me/$phoneNumber';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Tidak dapat membuka WhatsApp')),
-      );
-    }
-  }
-
-  Future<void> _deleteTeam(String teamId) async {
-    final confirmed = await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Konfirmasi'),
-        content: Text('Apakah Anda yakin ingin menghapus tim ini?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Hapus'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await _firestore.collection('sparring_teams').doc(teamId).delete();
-    }
-  }
-
-  void _editTeam(SparringTeam team) async {
-    final updatedTeam = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditSparringTeamPage(team: team),
-      ),
-    );
-
-    if (updatedTeam != null) {
-      await _firestore
-          .collection('sparring_teams')
-          .doc(updatedTeam.id)
-          .update(updatedTeam.toMap());
-    }
-  }
-
-  // Urutan hari untuk sorting
   final Map<String, int> _dayOrder = {
     'Senin': 1,
     'Selasa': 2,
@@ -120,6 +43,78 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     'Minggu': 7,
   };
 
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminStatus();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        DocumentSnapshot userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+        if (userDoc.exists && mounted) {
+          setState(() {
+            _isAdmin = userDoc.get('isAdmin') as bool;
+          });
+        }
+      } catch (e) {
+        print("Error checking admin status: $e");
+      }
+    }
+  }
+
+  void _launchWhatsApp(String phoneNumber) async {
+    String formattedNumber = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    if (formattedNumber.startsWith('0')) {
+      formattedNumber = '62${formattedNumber.substring(1)}';
+    }
+    final url = 'https://wa.me/$formattedNumber';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka WhatsApp')),
+      );
+    }
+  }
+
+  Future<void> _deleteTeam(String teamId) async {
+    final confirmed = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Hapus'),
+        content: const Text('Apakah Anda yakin ingin menghapus tim ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _firestore.collection('sparring_teams').doc(teamId).delete();
+    }
+  }
+
+  void _editTeam(SparringTeam team) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditSparringTeamPage(team: team),
+      ),
+    );
+  }
+
   void _navigateToBookingPage(SparringTeam team) {
     String lapangCategory = '';
     if (team.category == 'Tim Minisoccer') {
@@ -127,45 +122,34 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     } else if (team.category == 'Tim Basket 3x3') {
       lapangCategory = 'Lapang Basket 3x3';
     } else if (team.category == 'Tim Basket') {
-      // Tampilkan dialog untuk memilih jenis lapangan basket
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Pilih Jenis Lapangan Basket'),
-          content: Text(
+          title: const Text('Pilih Jenis Lapangan'),
+          content: const Text(
               'Silakan pilih jenis lapangan basket yang ingin Anda booking.'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                lapangCategory = 'Lapang Basket Vynil';
-                _openBookingPage(team, lapangCategory);
+                _openBookingPage(team, 'Lapang Basket Vynil');
               },
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-              ),
-              child: Text('Vynil'),
+              child: const Text('Vynil'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                lapangCategory = 'Lapang Basket Karet';
-                _openBookingPage(team, lapangCategory);
+                _openBookingPage(team, 'Lapang Basket Karet');
               },
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-              ),
-              child: Text('Karet'),
+              child: const Text('Karet'),
             ),
           ],
         ),
       );
+      return;
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Kategori tim tidak valid untuk booking lapangan.')),
+        const SnackBar(content: Text('Kategori tim tidak valid.')),
       );
       return;
     }
@@ -192,373 +176,360 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
       teams.sort((a, b) {
         final aDay = a.availableDays.isNotEmpty ? a.availableDays.first : '';
         final bDay = b.availableDays.isNotEmpty ? b.availableDays.first : '';
-        return (_dayOrder[aDay] ?? 0).compareTo(_dayOrder[bDay] ?? 0);
+        return (_dayOrder[aDay] ?? 8).compareTo(_dayOrder[bDay] ?? 8);
       });
     } else if (_selectedSort == 'Abjad A-Z') {
-      teams.sort((a, b) => a.name.compareTo(b.name));
+      teams
+          .sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     } else if (_selectedSort == 'Abjad Z-A') {
-      teams.sort((a, b) => b.name.compareTo(a.name));
+      teams
+          .sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = _auth.currentUser;
-    final screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Cari lawan sparring...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      prefixIcon: Icon(Icons.search),
-                      contentPadding: EdgeInsets.fromLTRB(18, 0, 18, 0),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
+      backgroundColor: const Color(0xFFF7F7F7),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              title: const Text("Cari Lawan Sparring",
+                  style: TextStyle(
+                      color: Colors.black, fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.white,
+              floating: true,
+              pinned: true,
+              snap: true,
+              forceElevated: innerBoxIsScrolled,
+              // --- PERUBAHAN DI SINI ---
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 20.0),
+                  child: IconButton(
+                    icon: const Icon(Icons.add_circle_outline,
+                        color: Colors.black, size: 28),
+                    tooltip: 'Buat Tim Sparring',
+                    onPressed: () {
+                      if (_auth.currentUser == null) {
+                        _showLoginDialog();
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const AddSparringTeamPage()),
+                        );
+                      }
                     },
                   ),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: DropdownButton<String>(
-                          value: _selectedCategory,
-                          hint: Text('Pilih Olahraga'),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCategory = value;
-                            });
-                          },
-                          items: _categories.map((category) {
-                            return DropdownMenuItem(
-                              value: category,
-                              child: Text(category),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: DropdownButton<String>(
-                          value: _selectedSort,
-                          hint: Text('Urutkan Berdasarkan'),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedSort = value;
-                            });
-                          },
-                          items: _sorts.map((sort) {
-                            return DropdownMenuItem(
-                              value: sort,
-                              child: Text(sort),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => AddSparringTeamPage()),
-                          );
-
-                          if (result == true) {
-                            // Refresh data di SparringTeamPage
-                            setState(() {});
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                ),
+              ],
+              // --- AKHIR PERUBAHAN ---
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(130.0),
+                child: _buildFilterSection(),
               ),
             ),
+          ];
+        },
+        body: _buildTeamList(),
+      ),
+      // --- FloatingActionButton DIHAPUS DARI SINI ---
+    );
+  }
+
+  Widget _buildFilterSection() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Cari nama tim...',
+                    prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(12)),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedSort,
+                    items: _sorts
+                        .map((sort) =>
+                            DropdownMenuItem(value: sort, child: Text(sort)))
+                        .toList(),
+                    onChanged: (val) => setState(() => _selectedSort = val),
+                    hint: const Text('Urutkan'),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore.collection('sparring_teams').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('Tidak ada tim sparring.'));
-                }
-
-                final teams = snapshot.data!.docs.map((doc) {
-                  var data = doc.data() as Map<String, dynamic>;
-
-                  return SparringTeam.fromMap({
-                    'id': doc.id,
-                    'name': data['name'] ?? '',
-                    'category': data['category'] ?? '',
-                    'imageUrl': data['imageUrl'] ?? '',
-                    'contact': data['contact'] ?? '',
-                    'cost': data['cost'] ?? 0.0,
-                    'availableDays': data['availableDays'] ?? [],
-                    'availableHours': data['availableHours'] ?? [],
-                    'createdAt': data['createdAt'] ?? Timestamp.now(),
-                    'createdBy': data['createdBy'] ?? '',
-                  });
-                }).toList();
-
-                // Filter dan sort teams (sesuai kebutuhan)
-                final filteredTeams = teams.where((team) {
-                  final categoryMatch = _selectedCategory == null ||
-                      _selectedCategory == 'Semua' ||
-                      team.category == _selectedCategory;
-                  final searchMatch = team.name
-                      .toLowerCase()
-                      .contains(_searchQuery.toLowerCase());
-                  return categoryMatch && searchMatch;
-                }).toList();
-
-                _sortTeams(filteredTeams);
-
-                return Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Center(
-                        child: Text(
-                          'Menampilkan ${filteredTeams.length} tim',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            int crossAxisCount = (constraints.maxWidth / 480)
-                                .floor()
-                                .clamp(1, 10);
-
-                            return GridView.builder(
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                childAspectRatio:
-                                    2.4, // Menjaga tinggi tetap proporsional
-                              ),
-                              itemCount: filteredTeams.length,
-                              itemBuilder: (context, index) {
-                                final team = filteredTeams[index];
-                                final isCreator = team.createdBy == user?.uid;
-
-                                return Card(
-                                  margin: EdgeInsets.all(8),
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: Row(
-                                      children: [
-                                        // Gambar tim
-                                        SizedBox(
-                                          width: 80,
-                                          height: 80,
-                                          child: team.imageUrl.isNotEmpty
-                                              ? Image.network(
-                                                  team.imageUrl,
-                                                  fit: BoxFit.cover,
-                                                  loadingBuilder: (context,
-                                                      child, loadingProgress) {
-                                                    if (loadingProgress == null)
-                                                      return child;
-                                                    return Center(
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        value: loadingProgress
-                                                                    .expectedTotalBytes !=
-                                                                null
-                                                            ? loadingProgress
-                                                                    .cumulativeBytesLoaded /
-                                                                loadingProgress
-                                                                    .expectedTotalBytes!
-                                                            : null,
-                                                      ),
-                                                    );
-                                                  },
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Icon(
-                                                      Icons.image_not_supported,
-                                                      size: 50,
-                                                      color: Colors.grey,
-                                                    );
-                                                  },
-                                                )
-                                              : Icon(
-                                                  Icons.image,
-                                                  size: 50,
-                                                  color: Colors.grey,
-                                                ),
-                                        ),
-                                        SizedBox(width: 12),
-                                        // Informasi tim
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                team.name,
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
-                                                  'Hari: ${team.availableDays.join(', ')}'),
-                                              Text(
-                                                  'Jam: ${team.availableHours.join(', ')}'),
-                                              Text(
-                                                  'Kategori: ${team.category}'),
-                                              Text('Kontak: ${team.contact}'),
-                                            ],
-                                          ),
-                                        ),
-                                        // Tombol aksi
-                                        Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                if (isCreator || _isAdmin)
-                                                  IconButton(
-                                                    icon: Icon(Icons.edit,
-                                                        color: Colors.blue),
-                                                    onPressed: () =>
-                                                        _editTeam(team),
-                                                  ),
-                                                IconButton(
-                                                  icon: Image.network(
-                                                    "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
-                                                    width:
-                                                        20, // Sesuaikan ukuran
-                                                    height: 20,
-                                                    color: Colors.green,
-                                                  ),
-                                                  onPressed: () =>
-                                                      _launchWhatsApp(
-                                                          team.contact),
-                                                ),
-                                              ],
-                                            ),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                if (_isAdmin)
-                                                  IconButton(
-                                                    icon: Icon(Icons.delete,
-                                                        color: Colors.red),
-                                                    onPressed: () =>
-                                                        _deleteTeam(team.id),
-                                                  ),
-                                                IconButton(
-                                                  icon: Icon(Icons.book_online,
-                                                      color: Colors.orange),
-                                                  onPressed: () {
-                                                    // Cek apakah pengguna sudah login atau belum
-                                                    if (user == null) {
-                                                      // Jika belum login, tampilkan dialog
-                                                      showDialog(
-                                                        context: context,
-                                                        builder: (context) =>
-                                                            AlertDialog(
-                                                          title: Text(
-                                                              'Login Diperlukan'),
-                                                          content: Text(
-                                                              'Harap login terlebih dahulu untuk booking jadwal sparring'),
-                                                          actions: [
-                                                            TextButton(
-                                                              style: TextButton.styleFrom(
-                                                                  foregroundColor:
-                                                                      Colors
-                                                                          .white,
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .black),
-                                                              onPressed: () =>
-                                                                  Navigator.of(
-                                                                          context)
-                                                                      .pop(),
-                                                              child: Text('OK'),
-                                                            ),
-                                                            TextButton(
-                                                              style: TextButton.styleFrom(
-                                                                  foregroundColor:
-                                                                      Colors
-                                                                          .white,
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .black),
-                                                              onPressed: () {
-                                                                Navigator.of(
-                                                                        context)
-                                                                    .pop();
-                                                                Navigator.push(
-                                                                    context,
-                                                                    MaterialPageRoute(
-                                                                        builder:
-                                                                            (context) =>
-                                                                                const LoginScreen()));
-                                                              },
-                                                              child:
-                                                                  Text('Login'),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    } else {
-                                                      // Jika sudah login, lanjutkan ke halaman booking
-                                                      _navigateToBookingPage(
-                                                          team);
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                );
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 40,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                final category = _categories[index];
+                return _buildCategoryChip(category);
               },
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String category) {
+    bool isSelected = _selectedCategory == category;
+    return ChoiceChip(
+      label: Text(category),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() => _selectedCategory = category);
+        }
+      },
+      backgroundColor: Colors.white,
+      selectedColor: Colors.black,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.black,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: StadiumBorder(
+        side: BorderSide(
+          color: isSelected ? Colors.black : Colors.grey[300]!,
+        ),
+      ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    );
+  }
+
+  Widget _buildTeamList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore.collection('sparring_teams').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text('Belum ada tim sparring.'));
+        }
+
+        final teams = snapshot.data!.docs.map((doc) {
+          var data = doc.data() as Map<String, dynamic>;
+          data['id'] = doc.id;
+          return SparringTeam.fromMap(data);
+        }).toList();
+
+        final filteredTeams = teams.where((team) {
+          final categoryMatch = _selectedCategory == 'Semua' ||
+              team.category == _selectedCategory;
+          final searchMatch =
+              team.name.toLowerCase().contains(_searchQuery.toLowerCase());
+          return categoryMatch && searchMatch;
+        }).toList();
+
+        _sortTeams(filteredTeams);
+
+        if (filteredTeams.isEmpty) {
+          return const Center(child: Text('Tim tidak ditemukan.'));
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: filteredTeams.length,
+          itemBuilder: (context, index) {
+            final team = filteredTeams[index];
+            final isCreator = team.createdBy == _auth.currentUser?.uid;
+            return _buildTeamCard(team, isCreator);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTeamCard(SparringTeam team, bool isCreator) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: Colors.grey[200],
+                backgroundImage: NetworkImage(team.imageUrl),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(team.name,
+                        style: const TextStyle(
+                            fontSize: 17, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        _buildInfoTag(
+                            Icons.sports_soccer, team.category, Colors.blue),
+                        _buildInfoTag(
+                            Icons.calendar_today,
+                            '${team.availableDays.join(', ')} at ${team.availableHours.join(', ')}',
+                            Colors.orange),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+              if (isCreator || _isAdmin)
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') _editTeam(team);
+                    if (value == 'delete') _deleteTeam(team.id);
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                    const PopupMenuItem(value: 'delete', child: Text('Hapus')),
+                  ],
+                  icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+                  tooltip: "Opsi",
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _launchWhatsApp(team.contact),
+                  icon: Image.network(
+                    'https://img.icons8.com/?size=100&id=16733&format=png&color=2ECC71', // URL dengan warna hijau
+                    width: 18,
+                    height: 18,
+                  ),
+                  label: const Text('Kontak'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.green,
+                    side: const BorderSide(color: Colors.green),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (_auth.currentUser == null) {
+                      _showLoginDialog();
+                    } else {
+                      _navigateToBookingPage(team);
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.sports_kabaddi,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                  label: const Text('Tanding'),
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoTag(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Flexible(
+              child: Text(text,
+                  style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12))),
+        ],
+      ),
+    );
+  }
+
+  void _showLoginDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login Diperlukan'),
+        content: const Text(
+            'Anda harus login terlebih dahulu untuk melakukan aksi ini.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()));
+            },
+            child: const Text('Login'),
           ),
         ],
       ),

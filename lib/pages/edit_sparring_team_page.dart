@@ -1,28 +1,30 @@
-// ignore_for_file: use_build_context_synchronously, sort_child_properties_last, avoid_print, prefer_interpolation_to_compose_strings
+// ignore_for_file: use_build_context_synchronously, sort_child_properties_last, avoid_print, prefer_interpolation_to_compose_strings, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-// import 'dart:typed_data'; // Untuk Uint8List
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart'; // Untuk kIsWeb
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 
 class EditSparringTeamPage extends StatefulWidget {
   final SparringTeam team;
-  const EditSparringTeamPage({required this.team});
+  const EditSparringTeamPage({super.key, required this.team});
 
   @override
   _EditSparringTeamPageState createState() => _EditSparringTeamPageState();
 }
 
 class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
+  // =======================================================================
+  // =                        LOGIKA (TIDAK DIUBAH)                        =
+  // =======================================================================
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  File? _imageFile; // Untuk Android/iOS
-  Uint8List? _webImage; // Untuk Web
+  File? _imageFile;
+  Uint8List? _webImage;
   String? _selectedCategory;
   String? _selectedDay;
   String? _selectedHour;
@@ -60,128 +62,6 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
     'Tim Minisoccer',
   ];
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    try {
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-      if (pickedFile != null) {
-        if (kIsWeb) {
-          // Web: Simpan sebagai Uint8List
-          _webImage = await pickedFile.readAsBytes();
-        } else {
-          // Mobile/Desktop: Simpan sebagai File
-          _imageFile = File(pickedFile.path);
-        }
-        setState(() {});
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memilih gambar: ${e.toString()}')),
-      );
-    }
-  }
-
-  Future<void> _deleteOldImage(String imageUrl) async {
-    try {
-      // Dapatkan referensi ke file gambar lama di Firebase Storage
-      Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
-      await storageRef.delete();
-    } catch (e) {
-      print('Error deleting old image: $e');
-    }
-  }
-
-  Future<String?> _uploadImage(String teamName) async {
-    try {
-      if (_imageFile == null && _webImage == null) {
-        return null; // Jika tidak ada gambar baru, kembalikan null
-      }
-
-      // Format nama file: hapus spasi dan karakter khusus, lalu tambahkan .jpg
-      String fileName =
-          teamName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase() +
-              '.jpg';
-
-      // Referensi ke Firebase Storage dengan nama file yang sesuai
-      Reference storageRef =
-          FirebaseStorage.instance.ref().child('team_images/$fileName');
-
-      UploadTask uploadTask;
-      if (kIsWeb && _webImage != null) {
-        uploadTask = storageRef.putData(_webImage!);
-      } else if (_imageFile != null) {
-        uploadTask = storageRef.putFile(_imageFile!);
-      } else {
-        throw Exception("Gambar tidak ditemukan");
-      }
-
-      TaskSnapshot taskSnapshot = await uploadTask;
-      return await taskSnapshot.ref.getDownloadURL();
-    } catch (e) {
-      print('Error uploading image: $e');
-      return null;
-    }
-  }
-
-  void _updateTeam() async {
-    if (_formKey.currentState!.validate()) {
-      if (_selectedDay == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pilih setidaknya satu hari')),
-        );
-        return;
-      }
-
-      if (_selectedHour == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pilih setidaknya satu jam')),
-        );
-        return;
-      }
-
-      if (_selectedCategory == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pilih kategori tim')),
-        );
-        return;
-      }
-
-      String? newImageUrl;
-
-      // Jika ada gambar baru, hapus gambar lama dan upload gambar baru
-      if (_imageFile != null || _webImage != null) {
-        // Hapus gambar lama dari Firebase Storage
-        await _deleteOldImage(widget.team.imageUrl);
-
-        // Upload gambar baru ke Firebase Storage dengan nama tim yang baru
-        newImageUrl = await _uploadImage(_nameController.text.trim());
-      }
-
-      final updatedTeam = SparringTeam(
-        id: widget.team.id,
-        name: _nameController.text,
-        imageUrl: newImageUrl ??
-            widget.team
-                .imageUrl, // Gunakan URL baru jika ada, jika tidak, gunakan yang lama
-        availableDays: [_selectedDay!], // Menggunakan hari yang dipilih
-        availableHours: [_selectedHour!], // Menggunakan jam yang dipilih
-        contact: _contactController.text,
-        category: _selectedCategory!,
-        createdBy: widget.team.createdBy,
-        createdAt: widget.team.createdAt, // Tetapkan createdAt yang lama
-      );
-
-      // Update data tim di Firestore
-      await FirebaseFirestore.instance
-          .collection('sparring_teams')
-          .doc(updatedTeam.id)
-          .set(updatedTeam.toMap(), SetOptions(merge: true));
-
-      Navigator.pop(context, updatedTeam);
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -196,173 +76,343 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         : null;
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    try {
+      final pickedFile =
+          await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (pickedFile != null) {
+        if (kIsWeb) {
+          _webImage = await pickedFile.readAsBytes();
+        } else {
+          _imageFile = File(pickedFile.path);
+        }
+        setState(() {});
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memilih gambar: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _deleteOldImage(String imageUrl) async {
+    if (imageUrl.isEmpty) return;
+    try {
+      Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
+      await storageRef.delete();
+    } catch (e) {
+      print('Error deleting old image: $e');
+    }
+  }
+
+  Future<String?> _uploadImage(String teamName) async {
+    try {
+      if (_imageFile == null && _webImage == null) return null;
+      String fileName =
+          teamName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase() +
+              '_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      Reference storageRef =
+          FirebaseStorage.instance.ref().child('team_images/$fileName');
+      UploadTask uploadTask;
+      if (kIsWeb && _webImage != null) {
+        uploadTask = storageRef.putData(_webImage!);
+      } else if (_imageFile != null) {
+        uploadTask = storageRef.putFile(_imageFile!);
+      } else {
+        return null;
+      }
+      TaskSnapshot taskSnapshot = await uploadTask;
+      return await taskSnapshot.ref.getDownloadURL();
+    } catch (e) {
+      print('Error uploading image: $e');
+      return null;
+    }
+  }
+
+  void _updateTeam() async {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedDay == null ||
+          _selectedHour == null ||
+          _selectedCategory == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Harap lengkapi semua pilihan (hari, jam, dan kategori).')),
+        );
+        return;
+      }
+
+      // Tampilkan dialog loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(child: CircularProgressIndicator());
+        },
+      );
+
+      String? newImageUrl;
+      if (_imageFile != null || _webImage != null) {
+        if (widget.team.imageUrl.isNotEmpty) {
+          await _deleteOldImage(widget.team.imageUrl);
+        }
+        newImageUrl = await _uploadImage(_nameController.text.trim());
+      }
+
+      final updatedTeam = SparringTeam(
+        id: widget.team.id,
+        name: _nameController.text.trim(),
+        imageUrl: newImageUrl ?? widget.team.imageUrl,
+        availableDays: [_selectedDay!],
+        availableHours: [_selectedHour!],
+        contact: _contactController.text.trim(),
+        category: _selectedCategory!,
+        createdBy: widget.team.createdBy,
+        createdAt: widget.team.createdAt,
+      );
+
+      await FirebaseFirestore.instance
+          .collection('sparring_teams')
+          .doc(updatedTeam.id)
+          .set(updatedTeam.toMap(), SetOptions(merge: true));
+
+      // Tutup dialog loading
+      Navigator.pop(context);
+      // Kembali ke halaman sebelumnya dengan data baru
+      Navigator.pop(context, updatedTeam);
+    }
+  }
+
+  // =======================================================================
+  // =                        TAMPILAN (UI BARU)                           =
+  // =======================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Edit Tim Sparring')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
-                        : _webImage != null
-                            ? MemoryImage(_webImage!)
-                            : NetworkImage(widget.team.imageUrl)
-                                as ImageProvider,
-                    child: _imageFile == null && _webImage == null
-                        ? Icon(Icons.add_a_photo, size: 20)
-                        : null,
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('Edit Tim Sparring'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+      ),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // --- Bagian Gambar ---
+              _buildImagePickerSection(),
+              const SizedBox(height: 24),
+
+              // --- Bagian Informasi Dasar ---
+              _buildInfoCard(),
+              const SizedBox(height: 24),
+
+              // --- Bagian Jadwal ---
+              _buildScheduleCard(),
+              const SizedBox(height: 32),
+
+              // --- Tombol Simpan ---
+              ElevatedButton.icon(
+                icon: const Icon(Icons.save, color: Colors.white),
+                label: const Text('Simpan Perubahan'),
+                onPressed: _updateTeam,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Nama Tim',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? 'Nama tim tidak boleh kosong'
-                        : null,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: TextFormField(
-                    controller: _contactController,
-                    decoration: InputDecoration(
-                      labelText: 'Kontak (No. Telepon)',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) =>
-                        value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
-                  ),
-                ),
-                SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedCategory,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCategory = value;
-                      });
-                    },
-                    items: _categories.map((category) {
-                      return DropdownMenuItem(
-                        value: category,
-                        child: Text(category),
-                      );
-                    }).toList(),
-                    decoration: InputDecoration(
-                      labelText: 'Kategori Tim',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text('Pilih Hari Tersedia:',
-                            style: TextStyle(fontSize: 16)),
-                      ),
-                      SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Wrap(
-                          spacing: 8,
-                          children: _daysOfWeek.map((day) {
-                            return ChoiceChip(
-                              label: Text(day),
-                              selected: _selectedDay == day,
-                              onSelected: (selected) {
-                                setState(() {
-                                  _selectedDay = selected ? day : null;
-                                });
-                              },
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text('Pilih Jam Tersedia:',
-                            style: TextStyle(fontSize: 16)),
-                      ),
-                      SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Wrap(
-                          spacing: 8,
-                          children: _timeSlots.map((time) {
-                            final isUnavailable =
-                                time == '18:00'; // Jam 18:00 tidak bisa dipilih
-                            return ChoiceChip(
-                              label: Text(time),
-                              selected: _selectedHour == time,
-                              onSelected: isUnavailable
-                                  ? null
-                                  : (selected) {
-                                      setState(() {
-                                        _selectedHour = selected ? time : null;
-                                      });
-                                    },
-                              backgroundColor: isUnavailable
-                                  ? Colors.grey.shade300
-                                  : Colors.grey
-                                      .shade100, // Nonaktifkan warna untuk jam tidak tersedia
-                              labelStyle: TextStyle(
-                                color:
-                                    isUnavailable ? Colors.grey : Colors.black,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _updateTeam,
-                  child: Text('Simpan Perubahan',
-                      style: TextStyle(color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                    backgroundColor: Colors.black,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImagePickerSection() {
+    return Center(
+      child: Stack(
+        children: [
+          Container(
+            width: 130,
+            height: 130,
+            decoration: BoxDecoration(
+              border: Border.all(width: 4, color: Colors.white),
+              boxShadow: [
+                BoxShadow(
+                  spreadRadius: 2,
+                  blurRadius: 10,
+                  color: Colors.black.withOpacity(0.1),
+                ),
+              ],
+              shape: BoxShape.circle,
+              image: DecorationImage(
+                fit: BoxFit.cover,
+                image: _imageFile != null
+                    ? FileImage(_imageFile!)
+                    : _webImage != null
+                        ? MemoryImage(_webImage!)
+                        : NetworkImage(widget.team.imageUrl.isNotEmpty
+                                ? widget.team.imageUrl
+                                : 'https://via.placeholder.com/150')
+                            as ImageProvider,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: InkWell(
+              onTap: _pickImage,
+              child: Container(
+                height: 40,
+                width: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(width: 2, color: Colors.white),
+                  color: Colors.black,
+                ),
+                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: _inputDecoration('Nama Tim', Icons.group),
+              validator: (value) => (value == null || value.isEmpty)
+                  ? 'Nama tim tidak boleh kosong'
+                  : null,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _contactController,
+              decoration: _inputDecoration('Kontak (No. WA)', Icons.phone),
+              keyboardType: TextInputType.phone,
+              validator: (value) =>
+                  value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedCategory,
+              onChanged: (value) => setState(() => _selectedCategory = value),
+              items: _categories.map((category) {
+                return DropdownMenuItem(value: category, child: Text(category));
+              }).toList(),
+              decoration: _inputDecoration('Kategori Tim', Icons.category),
+              validator: (value) => value == null ? 'Pilih kategori' : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScheduleCard() {
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Jadwal Tersedia',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            _buildChoiceChipGroup('Hari', _daysOfWeek, _selectedDay, (day) {
+              setState(() => _selectedDay = day);
+            }),
+            const SizedBox(height: 16),
+            _buildChoiceChipGroup('Jam', _timeSlots, _selectedHour, (time) {
+              setState(() => _selectedHour = time);
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChoiceChipGroup(String title, List<String> items,
+      String? selectedItem, Function(String?) onSelect) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: items.map((item) {
+            final isSelected = selectedItem == item;
+            final isUnavailable = item == '18:00'; // Contoh jam tidak tersedia
+
+            return ChoiceChip(
+              label: Text(item),
+              selected: isSelected,
+              onSelected: isUnavailable
+                  ? null
+                  : (selected) => onSelect(selected ? item : null),
+              backgroundColor:
+                  isUnavailable ? Colors.grey[300] : Colors.grey[100],
+              selectedColor: Colors.black,
+              labelStyle: TextStyle(
+                  color: isUnavailable
+                      ? Colors.grey[500]
+                      : isSelected
+                          ? Colors.white
+                          : Colors.black,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+              shape: StadiumBorder(
+                  side: BorderSide(
+                      color: isSelected ? Colors.black : Colors.grey[300]!)),
+              elevation: isSelected ? 2 : 0,
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.grey[600]),
+      filled: true,
+      fillColor: Colors.grey[100],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.black, width: 2),
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:mandalaarenaapp/pages/admin_home_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/pages/riwayat_pembayaran.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
@@ -632,11 +633,28 @@ Terima kasih.
                       const SizedBox(height: 10),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (context) => HomePage()),
-                            (route) => false,
-                          );
+                          // Ambil UserProvider
+                          final userProvider =
+                              Provider.of<UserProvider>(context, listen: false);
+
+                          // Cek apakah user adalah admin
+                          if (userProvider.isAdmin) {
+                            // Jika admin, arahkan ke AdminHomePage
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdminHomePage()),
+                              (route) => false,
+                            );
+                          } else {
+                            // Jika bukan admin, arahkan ke HomePage biasa
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => HomePage()),
+                              (route) => false,
+                            );
+                          }
                         },
                         child: const Text('Lakukan Booking'),
                       ),

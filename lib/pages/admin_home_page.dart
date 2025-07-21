@@ -43,6 +43,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   void initState() {
     super.initState();
     getLapangs();
+    Intl.defaultLocale = 'id_ID';
   }
 
   Future<void> getLapangs() async {
@@ -88,7 +89,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BannerFormPage(),
+        builder: (context) => BannerFormPage(banner: banner),
       ),
     );
   }
@@ -420,7 +421,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
             else
               _buildMembershipBanner(context),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Text(
               'Pilih Lapang',
               style: TextStyle(
@@ -430,7 +431,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
           _buildGridLapangs(context),
           const SizedBox(height: 20),
         ],
@@ -441,9 +441,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
   Widget _buildDiscountBanner(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    return Padding(
-      // 1. Padding ditambahkan di sini agar seragam
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('banners')
@@ -451,49 +450,46 @@ class _AdminHomePageState extends State<AdminHomePage> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            // Placeholder saat loading agar ukuran konsisten
             return Container(
               height: 220,
               alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(15),
-              ),
               child: const CircularProgressIndicator(),
             );
           }
           if (snapshot.hasError) {
-            return const SizedBox.shrink(); // Sembunyikan jika ada error
+            return const SizedBox.shrink();
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            // Hanya tampilkan UI untuk admin jika tidak ada banner
             if (userProvider.isAdmin) {
-              return Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(Icons.image_not_supported_outlined,
-                        size: 40, color: Colors.grey),
-                    const SizedBox(height: 8),
-                    const Text("Belum ada banner promo.",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    const Text("Ketuk untuk menambah banner baru.",
-                        style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => _navigateToBannerForm(),
-                      child: const Text("Tambah Banner"),
-                    )
-                  ],
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.image_not_supported_outlined,
+                          size: 40, color: Colors.grey),
+                      const SizedBox(height: 8),
+                      const Text("Belum ada banner promo.",
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      const Text("Ketuk untuk menambah banner baru.",
+                          style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => _navigateToBannerForm(),
+                        child: const Text("Tambah Banner"),
+                      )
+                    ],
+                  ),
                 ),
               );
             }
-            return const SizedBox.shrink(); // Sembunyikan untuk user biasa
+            return const SizedBox.shrink();
           }
 
           final banners = snapshot.data!.docs
@@ -506,22 +502,22 @@ class _AdminHomePageState extends State<AdminHomePage> {
               CarouselSlider.builder(
                 itemCount: banners.length,
                 options: CarouselOptions(
-                  height: 220, // Ukuran disesuaikan
+                  height: 220,
                   autoPlay: banners.length > 1,
-                  autoPlayInterval: const Duration(seconds: 8),
-                  viewportFraction: 1.0, // Item mengisi seluruh area padding
-                  enlargeCenterPage: false,
+                  autoPlayInterval: const Duration(seconds: 4),
+                  enlargeCenterPage: true,
+                  viewportFraction: 0.9,
+                  aspectRatio: 16 / 9,
                 ),
                 itemBuilder: (context, index, realIndex) {
                   final banner = banners[index];
-                  // Card digunakan untuk shadow dan clip (pembulatan sudut)
                   return Card(
-                    margin: EdgeInsets.zero, // Hapus margin dari Card
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 5.0, vertical: 4.0),
                     elevation: 4,
                     shadowColor: Colors.black.withOpacity(0.2),
                     clipBehavior: Clip.antiAlias,
                     shape: RoundedRectangleBorder(
-                      // 2. BorderRadius disamakan
                       borderRadius: BorderRadius.circular(15.0),
                     ),
                     child: Stack(
@@ -574,19 +570,20 @@ class _AdminHomePageState extends State<AdminHomePage> {
                                   color: Colors.black.withOpacity(0.5),
                                   borderRadius: BorderRadius.circular(20)),
                               child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                        icon: const Icon(Icons.edit,
-                                            color: Colors.white, size: 20),
-                                        onPressed: () => _navigateToBannerForm(
-                                            banner: banner)),
-                                    IconButton(
-                                        icon: const Icon(Icons.delete,
-                                            color: Colors.red, size: 20),
-                                        onPressed: () => _deleteBanner(context,
-                                            banner.id, banner.imageUrl)),
-                                  ]),
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.white, size: 20),
+                                      onPressed: () => _navigateToBannerForm(
+                                          banner: banner)),
+                                  IconButton(
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red, size: 20),
+                                      onPressed: () => _deleteBanner(
+                                          context, banner.id, banner.imageUrl)),
+                                ],
+                              ),
                             ),
                           ),
                       ],
@@ -597,7 +594,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               if (userProvider.isAdmin)
                 Positioned(
                   bottom: 12,
-                  right: 12,
+                  right: 24,
                   child: FloatingActionButton(
                     mini: true,
                     heroTag: 'add_banner',
@@ -615,7 +612,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   Widget _buildMembershipBanner(BuildContext context) {
     return Padding(
-      // Padding yang sama dengan banner di atas
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
       child: Card(
         elevation: 4,
@@ -668,7 +664,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   Widget _buildMemberStatusCard(BuildContext context, UserProvider provider) {
     final expiryDate = provider.memberUntil != null
-        ? DateFormat('dd MMMM yyyy', 'id_ID').format(provider.memberUntil!)
+        ? DateFormat('dd MMMM yyyy').format(provider.memberUntil!)
         : 'Tidak diketahui';
 
     return Padding(
@@ -706,6 +702,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
+  // --- BAGIAN GRID LAPANG ---
   Widget _buildGridLapangs(BuildContext context) {
     return GridView.builder(
       shrinkWrap: true,
@@ -733,6 +730,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 }
+
+// --- WIDGET DAN CLASS PENDUKUNG ---
 
 class ProfilePage extends StatelessWidget {
   final String userName;

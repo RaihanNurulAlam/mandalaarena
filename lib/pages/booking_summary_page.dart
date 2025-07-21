@@ -7,6 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mandalaarenaapp/pages/admin_home_page.dart';
 import 'package:mandalaarenaapp/pages/home_page.dart';
 import 'package:mandalaarenaapp/pages/models/cart_model.dart';
 import 'package:mandalaarenaapp/pages/riwayat_pembayaran.dart';
@@ -576,11 +577,31 @@ Terima kasih.
                         color: Colors.black,
                         child: const Text('Lakukan Booking',
                             style: TextStyle(color: Colors.white)),
-                        onPressed: () => Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (context) => HomePage()),
-                            (route) => false),
-                      ),
+                        onPressed: () {
+                          // Ambil UserProvider tanpa me-listen
+                          final userProvider =
+                              Provider.of<UserProvider>(context, listen: false);
+
+                          // Cek apakah user adalah admin
+                          if (userProvider.isAdmin) {
+                            // Jika admin, arahkan ke AdminHomePage
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => AdminHomePage()),
+                              (route) => false,
+                            );
+                          } else {
+                            // Jika bukan admin, arahkan ke HomePage
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => HomePage()),
+                              (route) => false,
+                            );
+                          }
+                        },
+                      )
                     ],
                   ),
                 )

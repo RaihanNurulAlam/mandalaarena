@@ -5,30 +5,25 @@ import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
 import 'package:mandalaarenaapp/pages/booking_summary_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
-// import 'package:mandalaarenaapp/pages/galery_page.dart';
+import 'package:mandalaarenaapp/pages/membership_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/points_page.dart';
 import 'package:mandalaarenaapp/pages/profile_navigation.dart';
-// import 'package:mandalaarenaapp/pages/payment_page.dart';
-// import 'package:mandalaarenaapp/pages/search_page.dart';
 import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
-// import '../widgets/drawer_widget.dart';
-// import '../pages/information_page.dart';
-// import '../pages/about_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -37,9 +32,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Lapang> lapangs = [];
-  // String adminWhatsApp = "";
   bool isExpanded = false;
   bool isHoveredToggle = false;
+
+  @override
+  void initState() {
+    super.initState();
+    getLapangs();
+    Intl.defaultLocale = 'id_ID';
+  }
 
   Future<void> getLapangs() async {
     String dataLapangJson =
@@ -49,55 +50,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       lapangs = jsonMap.map((e) => Lapang.fromJson(e)).toList();
     });
-
-    debugPrint(lapangs[0].name);
   }
-
-  // Future<void> fetchAdminContact() async {
-  //   final databaseReference =
-  //       FirebaseDatabase.instance.ref("admin_contact/whatsapp");
-  //   try {
-  //     final snapshot = await databaseReference.get();
-  //     if (snapshot.exists && snapshot.value != null) {
-  //       setState(() {
-  //         adminWhatsApp = snapshot.value.toString();
-  //       });
-  //     } else {
-  //       setState(() {
-  //         adminWhatsApp = "";
-  //       });
-  //       print("Nomor WhatsApp belum tersedia di database.");
-  //     }
-  //   } catch (e) {
-  //     print("Error fetching WhatsApp number: $e");
-  //   }
-  // }
-
-  // String formatWhatsAppNumber(String number) {
-  //   String formattedNumber = number.replaceAll(RegExp(r'[^0-9]'), '');
-
-  //   if (formattedNumber.startsWith('0')) {
-  //     formattedNumber = '62' + formattedNumber.substring(1);
-  //   }
-
-  //   return formattedNumber;
-  // }
-
-  // void openWhatsApp() async {
-  //   final defaultNumber = "082117556907";
-  //   final numberToUse =
-  //       adminWhatsApp.isNotEmpty ? adminWhatsApp : defaultNumber;
-
-  //   final formattedNumber = formatWhatsAppNumber(numberToUse);
-  //   final url = Uri.parse("https://wa.me/$formattedNumber");
-
-  //   if (await canLaunchUrl(url)) {
-  //     await launchUrl(url, mode: LaunchMode.externalApplication);
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text("Tidak dapat membuka WhatsApp.")));
-  //   }
-  // }
 
   void goToDetailLapang(int index) {
     Navigator.push(
@@ -126,13 +79,6 @@ class _HomePageState extends State<HomePage> {
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       throw 'Could not launch $url';
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    getLapangs();
-    // fetchAdminContact();
   }
 
   @override
@@ -178,7 +124,6 @@ class _HomePageState extends State<HomePage> {
               TextButton.icon(
                 onPressed: user != null
                     ? () {
-                        // 2. Gunakan 'newContext' dari Builder untuk memanggil Cubit
                         newContext.read<NavigationCubit>().navigateToIndex(3);
                       }
                     : null,
@@ -196,17 +141,6 @@ class _HomePageState extends State<HomePage> {
                 },
                 icon: const Icon(Icons.location_on, size: 30),
               ),
-              // Search button
-              // IconButton(
-              //   onPressed: () {
-              //     Navigator.push(context,
-              //         MaterialPageRoute(builder: (context) => SearchPage()));
-              //   },
-              //   icon: Icon(
-              //     CupertinoIcons.search,
-              //     size: 30,
-              //   ),
-              // ),
               Consumer<Cart>(
                 builder: (context, value, child) {
                   return Padding(
@@ -247,12 +181,8 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              // Tombol Login atau Avatar Profil (Posisi Paling Kanan)
               if (user == null)
-                // --- AWAL PERUBAHAN ---
-                // Jika user BELUM login
                 Padding(
-                  // Padding di kanan (14px) agar sejajar dengan cart
                   padding: const EdgeInsets.fromLTRB(4, 18, 16, 18),
                   child: ElevatedButton.icon(
                     onPressed: () {
@@ -274,18 +204,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 )
-              // --- AKHIR PERUBAHAN ---
               else
-                // Jika SUDAH login
                 Consumer<UserProvider>(
                   builder: (context, provider, child) {
                     return GestureDetector(
                       onTap: () {
-                        // 2. Gunakan 'newContext' juga di sini
                         newContext.read<NavigationCubit>().navigateToIndex(2);
                       },
                       child: Padding(
-                        // Padding di kanan (14px) agar sejajar
                         padding: const EdgeInsets.only(right: 16.0, left: 4.0),
                         child: CircleAvatar(
                           radius: 18,
@@ -301,20 +227,11 @@ class _HomePageState extends State<HomePage> {
                 ),
             ],
           ),
-          // drawer: DrawerWidget(),
           body: Stack(
             children: [
               BlocBuilder<NavigationCubit, NavigationState>(
                 builder: (context, state) {
                   switch (state) {
-                    // case NavigationState.gallery:
-                    //   return GalleryPage();
-                    // case NavigationState.information:
-                    //   return InformationPage();
-                    // case NavigationState.about:
-                    //   return AboutPage();
-                    // case NavigationState.payment:
-                    //   return PaymentPage();
                     case NavigationState.sparring:
                       return SparringTeamPage();
                     case NavigationState.profile:
@@ -326,14 +243,12 @@ class _HomePageState extends State<HomePage> {
                   }
                 },
               ),
-              // Floating Social Media Button
               Positioned(
                 bottom: 16,
                 right: 16,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    // WhatsApp
                     Visibility(
                       visible: isExpanded,
                       child: AnimatedContainer(
@@ -346,14 +261,12 @@ class _HomePageState extends State<HomePage> {
                           backgroundColor: Colors.green,
                           child: Image.network(
                             "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
-                            width: 25, // Sesuaikan ukuran
+                            width: 25,
                             height: 25,
                           ),
                         ),
                       ),
                     ),
-
-                    // Facebook
                     Visibility(
                       visible: isExpanded,
                       child: AnimatedContainer(
@@ -369,8 +282,6 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-
-                    // Instagram
                     Visibility(
                       visible: isExpanded,
                       child: AnimatedContainer(
@@ -383,13 +294,11 @@ class _HomePageState extends State<HomePage> {
                             backgroundColor: Colors.purple,
                             child: Image.network(
                               "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
-                              width: 25, // Sesuaikan ukuran
+                              width: 25,
                               height: 25,
                             )),
                       ),
                     ),
-
-                    // Email
                     Visibility(
                       visible: isExpanded,
                       child: AnimatedContainer(
@@ -402,14 +311,12 @@ class _HomePageState extends State<HomePage> {
                           backgroundColor: Colors.red,
                           child: Image.network(
                             "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
-                            width: 25, // Sesuaikan ukuran
+                            width: 25,
                             height: 25,
                           ),
                         ),
                       ),
                     ),
-
-                    // Tombol Utama (Menu)
                     MouseRegion(
                       onEnter: (_) => setState(() {
                         isHoveredToggle = true;
@@ -420,10 +327,8 @@ class _HomePageState extends State<HomePage> {
                       child: FloatingActionButton(
                         heroTag: "toggle",
                         onPressed: _toggleMenu,
-                        backgroundColor: Colors.black.withOpacity(
-                            isHoveredToggle
-                                ? 1.0
-                                : 0.5), // Transparansi di sini
+                        backgroundColor: Colors.black
+                            .withOpacity(isHoveredToggle ? 1.0 : 0.5),
                         child: Icon(
                           isExpanded ? Icons.close : Icons.add_comment,
                           color: Colors.white,
@@ -433,15 +338,6 @@ class _HomePageState extends State<HomePage> {
                   ],
                 ),
               ),
-              // Positioned(
-              //   bottom: 16,
-              //   right: 16,
-              //   child: FloatingActionButton(
-              //     onPressed: openWhatsApp,
-              //     backgroundColor: Colors.black,
-              //     child: Icon(Icons.message, color: Colors.white),
-              //   ),
-              // ),
             ],
           ),
           bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
@@ -458,22 +354,6 @@ class _HomePageState extends State<HomePage> {
                     icon: Icon(Icons.home),
                     label: 'Beranda',
                   ),
-                  // BottomNavigationBarItem(
-                  //   icon: Icon(Icons.photo_library),
-                  //   label: 'Galeri',
-                  // ),
-                  // BottomNavigationBarItem(
-                  //   icon: Icon(Icons.article),
-                  //   label: 'Informasi',
-                  // ),
-                  // BottomNavigationBarItem(
-                  //   icon: Icon(Icons.info),
-                  //   label: 'Tentang',
-                  // ),
-                  // BottomNavigationBarItem(
-                  //   icon: Icon(Icons.payment),
-                  //   label: 'Checkout',
-                  // ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.group),
                     label: 'Sparring',
@@ -496,94 +376,236 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHomeContent(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = FirebaseAuth.instance.currentUser;
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildDiscountBanner(context),
-          // bestSellerWidget(context),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Pilih Lapang',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+          if (user != null)
+            if (userProvider.isMembershipActive)
+              _buildMemberStatusCard(context, userProvider)
+            else
+              _buildMembershipBanner(context),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Text(
+              'Pilih Lapang',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
           _buildGridLapangs(context),
-          // _buildFAQSection(),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  // Widget _buildFAQSection() {
-  //   List<Map<String, String>> faqs = [
-  //     {
-  //       'question':
-  //           'Apa kelebihan sewa lapangan yang tersedia di Mandala Arena?',
-  //       'answer':
-  //           'Lapangan kami memiliki fasilitas lengkap dan lokasi strategis.'
-  //     },
-  //     {
-  //       'question': 'Bagaimana cara memesan lapangan di Mandala Arena?',
-  //       'answer':
-  //           'Anda dapat memesan melalui aplikasi atau menghubungi kami langsung.'
-  //     },
-  //     {
-  //       'question':
-  //           'Berapa biaya sewa lapangan yang tersedia di Mandala Arena?',
-  //       'answer':
-  //           'Biaya sewa bervariasi tergantung jenis lapangan dan waktu pemakaian.'
-  //     },
-  //     {
-  //       'question': 'Apakah ada diskon atau promo khusus?',
-  //       'answer':
-  //           'Kami menawarkan diskon setiap hari Jumat dan event-event tertentu.'
-  //     },
-  //   ];
+  Widget _buildDiscountBanner(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('banners')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Container(
+              height: 220,
+              alignment: Alignment.center,
+              child: const CircularProgressIndicator(),
+            );
+          }
+          if (snapshot.hasError) {
+            return const SizedBox.shrink();
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const SizedBox.shrink();
+          }
 
-  //   return Padding(
-  //     padding: const EdgeInsets.all(16.0),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //     //     Text(
-  //     //       'FAQ',
-  //     //       style: TextStyle(
-  //     //         fontSize: 24,
-  //     //         fontWeight: FontWeight.bold,
-  //     //       ),
-  //     //     ),
-  //     //     SizedBox(height: 16),
-  //     //     ...faqs.map((faq) => ExpansionTile(
-  //     //           title: Text(
-  //     //             faq['question']!,
-  //     //             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-  //     //           ),
-  //     //           children: [
-  //     //             Padding(
-  //     //               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  //     //               child: Text(faq['answer']!),
-  //     //             ),
-  //     //           ],
-  //     //         )),
-  //     //   ],
-  //     // ),
-  //   );
-  // }
+          final banners = snapshot.data!.docs
+              .map((doc) => BannerModel.fromFirestore(doc))
+              .toList();
+
+          return CarouselSlider.builder(
+            itemCount: banners.length,
+            options: CarouselOptions(
+              height: 220,
+              autoPlay: banners.length > 1,
+              autoPlayInterval: const Duration(seconds: 4),
+              enlargeCenterPage: true,
+              viewportFraction: 0.9,
+              aspectRatio: 16 / 9,
+            ),
+            itemBuilder: (context, index, realIndex) {
+              final banner = banners[index];
+              return Card(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 5.0, vertical: 4.0),
+                elevation: 4,
+                shadowColor: Colors.black.withOpacity(0.2),
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      banner.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(
+                              child: Icon(Icons.error, color: Colors.red)),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                    ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.center,
+                          colors: [
+                            Colors.black.withOpacity(0.7),
+                            Colors.transparent
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 20.0,
+                      left: 20.0,
+                      right: 20.0,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(banner.title,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8.0),
+                          Text(banner.description,
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 14)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMembershipBanner(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Card(
+        elevation: 4,
+        shadowColor: Colors.black.withOpacity(0.2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MembershipPage()),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.black87, Colors.black],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.star, color: Colors.amber, size: 40),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Upgrade Jadi Member!',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white)),
+                      SizedBox(height: 4),
+                      Text('Nikmati diskon dan keuntungan eksklusif.',
+                          style: TextStyle(color: Colors.white70)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemberStatusCard(BuildContext context, UserProvider provider) {
+    final expiryDate = provider.memberUntil != null
+        ? DateFormat('dd MMMM yyyy').format(provider.memberUntil!)
+        : 'Tidak diketahui';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Card(
+        color: Colors.green[50],
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green, size: 40),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Anda Adalah Member',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green),
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Aktif sampai: $expiryDate'),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildGridLapangs(BuildContext context) {
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(
-          horizontal: 20, vertical: 10), // Padding di sekeliling GridView
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: MediaQuery.of(context).size.width > 1650
             ? 5
@@ -592,13 +614,12 @@ class _HomePageState extends State<HomePage> {
                 : MediaQuery.of(context).size.width > 750
                     ? 3
                     : 2,
-        mainAxisSpacing: 20, // Sedikit perbesar jarak
-        crossAxisSpacing: 20, // Sedikit perbesar jarak
+        mainAxisSpacing: 20,
+        crossAxisSpacing: 20,
         childAspectRatio: 4 / 5,
       ),
       itemCount: lapangs.length,
       itemBuilder: (context, index) {
-        // Panggil widget item yang sudah kita buat
         return LapangGridItem(
           lapang: lapangs[index],
           onTap: () => goToDetailLapang(index),
@@ -606,233 +627,6 @@ class _HomePageState extends State<HomePage> {
       },
     );
   }
-
-  Widget _buildDiscountBanner(BuildContext context) {
-    final List<Map<String, String>> discountBanners = [
-      {
-        "image": "assets/mini.JPG",
-        "title": "Dapatkan Diskon 10%",
-        "description": "Untuk Booking Lapang di Hari Jumat",
-      },
-      {
-        "image": "assets/rubber.JPG",
-        "title": "Diskon 15% Untuk Member",
-        "description": "Nikmati promo eksklusif untuk pengguna setia",
-      },
-      {
-        "image": "assets/vynil.JPG",
-        "title": "Promo Spesial Weekend!",
-        "description": "Diskon 20% untuk pemesanan di Sabtu & Minggu",
-      },
-    ];
-
-    return Container(
-      height: 250,
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: CarouselSlider.builder(
-        itemCount: discountBanners.length,
-        options: CarouselOptions(
-          height: 300,
-          autoPlay: true,
-          autoPlayInterval: const Duration(seconds: 20),
-          autoPlayAnimationDuration: const Duration(milliseconds: 800),
-          enlargeCenterPage: true,
-          viewportFraction: 1.0,
-        ),
-        itemBuilder: (context, index, realIndex) {
-          final discount = discountBanners[index];
-          return Container(
-            margin: const EdgeInsets.symmetric(
-                horizontal: 5.0), // Beri sedikit jarak antar banner
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Stack(
-                fit: StackFit.expand, // Pastikan Stack memenuhi seluruh area
-                children: [
-                  // Gambar Latar Belakang
-                  Image.asset(
-                    discount["image"]!,
-                    fit: BoxFit.cover,
-                  ),
-                  // Lapisan Gradasi untuk Teks
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.center,
-                        colors: [
-                          Colors.black.withOpacity(0.8),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Konten Teks
-                  Positioned(
-                    bottom: 20.0,
-                    left: 20.0,
-                    right: 20.0,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          discount["title"]!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              // Tambahkan shadow agar teks lebih terbaca
-                              Shadow(
-                                blurRadius: 10.0,
-                                color: Colors.black54,
-                                offset: Offset(2.0, 2.0),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8.0),
-                        Text(
-                          discount["description"]!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-//   Widget bestSellerWidget(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           const SizedBox(height: 10),
-//           if (lapangs.isNotEmpty && lapangs.length > 1)
-//             GestureDetector(
-//               onTap: () {
-//                 goToDetailLapang(1);
-//               },
-//               child: Stack(
-//                 children: [
-//                   // Gambar dengan deskripsi
-//                   Container(
-//                     height: 250,
-//                     width: MediaQuery.sizeOf(context).width,
-//                     decoration: BoxDecoration(
-//                       borderRadius: BorderRadius.circular(20),
-//                       image: DecorationImage(
-//                         image: AssetImage(lapangs[1].imagePath.toString()),
-//                         fit: BoxFit.cover,
-//                         colorFilter: ColorFilter.mode(
-//                           Colors.black.withOpacity(0.2),
-//                           BlendMode.darken,
-//                         ),
-//                       ),
-//                     ),
-//                     child: Align(
-//                       alignment: Alignment.bottomCenter,
-//                       child: Container(
-//                         padding: const EdgeInsets.symmetric(
-//                             horizontal: 16, vertical: 10),
-//                         decoration: const BoxDecoration(
-//                           color: Colors.white60,
-//                           borderRadius: BorderRadius.vertical(
-//                             bottom: Radius.circular(20),
-//                           ),
-//                         ),
-//                         child: ListTile(
-//                           title: Text(
-//                             lapangs[1].name.toString(),
-//                             style: const TextStyle(
-//                               color: Colors.black,
-//                               fontSize: 18,
-//                               fontWeight: FontWeight.bold,
-//                             ),
-//                           ),
-//                           subtitle: Text(
-//                             'Rp. ${lapangs[1].price}',
-//                             style: const TextStyle(
-//                               color: Colors.black,
-//                               fontSize: 14,
-//                             ),
-//                           ),
-//                           trailing: Row(
-//                             mainAxisSize: MainAxisSize.min,
-//                             children: [
-//                               const Icon(
-//                                 CupertinoIcons.star_fill,
-//                                 size: 20,
-//                                 color: Colors.yellow,
-//                               ),
-//                               const SizedBox(
-//                                   width: 6), // Jarak antara ikon dan teks
-//                               Text(
-//                                 '${lapangs[1].rating ?? 0.0}', // Menampilkan rating
-//                                 style: const TextStyle(
-//                                   color: Colors.black,
-//                                   fontSize: 14,
-//                                   // fontWeight: FontWeight.bold,
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-//                   // Banner di pojok kiri atas
-//                   Positioned(
-//                     top: 10,
-//                     left: 10,
-//                     child: Container(
-//                       padding: const EdgeInsets.symmetric(
-//                           horizontal: 10, vertical: 5),
-//                       decoration: BoxDecoration(
-//                         color: Colors.black,
-//                         borderRadius: BorderRadius.circular(10),
-//                         boxShadow: [
-//                           BoxShadow(
-//                             color: Colors.black.withOpacity(0.2),
-//                             blurRadius: 4,
-//                             offset: const Offset(2, 2),
-//                           ),
-//                         ],
-//                       ),
-//                       child: const Text(
-//                         'Best Seller',
-//                         style: TextStyle(
-//                           color: Colors.white,
-//                           fontSize: 14,
-//                           fontWeight: FontWeight.bold,
-//                         ),
-//                       ),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             )
-//           else
-//             Center(
-//               child: Text(
-//                 "Belum ada best seller tersedia",
-//                 style: TextStyle(color: Colors.grey, fontSize: 16),
-//               ),
-//             ),
-//         ],
-//       ),
-//     );
-//   }
 }
 
 class ProfilePage extends StatelessWidget {
@@ -893,7 +687,7 @@ class ProfilePage extends StatelessWidget {
 }
 
 class LapangGridItem extends StatefulWidget {
-  final Lapang lapang; // Ganti 'Lapang' dengan nama model Anda
+  final Lapang lapang;
   final VoidCallback onTap;
 
   const LapangGridItem({
@@ -918,30 +712,24 @@ class _LapangGridItemState extends State<LapangGridItem> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          // --- Animasi saat hover ---
           transform: _isHovered
               ? (Matrix4.identity()..scale(1.05))
               : Matrix4.identity(),
           transformAlignment: FractionalOffset.center,
           child: Card(
-            // --- Efek shadow dan corner radius ---
             elevation: _isHovered ? 10 : 5,
             shadowColor: Colors.black.withOpacity(0.3),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            clipBehavior:
-                Clip.antiAlias, // Penting agar gambar mengikuti corner radius
+            clipBehavior: Clip.antiAlias,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Gambar Latar
                 Image.asset(
                   widget.lapang.imagePath ?? 'assets/default_image.jpg',
                   fit: BoxFit.cover,
                 ),
-
-                // --- Efek Gradien ---
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -956,8 +744,6 @@ class _LapangGridItemState extends State<LapangGridItem> {
                     ),
                   ),
                 ),
-
-                // Konten Teks
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -1007,153 +793,25 @@ class _LapangGridItemState extends State<LapangGridItem> {
 }
 
 class BannerModel {
+  final String id;
   final String imageUrl;
   final String title;
   final String description;
 
   BannerModel({
+    required this.id,
     required this.imageUrl,
     required this.title,
     required this.description,
   });
 
-  // Factory constructor untuk membuat instance dari Firestore document
   factory BannerModel.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map<String, dynamic>;
     return BannerModel(
+      id: doc.id,
       imageUrl: data['imageUrl'] ?? '',
       title: data['title'] ?? 'Judul Tidak Tersedia',
       description: data['description'] ?? 'Deskripsi tidak tersedia.',
-    );
-  }
-}
-
-// 2. Buat Widget yang dinamis
-class DiscountBanner extends StatefulWidget {
-  const DiscountBanner({super.key});
-
-  @override
-  State<DiscountBanner> createState() => _DiscountBannerState();
-}
-
-class _DiscountBannerState extends State<DiscountBanner> {
-  // Fungsi untuk mengambil data dari koleksi 'banners' di Firestore
-  Future<List<BannerModel>> _fetchBanners() async {
-    QuerySnapshot snapshot =
-        await FirebaseFirestore.instance.collection('banners').get();
-
-    // Filter dokumen yang aktif saja (opsional)
-    // QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('banners').where('isActive', isEqualTo: true).get();
-
-    return snapshot.docs.map((doc) => BannerModel.fromFirestore(doc)).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<BannerModel>>(
-      future: _fetchBanners(),
-      builder: (context, snapshot) {
-        // Saat data sedang dimuat
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // Jika terjadi error
-        if (snapshot.hasError) {
-          return const Center(child: Text("Gagal memuat banner promo."));
-        }
-
-        // Jika tidak ada data atau data kosong
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const SizedBox.shrink(); // Tidak menampilkan apa-apa
-        }
-
-        // Jika data berhasil dimuat
-        final banners = snapshot.data!;
-
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 10),
-          child: CarouselSlider.builder(
-            itemCount: banners.length,
-            options: CarouselOptions(
-              height: 220, // Sesuaikan tinggi
-              autoPlay: true,
-              autoPlayInterval: const Duration(seconds: 5),
-              enlargeCenterPage: true,
-              viewportFraction: 0.9, // Menampilkan sedikit banner di samping
-              aspectRatio: 16 / 9,
-            ),
-            itemBuilder: (context, index, realIndex) {
-              final banner = banners[index];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Ganti Image.asset menjadi Image.network
-                      Image.network(
-                        banner.imageUrl,
-                        fit: BoxFit.cover,
-                        // Loading builder untuk menampilkan progress saat gambar di-load
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.error, color: Colors.red);
-                        },
-                      ),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.center,
-                            colors: [
-                              Colors.black.withOpacity(0.8),
-                              Colors.transparent
-                            ],
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 20.0,
-                        left: 20.0,
-                        right: 20.0,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              banner.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                shadows: [
-                                  Shadow(
-                                      blurRadius: 10.0, color: Colors.black54)
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 8.0),
-                            Text(
-                              banner.description,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
     );
   }
 }
