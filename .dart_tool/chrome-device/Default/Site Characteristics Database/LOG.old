@@ -1,14 +1,9 @@
-2025/07/21-17:38:03.578 28b0 Log #3: 7 ops saved to Table #11 OK
-2025/07/21-17:38:03.586 28b0 Archiving C:\Users\ESES\AppData\Local\Temp\flutter_tools.d3321c02\flutter_tools_chrome_device.44a112c4\Default\Site Characteristics Database/000003.log: OK
-2025/07/21-17:38:03.591 28b0 Log #6: 1 ops saved to Table #12 OK
-2025/07/21-17:38:03.594 28b0 Archiving C:\Users\ESES\AppData\Local\Temp\flutter_tools.d3321c02\flutter_tools_chrome_device.44a112c4\Default\Site Characteristics Database/000006.log: OK
-2025/07/21-17:38:03.600 28b0 Log #10: 2 ops saved to Table #13 OK
-2025/07/21-17:38:03.601 28b0 Archiving C:\Users\ESES\AppData\Local\Temp\flutter_tools.d3321c02\flutter_tools_chrome_device.44a112c4\Default\Site Characteristics Database/000010.log: OK
-2025/07/21-17:38:03.601 28b0 Table #4: 7 entries OK
-2025/07/21-17:38:03.602 28b0 Table #7: 7 entries OK
-2025/07/21-17:38:03.602 28b0 Table #8: 1 entries OK
-2025/07/21-17:38:03.602 28b0 Table #11: 7 entries OK
-2025/07/21-17:38:03.603 28b0 Table #12: 1 entries OK
-2025/07/21-17:38:03.603 28b0 Table #13: 2 entries OK
-2025/07/21-17:38:03.606 28b0 Archiving C:\Users\ESES\AppData\Local\Temp\flutter_tools.d3321c02\flutter_tools_chrome_device.44a112c4\Default\Site Characteristics Database/MANIFEST-000001: OK
-2025/07/21-17:38:03.616 28b0 **** Repaired leveldb C:\Users\ESES\AppData\Local\Temp\flutter_tools.d3321c02\flutter_tools_chrome_device.44a112c4\Default\Site Characteristics Database; recovered 6 files; 1637 bytes. Some data may have been lost. ****
+2025/07/25-07:56:32.265 2190 Reusing MANIFEST C:\Users\ESES\AppData\Local\Temp\flutter_tools.800c0b20\flutter_tools_chrome_device.70dbb03f\Default\Site Characteristics Database/MANIFEST-000001
+2025/07/25-07:56:32.268 2190 Recovering log #15
+2025/07/25-07:56:32.268 2190 Reusing old log C:\Users\ESES\AppData\Local\Temp\flutter_tools.800c0b20\flutter_tools_chrome_device.70dbb03f\Default\Site Characteristics Database/000015.log 
+2025/07/25-07:56:32.269 2190 Delete type=0 #3
+2025/07/25-07:56:32.269 2190 Delete type=2 #4
+2025/07/25-07:56:32.269 2190 Delete type=0 #6
+2025/07/25-07:56:32.269 2190 Delete type=2 #7
+2025/07/25-07:56:32.269 2190 Delete type=2 #8
+2025/07/25-07:56:32.269 2190 Delete type=0 #10

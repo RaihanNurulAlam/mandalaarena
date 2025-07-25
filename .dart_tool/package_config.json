@@ -1052,13 +1052,19 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "youtube_player_flutter",
+      "rootUri": "file:///C:/Users/ESES/AppData/Local/Pub/Cache/hosted/pub.dev/youtube_player_flutter-9.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
       "name": "mandalaarenaapp",
       "rootUri": "../",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     }
   ],
-  "generated": "2025-07-21T10:36:02.668257Z",
+  "generated": "2025-07-25T00:06:22.593785Z",
   "generator": "pub",
   "generatorVersion": "3.6.0",
   "flutterRoot": "file:///C:/Users/ESES/flutter",

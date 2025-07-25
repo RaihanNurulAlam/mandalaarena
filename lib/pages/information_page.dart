@@ -46,7 +46,10 @@ class _InformationPageState extends State<InformationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Artikel', style: TextStyle(color: Colors.black)),
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: const Text('Artikel', style: TextStyle(color: Colors.black)),
+        ),
         actions: [
           if (_isAdmin)
             Padding(
@@ -119,9 +122,11 @@ class _InformationPageState extends State<InformationPage> {
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
                                   style: TextButton.styleFrom(
-      backgroundColor: Colors.black, // Warna hitam
-      foregroundColor: Colors.white, // Font warna putih
-    ),
+                                    backgroundColor:
+                                        Colors.black, // Warna hitam
+                                    foregroundColor:
+                                        Colors.white, // Font warna putih
+                                  ),
                                   child: Text('Batal'),
                                 ),
                                 TextButton(
@@ -133,9 +138,11 @@ class _InformationPageState extends State<InformationPage> {
                                     Navigator.pop(context);
                                   },
                                   style: TextButton.styleFrom(
-      backgroundColor: Colors.black, // Warna hitam
-      foregroundColor: Colors.white, // Font warna putih
-    ),
+                                    backgroundColor:
+                                        Colors.black, // Warna hitam
+                                    foregroundColor:
+                                        Colors.white, // Font warna putih
+                                  ),
                                   child: Text('Hapus'),
                                 ),
                               ],

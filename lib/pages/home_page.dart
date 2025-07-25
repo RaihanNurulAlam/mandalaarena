@@ -1,4 +1,4 @@
-// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously, use_super_parameters, unused_local_variable
+// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously, use_super_parameters, unused_local_variable, sized_box_for_whitespace
 
 import 'dart:convert';
 
@@ -11,19 +11,25 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
+import 'package:mandalaarenaapp/pages/about_page.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
 import 'package:mandalaarenaapp/pages/booking_summary_page.dart';
 import 'package:mandalaarenaapp/pages/detailpage.dart';
+import 'package:mandalaarenaapp/pages/edit_profile_page.dart';
+import 'package:mandalaarenaapp/pages/galery_page.dart';
+import 'package:mandalaarenaapp/pages/information_page.dart';
+import 'package:mandalaarenaapp/pages/manage_booking_page.dart';
 import 'package:mandalaarenaapp/pages/membership_page.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 import 'package:mandalaarenaapp/pages/points_page.dart';
-import 'package:mandalaarenaapp/pages/profile_navigation.dart';
 import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
+import 'package:mandalaarenaapp/pages/welcome_page.dart';
 import 'package:mandalaarenaapp/provider/cart.dart';
 import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -34,12 +40,36 @@ class _HomePageState extends State<HomePage> {
   List<Lapang> lapangs = [];
   bool isExpanded = false;
   bool isHoveredToggle = false;
+  YoutubePlayerController? _controller;
 
   @override
   void initState() {
     super.initState();
     getLapangs();
     Intl.defaultLocale = 'id_ID';
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      const videoUrl = 'https://www.youtube.com/watch?v=Ke-n-g-3P2U';
+      final videoId = YoutubePlayer.convertUrlToId(videoUrl);
+
+      if (mounted) {
+        setState(() {
+          _controller = YoutubePlayerController(
+            initialVideoId: videoId ?? '',
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              mute: false,
+            ),
+          );
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
   }
 
   Future<void> getLapangs() async {
@@ -89,6 +119,7 @@ class _HomePageState extends State<HomePage> {
       create: (context) => NavigationCubit(),
       child: Builder(builder: (BuildContext newContext) {
         return Scaffold(
+          endDrawer: const ProfileSlider(),
           appBar: AppBar(
             toolbarHeight: 80,
             title: Padding(
@@ -124,7 +155,11 @@ class _HomePageState extends State<HomePage> {
               TextButton.icon(
                 onPressed: user != null
                     ? () {
-                        newContext.read<NavigationCubit>().navigateToIndex(3);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const PointsPage()),
+                        );
                       }
                     : null,
                 icon: const Icon(Icons.star, color: Colors.orange, size: 22),
@@ -151,7 +186,7 @@ class _HomePageState extends State<HomePage> {
                           onPressed: () {
                             goToCart();
                           },
-                          icon: Icon(
+                          icon: const Icon(
                             CupertinoIcons.bag,
                             size: 30,
                           ),
@@ -167,7 +202,7 @@ class _HomePageState extends State<HomePage> {
                               child: Center(
                                 child: Text(
                                   value.cart.length.toString(),
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.black,
                                     fontSize: 10,
                                   ),
@@ -206,10 +241,10 @@ class _HomePageState extends State<HomePage> {
                 )
               else
                 Consumer<UserProvider>(
-                  builder: (context, provider, child) {
+                  builder: (context, userProvider, child) {
                     return GestureDetector(
                       onTap: () {
-                        newContext.read<NavigationCubit>().navigateToIndex(2);
+                        Scaffold.of(context).openEndDrawer();
                       },
                       child: Padding(
                         padding: const EdgeInsets.only(right: 16.0, left: 4.0),
@@ -234,10 +269,10 @@ class _HomePageState extends State<HomePage> {
                   switch (state) {
                     case NavigationState.sparring:
                       return SparringTeamPage();
-                    case NavigationState.profile:
-                      return ProfilePageNavigation();
-                    case NavigationState.points:
-                      return PointsPage();
+                    case NavigationState.information:
+                      return InformationPage();
+                    case NavigationState.about:
+                      return AboutPage();
                     default:
                       return _buildHomeContent(context);
                   }
@@ -359,12 +394,12 @@ class _HomePageState extends State<HomePage> {
                     label: 'Sparring',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.person),
-                    label: 'Profile',
+                    icon: Icon(Icons.article_rounded),
+                    label: 'Artikel',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.star),
-                    label: 'Points',
+                    icon: Icon(Icons.question_answer_rounded),
+                    label: 'Ulasan',
                   ),
                 ],
               );
@@ -375,6 +410,130 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildYoutubePlayer() {
+    if (_controller == null) {
+      return const SizedBox(
+        height: 200,
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        clipBehavior: Clip.antiAlias,
+        child: YoutubePlayer(
+          controller: _controller!,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: Colors.amber,
+          progressColors: const ProgressBarColors(
+            playedColor: Colors.amber,
+            handleColor: Colors.amberAccent,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // WIDGET BARU: PRATINJAU GALERI
+  Widget _buildGalleryPreview(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Galeri Aktivitas',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => GalleryPage()),
+                  );
+                },
+                child: const Text(
+                  'Lihat Lainnya >',
+                  style: TextStyle(
+                      color: Colors.black54, fontWeight: FontWeight.bold),
+                ),
+              )
+            ],
+          ),
+        ),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('gallery')
+              .orderBy('timestamp', descending: true)
+              .limit(3)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 220, // Disesuaikan dari 200 menjadi 220
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            final galleryDocs = snapshot.data!.docs;
+
+            return CarouselSlider.builder(
+              itemCount: galleryDocs.length,
+              options: CarouselOptions(
+                height: 220, // Disesuaikan dari 200 menjadi 220
+                autoPlay: galleryDocs.length > 1,
+                autoPlayInterval: const Duration(seconds: 5),
+                enlargeCenterPage: true,
+                viewportFraction: 0.9, // Disesuaikan dari 0.85 menjadi 0.9
+                aspectRatio: 16 / 9, // Ditambahkan agar sesuai
+              ),
+              itemBuilder: (context, index, realIndex) {
+                final doc = galleryDocs[index];
+                final imageUrl = doc['imageUrl'];
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 5.0, vertical: 4.0),
+                  elevation: 4,
+                  shadowColor: Colors.black.withOpacity(0.2),
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                        child: Icon(Icons.error, color: Colors.red)),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildHomeContent(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = FirebaseAuth.instance.currentUser;
@@ -382,14 +541,18 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDiscountBanner(context),
+          // --- BLOK MEMBER DIPINDAHKAN KE ATAS ---
           if (user != null)
             if (userProvider.isMembershipActive)
               _buildMemberStatusCard(context, userProvider)
             else
               _buildMembershipBanner(context),
+
+          _buildDiscountBanner(context),
+          _buildYoutubePlayer(),
+          _buildGalleryPreview(context),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
             child: Text(
               'Pilih Lapang',
               style: TextStyle(
@@ -604,8 +767,8 @@ class _HomePageState extends State<HomePage> {
   Widget _buildGridLapangs(BuildContext context) {
     return GridView.builder(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: MediaQuery.of(context).size.width > 1650
             ? 5
@@ -629,59 +792,226 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class ProfilePage extends StatelessWidget {
-  final String userName;
-  final String userEmail;
-  final String profileImageUrl;
+// WIDGET BARU UNTUK SLIDER PROFIL
+class ProfileSlider extends StatefulWidget {
+  const ProfileSlider({Key? key}) : super(key: key);
 
-  const ProfilePage({
-    Key? key,
-    required this.userName,
-    required this.userEmail,
-    required this.profileImageUrl,
-  }) : super(key: key);
+  @override
+  State<ProfileSlider> createState() => _ProfileSliderState();
+}
+
+class _ProfileSliderState extends State<ProfileSlider> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _syncUserData(context);
+      }
+    });
+  }
+
+  Future<void> _syncUserData(BuildContext context) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        final userData = userDoc.data();
+        if (userData != null && mounted) {
+          Provider.of<UserProvider>(context, listen: false).setUserData(
+            userId: user.uid,
+            userName: userData['name'] ?? '',
+            userEmail: user.email ?? '',
+            profileImageUrl: userData['profileImageUrl'] ?? '',
+            userPhone: userData['phone'] ?? '',
+            isMember: userData['member'] ?? false,
+            points: userData['points'] ?? 0,
+            memberUntil: (userData['memberUntil'] as Timestamp?)?.toDate(),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Kesalahan sinkronisasi data pengguna: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Halaman Profil"),
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Drawer(
+          child: Center(child: Text("Pengguna tidak ditemukan.")));
+    }
+
+    final userProvider = Provider.of<UserProvider>(context);
+
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // Header Profil Kustom yang Baru
+          _buildProfileHeader(userProvider),
+
+          const SizedBox(height: 10), // Spasi sebelum menu
+
+          // Menu Item
+          _buildListTile(
+            context,
+            'Ubah Profil',
+            Icons.edit,
+            () async {
+              Navigator.pop(context);
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfilePage(
+                    userName: userProvider.userName,
+                    userEmail: userProvider.userEmail,
+                    profileImageUrl: userProvider.profileImageUrl,
+                    phoneNumber: userProvider.userPhone,
+                  ),
+                ),
+              );
+              if (result == true) {
+                _syncUserData(context);
+              }
+            },
+          ),
+          _buildAdminButton(context, user.uid),
+          const Divider(indent: 16, endIndent: 16),
+          _buildListTile(
+            context,
+            'Keluar',
+            Icons.logout,
+            () async {
+              final navigator = Navigator.of(context);
+              final userProvider =
+                  Provider.of<UserProvider>(context, listen: false);
+
+              final confirmLogout = await showDialog<bool>(
+                context: context,
+                builder: (BuildContext context) => AlertDialog(
+                  title: const Text('Konfirmasi Keluar'),
+                  content: const Text('Apakah Anda yakin ingin keluar?'),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Batal'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Keluar'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmLogout == true) {
+                await FirebaseAuth.instance.signOut();
+                userProvider.clearUserData();
+                navigator.pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const WelcomePage()),
+                  (route) => false,
+                );
+              }
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+    );
+  }
+
+  // Widget header profil yang baru dengan info terpusat
+  Widget _buildProfileHeader(UserProvider userProvider) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 60, 16, 20),
+      color: Colors.black,
+      child: Center(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage(profileImageUrl),
+              radius: 45,
+              backgroundImage: NetworkImage(
+                userProvider.profileImageUrl.isNotEmpty
+                    ? userProvider.profileImageUrl
+                    : "https://via.placeholder.com/150",
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             Text(
-              userName,
+              userProvider.userName.isNotEmpty
+                  ? userProvider.userName
+                  : "Pengguna",
               style: const TextStyle(
-                fontSize: 24,
                 fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: Colors.white,
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
-              userEmail,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
+              userProvider.userEmail.isNotEmpty
+                  ? userProvider.userEmail
+                  : "Email tidak ditemukan",
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              textAlign: TextAlign.center,
             ),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Kembali ke beranda"),
+            const SizedBox(height: 4),
+            Text(
+              userProvider.userPhone.isNotEmpty
+                  ? userProvider.userPhone
+                  : "No. telepon belum ditambahkan",
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // Widget helper untuk tombol admin
+  Widget _buildAdminButton(BuildContext context, String uid) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
+          final userData = snapshot.data!.data() as Map<String, dynamic>;
+          final isAdmin = userData['isAdmin'] ?? false;
+          if (isAdmin) {
+            return _buildListTile(
+              context,
+              'Kelola Booking',
+              Icons.book_online,
+              () {
+                Navigator.pop(context);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ManageBookingsPage()));
+              },
+            );
+          }
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  // Widget helper untuk membuat ListTile
+  Widget _buildListTile(
+      BuildContext context, String title, IconData icon, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.black87),
+      title: Text(title),
+      onTap: onTap,
     );
   }
 }

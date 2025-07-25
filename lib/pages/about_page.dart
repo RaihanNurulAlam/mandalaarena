@@ -139,11 +139,11 @@ class _AboutPageState extends State<AboutPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Tentang Aplikasi', style: TextStyle(color: Colors.black)),
-        // centerTitle: true,
-        // backgroundColor: Colors.black,
-      ),
+      // appBar: AppBar(
+      //     // title: Text('Tentang Aplikasi', style: TextStyle(color: Colors.black)),
+      //     // centerTitle: true,
+      //     // backgroundColor: Colors.black,
+      //     ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(12),

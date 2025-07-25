@@ -1,5 +1,6 @@
 // ignore_for_file: use_key_in_widget_constructors, use_build_context_synchronously, avoid_print, deprecated_member_use, avoid_types_as_parameter_names
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,14 +30,30 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
   bool showPaymentPopup = false;
   String? paymentUrl;
   String? currentOrderId;
+  Timer? _cartCleanUpTimer;
 
   @override
   void initState() {
     super.initState();
-    // Memuat data keranjang dan menghapus item yang sudah kedaluwarsa
+    // Memuat data keranjang dan melakukan pembersihan awal
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAndCleanCart();
     });
+
+    // BARU: Setel Timer untuk memeriksa keranjang secara berkala (misal: setiap 30 detik)
+    _cartCleanUpTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      // Pastikan widget masih ada di tree sebelum menjalankan pengecekan
+      if (mounted) {
+        print("Timer berjalan: Memeriksa booking yang kedaluwarsa...");
+        _removeExpiredBookings();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _cartCleanUpTimer?.cancel();
+    super.dispose();
   }
 
   /// Memuat data keranjang dari Firebase dan membersihkan item yang sudah kedaluwarsa.
@@ -46,49 +63,51 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
       final cart = Provider.of<Cart>(context, listen: false);
       await cart.loadCart(user.uid);
       // Panggil fungsi untuk menghapus item kedaluwarsa setelah data dimuat
-      _removeExpiredBookings();
+      await _removeExpiredBookings();
     }
   }
 
   /// **FITUR BARU: Hapus item booking yang waktunya sudah terlewat.**
   Future<void> _removeExpiredBookings() async {
     final cart = Provider.of<Cart>(context, listen: false);
+    if (cart.cart.isEmpty) return;
+
     final now = DateTime.now();
-    // Gunakan locale 'id_ID' untuk parsing nama hari dan bulan dalam Bahasa Indonesia
-    final formatter = DateFormat('EEEE, dd MMMM yyyy HH:mm', 'id_ID');
+    // BARU: Sesuaikan format parser dengan data Anda
+    final formatter = DateFormat('yyyy-MM-dd HH:mm');
     List<CartModel> expiredItems = [];
-    int expiredCount = 0;
 
     for (final item in cart.cart) {
       try {
-        // Gabungkan tanggal dan waktu dari item
+        // String gabungan akan menjadi "2025-07-25 09:00"
         final String dateTimeString = '${item.bookingDate} ${item.time}';
         final DateTime bookingDateTime = formatter.parse(dateTimeString);
 
-        // Jika waktu booking sudah lewat dari sekarang, tandai untuk dihapus
         if (bookingDateTime.isBefore(now)) {
           expiredItems.add(item);
         }
       } catch (e) {
-        print("Error parsing date for item ${item.name}: $e");
-        // Anda bisa menangani item dengan format tanggal yang salah di sini jika perlu
+        print("Error parsing date untuk item ${item.name}: $e");
+        print(
+            "Data string yang gagal di-parse: '${item.bookingDate} ${item.time}'");
       }
     }
 
-    // Hapus semua item yang ditandai kedaluwarsa
     if (expiredItems.isNotEmpty) {
-      expiredCount = expiredItems.length;
+      int expiredCount = expiredItems.length;
       for (final item in expiredItems) {
         await cart.deleteItemCart(item);
       }
-      // Beri notifikasi ke pengguna
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              '$expiredCount item booking yang kedaluwarsa telah dihapus.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '$expiredCount item booking yang kedaluwarsa telah dihapus.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 

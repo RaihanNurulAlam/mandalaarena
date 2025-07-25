@@ -8,11 +8,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 enum NavigationState {
   home,
   sparring,
-  profile,
-  points,
+  // profile,
+  // points,
   // gallery,
-  // information,
-  // about,
+  information,
+  about,
   // payment,
   // booking,
   admin,
@@ -34,15 +34,15 @@ class NavigationCubit extends Cubit<NavigationState> {
       case 1:
         emit(NavigationState.sparring);
         break;
-      case 2:
-        emit(NavigationState.profile);
-        break;
-      case 3:
-        emit(NavigationState.points);
-        break;
       // case 4:
-      //   emit(NavigationState.about);
+      //   emit(NavigationState.profile);
       //   break;
+      // case 5:
+      //   emit(NavigationState.points);
+      //   break;
+      case 3:
+        emit(NavigationState.about);
+        break;
       // case 5:
       //   emit(NavigationState.payment);
       //   break;
@@ -52,9 +52,9 @@ class NavigationCubit extends Cubit<NavigationState> {
       // case 7:
       //   emit(NavigationState.booking);
       //   break;
-      // case 8:
-      //   emit(NavigationState.information);
-      //   break;
+      case 2:
+        emit(NavigationState.information);
+        break;
       default:
         emit(NavigationState.home);
         break;

@@ -22,8 +22,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
 import '../widgets/drawer_widget.dart';
-// import '../pages/information_page.dart';
-// import '../pages/about_page.dart';
+import '../pages/information_page.dart';
+import '../pages/about_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -219,10 +219,10 @@ class _HomePageState extends State<HomePage> {
                 switch (state) {
                   // case NavigationState.gallery:
                   //   return GalleryPage();
-                  // case NavigationState.information:
-                  //   return InformationPage();
-                  // case NavigationState.about:
-                  //   return AboutPage();
+                  case NavigationState.information:
+                    return InformationPage();
+                  case NavigationState.about:
+                    return AboutPage();
                   // case NavigationState.payment:
                   //   return PaymentPage();
                   case NavigationState.sparring:

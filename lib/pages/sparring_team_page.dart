@@ -195,15 +195,17 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              title: const Text("Cari Lawan Sparring",
-                  style: TextStyle(
-                      color: Colors.black, fontWeight: FontWeight.bold)),
+              title: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: const Text("Cari Lawan Sparring",
+                    style: TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold)),
+              ),
               backgroundColor: Colors.white,
               floating: true,
               pinned: true,
               snap: true,
               forceElevated: innerBoxIsScrolled,
-              // --- PERUBAHAN DI SINI ---
               actions: [
                 Padding(
                   padding: const EdgeInsets.only(right: 20.0),
@@ -226,7 +228,6 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                   ),
                 ),
               ],
-              // --- AKHIR PERUBAHAN ---
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(130.0),
                 child: _buildFilterSection(),
@@ -236,7 +237,6 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
         },
         body: _buildTeamList(),
       ),
-      // --- FloatingActionButton DIHAPUS DARI SINI ---
     );
   }
 
