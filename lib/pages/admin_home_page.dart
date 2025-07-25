@@ -187,7 +187,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               children: const [
                 Text(
                   'Mandala Arena (Admin)',
-                  style: TextStyle(color: Colors.black, fontSize: 20),
+                  style: TextStyle(color: Colors.black, fontSize: 16),
                 ),
                 Row(
                   children: [
@@ -474,7 +474,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               _buildMembershipBanner(context),
 
           _buildDiscountBanner(context),
-          _buildYoutubePlayer(),
+          // _buildYoutubePlayer(),
           _buildGalleryPreview(context),
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -494,33 +494,33 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  Widget _buildYoutubePlayer() {
-    if (_controller == null) {
-      return const SizedBox(
-        height: 200,
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        clipBehavior: Clip.antiAlias,
-        child: YoutubePlayer(
-          controller: _controller!,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: Colors.amber,
-          progressColors: const ProgressBarColors(
-            playedColor: Colors.amber,
-            handleColor: Colors.amberAccent,
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildYoutubePlayer() {
+  //   if (_controller == null) {
+  //     return const SizedBox(
+  //       height: 200,
+  //       child: Center(
+  //         child: CircularProgressIndicator(),
+  //       ),
+  //     );
+  //   }
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+  //     child: Card(
+  //       elevation: 4,
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+  //       clipBehavior: Clip.antiAlias,
+  //       child: YoutubePlayer(
+  //         controller: _controller!,
+  //         showVideoProgressIndicator: true,
+  //         progressIndicatorColor: Colors.amber,
+  //         progressColors: const ProgressBarColors(
+  //           playedColor: Colors.amber,
+  //           handleColor: Colors.amberAccent,
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildGalleryPreview(BuildContext context) {
     return Column(
@@ -1180,7 +1180,7 @@ class _LapangGridItemState extends State<LapangGridItem> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             shadows: [
                               Shadow(
@@ -1196,7 +1196,7 @@ class _LapangGridItemState extends State<LapangGridItem> {
                           'Mulai dari Rp. ${widget.lapang.price}',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
-                            fontSize: 13,
+                            fontSize: 10,
                           ),
                         ),
                       ],
