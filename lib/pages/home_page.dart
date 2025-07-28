@@ -1,4 +1,4 @@
-// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously, use_super_parameters, unused_local_variable, sized_box_for_whitespace
+// ignore_for_file: use_key_in_widget_constructors, deprecated_member_use, prefer_typing_uninitialized_variables, unreachable_switch_case, avoid_print, prefer_interpolation_to_compose_strings, use_build_context_synchronously, use_super_parameters, unused_local_variable, sized_box_for_whitespace, sort_child_properties_last
 
 import 'dart:convert';
 
@@ -129,13 +129,17 @@ class _HomePageState extends State<HomePage> {
                 children: const [
                   Text(
                     'Mandala Arena',
-                    style: TextStyle(color: Colors.black, fontSize: 16),
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Row(
                     children: [
                       Icon(
                         CupertinoIcons.map_pin,
-                        size: 14,
+                        size: 12,
                         color: Colors.grey,
                       ),
                       SizedBox(width: 1),
@@ -143,7 +147,7 @@ class _HomePageState extends State<HomePage> {
                         'Garut, Indonesia',
                         style: TextStyle(
                           color: Colors.grey,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -152,74 +156,92 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             actions: [
-              TextButton.icon(
-                onPressed: user != null
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const PointsPage()),
-                        );
-                      }
-                    : null,
-                icon: const Icon(Icons.star, color: Colors.orange, size: 22),
-                label: Text(
-                  userProvider.points.toString(),
-                  style: const TextStyle(
-                      color: Colors.black, fontWeight: FontWeight.bold),
+              // 1. Ikon Poin (Bintang)
+              // Hanya muncul jika user sudah login
+              if (user != null)
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const PointsPage()),
+                    );
+                  },
+                  icon: const Icon(Icons.star,
+                      color: Colors.orange, size: 22), // Ukuran diperkecil
+                  label: Text(
+                    userProvider.points.toString(),
+                    style: const TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10), // Padding dikurangi
+                    minimumSize: const Size(30, 30),
+                  ),
                 ),
-              ),
+              if (user != null) const SizedBox(width: 2), // Jarak antar ikon
+
+              // 2. Ikon Alamat
               IconButton(
                 onPressed: () {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => AlamatPage()));
                 },
-                icon: const Icon(Icons.location_on, size: 30),
+                icon: const Icon(Icons.location_on,
+                    size: 30), // Ukuran diperkecil
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
               ),
+              const SizedBox(width: 8), // Jarak antar ikon
+
+              // 3. Ikon Keranjang (Cart)
               Consumer<Cart>(
                 builder: (context, value, child) {
                   return Padding(
-                    padding: const EdgeInsets.only(right: 14, left: 5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0), // Padding disesuaikan
                     child: Stack(
+                      alignment: Alignment.center,
                       children: [
                         IconButton(
-                          onPressed: () {
-                            goToCart();
-                          },
-                          icon: const Icon(
-                            CupertinoIcons.bag,
-                            size: 30,
-                          ),
+                          onPressed: goToCart,
+                          icon: const Icon(CupertinoIcons.bag,
+                              size: 30), // Ukuran diperkecil
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Visibility(
-                            visible: value.cart.isNotEmpty ? true : false,
+                        if (value.cart.isNotEmpty)
+                          Positioned(
+                            top: 4, // Posisi badge disesuaikan
+                            right: 0,
                             child: CircleAvatar(
-                              radius: 10,
+                              radius: 8, // Ukuran badge diperkecil
                               backgroundColor: Colors.yellow,
                               child: Center(
                                 child: Text(
                                   value.cart.length.toString(),
                                   style: const TextStyle(
                                     color: Colors.black,
-                                    fontSize: 10,
+                                    fontSize: 10, // Font diperkecil
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   );
                 },
               ),
+              const SizedBox(width: 14), // Jarak sebelum tombol Login/Avatar
+
+              // 4. Tombol Login atau Avatar Profil
               if (user == null)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 18, 16, 18),
-                  child: ElevatedButton.icon(
+                  padding: const EdgeInsets.only(right: 30.0),
+                  child: ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -227,38 +249,35 @@ class _HomePageState extends State<HomePage> {
                             builder: (context) => const LoginScreen()),
                       );
                     },
-                    icon:
-                        const Icon(Icons.login, size: 18, color: Colors.white),
-                    label: const Text("Login"),
+                    child: const Text("Login", style: TextStyle(fontSize: 12)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                          borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 12), // Padding diperkecil
                     ),
                   ),
                 )
               else
-                Consumer<UserProvider>(
-                  builder: (context, userProvider, child) {
-                    return GestureDetector(
-                      onTap: () {
-                        Scaffold.of(context).openEndDrawer();
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 16.0, left: 4.0),
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundImage: NetworkImage(
-                            userProvider.profileImageUrl.isNotEmpty
-                                ? userProvider.profileImageUrl
-                                : "https://via.placeholder.com/150",
-                          ),
+                Builder(
+                  builder: (newContext) => GestureDetector(
+                    onTap: () {
+                      Scaffold.of(newContext).openEndDrawer();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16.0),
+                      child: CircleAvatar(
+                        radius: 18, // Ukuran avatar diperkecil
+                        backgroundImage: NetworkImage(
+                          userProvider.profileImageUrl.isNotEmpty
+                              ? userProvider.profileImageUrl
+                              : "https://via.placeholder.com/150",
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -444,7 +463,7 @@ class _HomePageState extends State<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          padding: const EdgeInsets.fromLTRB(30, 10, 30, 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -541,7 +560,6 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- BLOK MEMBER DIPINDAHKAN KE ATAS ---
           if (user != null)
             if (userProvider.isMembershipActive)
               _buildMemberStatusCard(context, userProvider)
@@ -552,7 +570,7 @@ class _HomePageState extends State<HomePage> {
           // _buildYoutubePlayer(),
           _buildGalleryPreview(context),
           const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+            padding: EdgeInsets.fromLTRB(30, 20, 20, 10),
             child: Text(
               'Pilih Lapang',
               style: TextStyle(
@@ -890,19 +908,27 @@ class _ProfileSliderState extends State<ProfileSlider> {
               final navigator = Navigator.of(context);
               final userProvider =
                   Provider.of<UserProvider>(context, listen: false);
-
+              final cartProvider = Provider.of<Cart>(context, listen: false);
               final confirmLogout = await showDialog<bool>(
                 context: context,
                 builder: (BuildContext context) => AlertDialog(
                   title: const Text('Konfirmasi Keluar'),
                   content: const Text('Apakah Anda yakin ingin keluar?'),
                   actions: <Widget>[
-                    TextButton(
+                    ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
                       child: const Text('Batal'),
                     ),
-                    TextButton(
+                    ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
                       child: const Text('Keluar'),
                     ),
                   ],
@@ -912,6 +938,7 @@ class _ProfileSliderState extends State<ProfileSlider> {
               if (confirmLogout == true) {
                 await FirebaseAuth.instance.signOut();
                 userProvider.clearUserData();
+                cartProvider.clearCart();
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const WelcomePage()),
                   (route) => false,

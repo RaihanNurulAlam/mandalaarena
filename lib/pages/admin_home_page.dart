@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously, unused_element, deprecated_member_use, use_super_parameters, unused_field, use_key_in_widget_constructors, prefer_const_constructors, avoid_print, prefer_interpolation_to_compose_strings, sized_box_for_whitespace
+// ignore_for_file: use_build_context_synchronously, unused_element, deprecated_member_use, use_super_parameters, unused_field, use_key_in_widget_constructors, prefer_const_constructors, avoid_print, prefer_interpolation_to_compose_strings, sized_box_for_whitespace, sort_child_properties_last
 
 import 'dart:convert';
 
@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:mandalaarenaapp/Login%20Signup/Screen/login.dart';
 import 'package:mandalaarenaapp/cubit/navigation_cubit.dart';
 import 'package:mandalaarenaapp/pages/about_page.dart';
 import 'package:mandalaarenaapp/pages/alamat_page.dart';
@@ -41,8 +40,6 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey =
-      GlobalKey<ScaffoldState>(); // 1. Deklarasikan GlobalKey
   List<Lapang> lapangs = [];
   bool isExpanded = false;
   bool isHoveredToggle = false;
@@ -170,292 +167,292 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
     final userProvider = Provider.of<UserProvider>(context);
+    final user = FirebaseAuth.instance.currentUser;
     return BlocProvider(
       create: (context) => NavigationCubit(),
-      child: Scaffold(
-        // 4. Hapus Builder yang membungkus Scaffold
-        key: _scaffoldKey, // 2. Gunakan GlobalKey pada Scaffold
-        endDrawer: const ProfileSlider(),
-        appBar: AppBar(
-          toolbarHeight: 80,
-          title: Padding(
-            padding: const EdgeInsets.only(left: 15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Mandala Arena (Admin)',
-                  style: TextStyle(color: Colors.black, fontSize: 16),
-                ),
-                Row(
-                  children: [
-                    Icon(
-                      CupertinoIcons.map_pin,
-                      size: 14,
-                      color: Colors.grey,
+      child: Builder(builder: (BuildContext newContext) {
+        return Scaffold(
+          endDrawer: const ProfileSlider(),
+          appBar: AppBar(
+            toolbarHeight: 80,
+            title: Padding(
+              padding: const EdgeInsets.only(left: 15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Mandala Arena (Admin)',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(width: 1),
-                    Text(
-                      'Garut, Indonesia',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton.icon(
-              onPressed: user != null
-                  ? () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => PointsPage()));
-                    }
-                  : null,
-              icon: const Icon(Icons.star, color: Colors.orange, size: 22),
-              label: Text(
-                userProvider.points.toString(),
-                style: const TextStyle(
-                    color: Colors.black, fontWeight: FontWeight.bold),
-              ),
-            ),
-            IconButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => AlamatPage()));
-              },
-              icon: const Icon(Icons.location_on, size: 30),
-            ),
-            Consumer<Cart>(
-              builder: (context, value, child) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 14, left: 5),
-                  child: Stack(
+                  ),
+                  Row(
                     children: [
-                      IconButton(
-                        onPressed: goToCart,
-                        icon: const Icon(
-                          CupertinoIcons.bag,
-                          size: 30,
-                        ),
+                      Icon(
+                        CupertinoIcons.map_pin,
+                        size: 12,
+                        color: Colors.grey,
                       ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Visibility(
-                          visible: value.cart.isNotEmpty,
-                          child: CircleAvatar(
-                            radius: 10,
-                            backgroundColor: Colors.yellow,
-                            child: Center(
-                              child: Text(
-                                value.cart.length.toString(),
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ),
-                          ),
+                      SizedBox(width: 1),
+                      Text(
+                        'Garut, Indonesia',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
-                );
-              },
+                ],
+              ),
             ),
-            if (user == null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 18, 16, 18),
-                child: ElevatedButton.icon(
+            actions: [
+              // ## PENAMBAHAN KODE: Menampilkan ikon Poin (star) agar konsisten ##
+              if (user != null)
+                TextButton.icon(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const LoginScreen()),
+                          builder: (context) => const PointsPage()),
                     );
                   },
-                  icon: const Icon(Icons.login, size: 18),
-                  label: const Text("Login"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                  icon: const Icon(Icons.star,
+                      color: Colors.orange, size: 22), // Ukuran diperkecil
+                  label: Text(
+                    userProvider.points.toString(),
+                    style: const TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10), // Padding dikurangi
+                    minimumSize: const Size(30, 30),
                   ),
                 ),
-              )
-            else
-              Consumer<UserProvider>(
-                builder: (context, provider, child) {
-                  return GestureDetector(
-                    onTap: () {
-                      _scaffoldKey.currentState
-                          ?.openEndDrawer(); // 3. Panggil openEndDrawer melalui key
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 16.0, left: 4.0),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundImage: NetworkImage(
-                          provider.profileImageUrl.isNotEmpty
-                              ? provider.profileImageUrl
-                              : "https://via.placeholder.com/150",
+              if (user != null) const SizedBox(width: 2),
+
+              // Ikon Alamat (tetap ada)
+              IconButton(
+                onPressed: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => AlamatPage()));
+                },
+                icon: const Icon(Icons.location_on, size: 30),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 8),
+
+              // Ikon Keranjang (Cart) - Disesuaikan agar konsisten
+              Consumer<Cart>(
+                builder: (context, value, child) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: goToCart,
+                          icon: const Icon(CupertinoIcons.bag, size: 30),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
-                      ),
+                        if (value.cart.isNotEmpty)
+                          Positioned(
+                            top: 4,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 8,
+                              backgroundColor: Colors.yellow,
+                              child: Center(
+                                child: Text(
+                                  value.cart.length.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   );
                 },
               ),
-          ],
-        ),
-        body: Stack(
-          children: [
-            BlocBuilder<NavigationCubit, NavigationState>(
-              builder: (context, state) {
-                switch (state) {
-                  case NavigationState.sparring:
-                    return SparringTeamPage();
-                  case NavigationState.information:
-                    return InformationPage();
-                  case NavigationState.about:
-                    return AboutPage();
-                  default:
-                    return _buildHomeContent(context);
-                }
-              },
-            ),
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Visibility(
-                    visible: isExpanded,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: FloatingActionButton(
-                        heroTag: "whatsapp",
-                        onPressed: () =>
-                            _launchURL('https://wa.me/6281111122525'),
-                        backgroundColor: Colors.green,
-                        child: Image.network(
-                          "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
-                          width: 25,
-                          height: 25,
-                        ),
+              const SizedBox(width: 14),
+
+              // Avatar Profil Admin (selalu ditampilkan)
+              Builder(
+                builder: (context) => GestureDetector(
+                  onTap: () {
+                    Scaffold.of(context).openEndDrawer();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundImage: NetworkImage(
+                        userProvider.profileImageUrl.isNotEmpty
+                            ? userProvider.profileImageUrl
+                            : "https://via.placeholder.com/150",
                       ),
                     ),
                   ),
-                  Visibility(
-                    visible: isExpanded,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: FloatingActionButton(
-                        heroTag: "facebook",
-                        onPressed: () => _launchURL(
-                            'https://www.facebook.com/mandala.arena'),
-                        backgroundColor: Colors.blue,
-                        child: const Icon(Icons.facebook, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  Visibility(
-                    visible: isExpanded,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: FloatingActionButton(
-                          heroTag: "instagram",
-                          onPressed: () => _launchURL(
-                              'https://www.instagram.com/mandalaarena'),
-                          backgroundColor: Colors.purple,
+                ),
+              ),
+            ],
+          ),
+          body: Stack(
+            children: [
+              BlocBuilder<NavigationCubit, NavigationState>(
+                builder: (context, state) {
+                  switch (state) {
+                    case NavigationState.sparring:
+                      return SparringTeamPage();
+                    case NavigationState.information:
+                      return InformationPage();
+                    case NavigationState.about:
+                      return AboutPage();
+                    default:
+                      return _buildHomeContent(context);
+                  }
+                },
+              ),
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Visibility(
+                      visible: isExpanded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: FloatingActionButton(
+                          heroTag: "whatsapp",
+                          onPressed: () =>
+                              _launchURL('https://wa.me/6281111122525'),
+                          backgroundColor: Colors.green,
                           child: Image.network(
-                            "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                            "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
                             width: 25,
                             height: 25,
-                          )),
-                    ),
-                  ),
-                  Visibility(
-                    visible: isExpanded,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: FloatingActionButton(
-                        heroTag: "email",
-                        onPressed: () =>
-                            _launchURL('mailto:mandalaarena@gmail.com'),
-                        backgroundColor: Colors.red,
-                        child: Image.network(
-                          "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
-                          width: 25,
-                          height: 25,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  MouseRegion(
-                    onEnter: (_) => setState(() => isHoveredToggle = true),
-                    onExit: (_) => setState(() => isHoveredToggle = false),
-                    child: FloatingActionButton(
-                      heroTag: "toggle",
-                      onPressed: _toggleMenu,
-                      backgroundColor:
-                          Colors.black.withOpacity(isHoveredToggle ? 1.0 : 0.5),
-                      child: Icon(
-                        isExpanded ? Icons.close : Icons.add_comment,
-                        color: Colors.white,
+                    Visibility(
+                      visible: isExpanded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: FloatingActionButton(
+                          heroTag: "facebook",
+                          onPressed: () => _launchURL(
+                              'https://www.facebook.com/mandala.arena'),
+                          backgroundColor: Colors.blue,
+                          child:
+                              const Icon(Icons.facebook, color: Colors.white),
+                        ),
                       ),
                     ),
+                    Visibility(
+                      visible: isExpanded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: FloatingActionButton(
+                            heroTag: "instagram",
+                            onPressed: () => _launchURL(
+                                'https://www.instagram.com/mandalaarena'),
+                            backgroundColor: Colors.purple,
+                            child: Image.network(
+                              "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                              width: 25,
+                              height: 25,
+                            )),
+                      ),
+                    ),
+                    Visibility(
+                      visible: isExpanded,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.only(bottom: 10),
+                        child: FloatingActionButton(
+                          heroTag: "email",
+                          onPressed: () =>
+                              _launchURL('mailto:mandalaarena@gmail.com'),
+                          backgroundColor: Colors.red,
+                          child: Image.network(
+                            "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
+                            width: 25,
+                            height: 25,
+                          ),
+                        ),
+                      ),
+                    ),
+                    MouseRegion(
+                      onEnter: (_) => setState(() {
+                        isHoveredToggle = true;
+                      }),
+                      onExit: (_) => setState(() {
+                        isHoveredToggle = false;
+                      }),
+                      child: FloatingActionButton(
+                        heroTag: "toggle",
+                        onPressed: _toggleMenu,
+                        backgroundColor: Colors.black
+                            .withOpacity(isHoveredToggle ? 1.0 : 0.5),
+                        child: Icon(
+                          isExpanded ? Icons.close : Icons.add_comment,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
+            builder: (context, state) {
+              return BottomNavigationBar(
+                currentIndex: state.index,
+                selectedItemColor: Colors.black,
+                unselectedItemColor: Colors.black,
+                onTap: (index) {
+                  context.read<NavigationCubit>().navigateToIndex(index);
+                },
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.home),
+                    label: 'Beranda',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.group),
+                    label: 'Sparring',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.article_rounded),
+                    label: 'Artikel',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.question_answer_rounded),
+                    label: 'Ulasan',
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-        bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
-          builder: (context, state) {
-            return BottomNavigationBar(
-              currentIndex: state.index,
-              selectedItemColor: Colors.black,
-              unselectedItemColor: Colors.black,
-              onTap: (index) {
-                context.read<NavigationCubit>().navigateToIndex(index);
-              },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'Beranda',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.group),
-                  label: 'Sparring',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.article_rounded),
-                  label: 'Artikel',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.question_answer_rounded),
-                  label: 'Ulasan',
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+              );
+            },
+          ),
+        );
+      }),
     );
   }
 
@@ -466,7 +463,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- BLOK MEMBER DIPINDAHKAN KE ATAS ---
+          // ## PENAMBAHAN KODE: Menampilkan banner member agar konsisten ##
           if (user != null)
             if (userProvider.isMembershipActive)
               _buildMemberStatusCard(context, userProvider)
@@ -474,10 +471,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
               _buildMembershipBanner(context),
 
           _buildDiscountBanner(context),
-          // _buildYoutubePlayer(),
           _buildGalleryPreview(context),
           const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+            padding: EdgeInsets.fromLTRB(30, 20, 20, 10),
             child: Text(
               'Pilih Lapang',
               style: TextStyle(
@@ -494,40 +490,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // Widget _buildYoutubePlayer() {
-  //   if (_controller == null) {
-  //     return const SizedBox(
-  //       height: 200,
-  //       child: Center(
-  //         child: CircularProgressIndicator(),
-  //       ),
-  //     );
-  //   }
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-  //     child: Card(
-  //       elevation: 4,
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-  //       clipBehavior: Clip.antiAlias,
-  //       child: YoutubePlayer(
-  //         controller: _controller!,
-  //         showVideoProgressIndicator: true,
-  //         progressIndicatorColor: Colors.amber,
-  //         progressColors: const ProgressBarColors(
-  //           playedColor: Colors.amber,
-  //           handleColor: Colors.amberAccent,
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildGalleryPreview(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          padding: const EdgeInsets.fromLTRB(30, 10, 30, 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -564,7 +532,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
-                height: 220, // Disesuaikan dari 200 menjadi 220
+                height: 220,
                 child: Center(child: CircularProgressIndicator()),
               );
             }
@@ -577,12 +545,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
             return CarouselSlider.builder(
               itemCount: galleryDocs.length,
               options: CarouselOptions(
-                height: 220, // Disesuaikan dari 200 menjadi 220
+                height: 220,
                 autoPlay: galleryDocs.length > 1,
                 autoPlayInterval: const Duration(seconds: 5),
                 enlargeCenterPage: true,
-                viewportFraction: 0.9, // Disesuaikan dari 0.85 menjadi 0.9
-                aspectRatio: 16 / 9, // Ditambahkan agar sesuai
+                viewportFraction: 0.9,
+                aspectRatio: 16 / 9,
               ),
               itemBuilder: (context, index, realIndex) {
                 final doc = galleryDocs[index];
@@ -618,8 +586,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   Widget _buildDiscountBanner(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10.0),
       child: StreamBuilder<QuerySnapshot>(
@@ -639,36 +605,33 @@ class _AdminHomePageState extends State<AdminHomePage> {
             return const SizedBox.shrink();
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            if (userProvider.isAdmin) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.image_not_supported_outlined,
-                          size: 40, color: Colors.grey),
-                      const SizedBox(height: 8),
-                      const Text("Belum ada banner promo.",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      const Text("Ketuk untuk menambah banner baru.",
-                          style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => _navigateToBannerForm(),
-                        child: const Text("Tambah Banner"),
-                      )
-                    ],
-                  ),
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-              );
-            }
-            return const SizedBox.shrink();
+                child: Column(
+                  children: [
+                    const Icon(Icons.image_not_supported_outlined,
+                        size: 40, color: Colors.grey),
+                    const SizedBox(height: 8),
+                    const Text("Belum ada banner promo.",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    const Text("Ketuk untuk menambah banner baru.",
+                        style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => _navigateToBannerForm(),
+                      child: const Text("Tambah Banner"),
+                    )
+                  ],
+                ),
+              ),
+            );
           }
 
           final banners = snapshot.data!.docs
@@ -740,48 +703,46 @@ class _AdminHomePageState extends State<AdminHomePage> {
                             ],
                           ),
                         ),
-                        if (userProvider.isAdmin)
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(20)),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          color: Colors.white, size: 20),
-                                      onPressed: () => _navigateToBannerForm(
-                                          banner: banner)),
-                                  IconButton(
-                                      icon: const Icon(Icons.delete,
-                                          color: Colors.red, size: 20),
-                                      onPressed: () => _deleteBanner(
-                                          context, banner.id, banner.imageUrl)),
-                                ],
-                              ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(20)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.white, size: 20),
+                                    onPressed: () =>
+                                        _navigateToBannerForm(banner: banner)),
+                                IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red, size: 20),
+                                    onPressed: () => _deleteBanner(
+                                        context, banner.id, banner.imageUrl)),
+                              ],
                             ),
                           ),
+                        ),
                       ],
                     ),
                   );
                 },
               ),
-              if (userProvider.isAdmin)
-                Positioned(
-                  bottom: 12,
-                  right: 24,
-                  child: FloatingActionButton(
-                    mini: true,
-                    heroTag: 'add_banner',
-                    onPressed: _navigateToBannerForm,
-                    tooltip: 'Tambah Banner Baru',
-                    child: const Icon(Icons.add),
-                  ),
+              Positioned(
+                bottom: 12,
+                right: 24,
+                child: FloatingActionButton(
+                  mini: true,
+                  heroTag: 'add_banner',
+                  onPressed: _navigateToBannerForm,
+                  tooltip: 'Tambah Banner Baru',
+                  child: const Icon(Icons.add),
                 ),
+              ),
             ],
           );
         },
@@ -789,6 +750,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
+  // ## PENAMBAHAN KODE: Widget untuk banner membership ##
   Widget _buildMembershipBanner(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -841,6 +803,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
+  // ## PENAMBAHAN KODE: Widget untuk status member ##
   Widget _buildMemberStatusCard(BuildContext context, UserProvider provider) {
     final expiryDate = provider.memberUntil != null
         ? DateFormat('dd MMMM yyyy').format(provider.memberUntil!)
@@ -921,14 +884,16 @@ class _ProfileSliderState extends State<ProfileSlider> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncUserData(context);
+      if (mounted) {
+        _syncUserData(context);
+      }
     });
   }
 
   Future<void> _syncUserData(BuildContext context) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
-      if (user != null && mounted) {
+      if (user != null) {
         await Provider.of<UserProvider>(context, listen: false)
             .fetchUserData(user.uid);
       }
@@ -959,7 +924,7 @@ class _ProfileSliderState extends State<ProfileSlider> {
             Icons.edit,
             () async {
               Navigator.pop(context);
-              await Navigator.push(
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => EditProfilePage(
@@ -970,6 +935,9 @@ class _ProfileSliderState extends State<ProfileSlider> {
                   ),
                 ),
               );
+              if (result == true) {
+                _syncUserData(context);
+              }
             },
           ),
           _buildAdminButton(context, user.uid),
@@ -982,6 +950,8 @@ class _ProfileSliderState extends State<ProfileSlider> {
               final navigator = Navigator.of(context);
               final userProvider =
                   Provider.of<UserProvider>(context, listen: false);
+              // ## PENAMBAHAN LOGIKA: Dapatkan Cart provider ##
+              final cartProvider = Provider.of<Cart>(context, listen: false);
 
               final confirmLogout = await showDialog<bool>(
                 context: context,
@@ -989,12 +959,20 @@ class _ProfileSliderState extends State<ProfileSlider> {
                   title: const Text('Konfirmasi Keluar'),
                   content: const Text('Apakah Anda yakin ingin keluar?'),
                   actions: <Widget>[
-                    TextButton(
+                    ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
                       child: const Text('Batal'),
                     ),
-                    TextButton(
+                    ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
                       child: const Text('Keluar'),
                     ),
                   ],
@@ -1004,6 +982,8 @@ class _ProfileSliderState extends State<ProfileSlider> {
               if (confirmLogout == true) {
                 await FirebaseAuth.instance.signOut();
                 userProvider.clearUserData();
+                // ## PENAMBAHAN LOGIKA: Panggil clearCart() ##
+                cartProvider.clearCart();
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const WelcomePage()),
                   (route) => false,
@@ -1037,7 +1017,7 @@ class _ProfileSliderState extends State<ProfileSlider> {
             Text(
               userProvider.userName.isNotEmpty
                   ? userProvider.userName
-                  : "Pengguna",
+                  : "Admin",
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -1068,30 +1048,14 @@ class _ProfileSliderState extends State<ProfileSlider> {
   }
 
   Widget _buildAdminButton(BuildContext context, String uid) {
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done &&
-            snapshot.hasData &&
-            snapshot.data!.exists) {
-          final userData = snapshot.data!.data() as Map<String, dynamic>;
-          final isAdmin = userData['isAdmin'] ?? false;
-          if (isAdmin) {
-            return _buildListTile(
-              context,
-              'Kelola Booking',
-              Icons.book_online,
-              () {
-                Navigator.pop(context);
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => ManageBookingsPage()));
-              },
-            );
-          }
-        }
-        return const SizedBox.shrink();
+    return _buildListTile(
+      context,
+      'Kelola Booking',
+      Icons.book_online,
+      () {
+        Navigator.pop(context);
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => ManageBookingsPage()));
       },
     );
   }

@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_final_fields
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/models/cart_model.dart';
@@ -5,9 +7,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mandalaarenaapp/pages/models/lapang.dart';
 
 class Cart extends ChangeNotifier {
-  final List<CartModel> _cart = [];
+  List<CartModel> _cart = [];
+  String? _currentUserId;
 
   List<CartModel> get cart => _cart;
+
+  Future<void> updateUserAndLoadCart(String? newUserId) async {
+    if (_currentUserId != newUserId) {
+      print(
+          "Auth state changed! Old User: $_currentUserId, New User: $newUserId");
+      _currentUserId = newUserId;
+      if (newUserId != null && newUserId.isNotEmpty) {
+        await loadCart(newUserId);
+      } else {
+        notifyListeners();
+      }
+    }
+  }
 
   // --- [MODIFIKASI] Tambahkan parameter useIceBath ---
   Future<void> addToCart(

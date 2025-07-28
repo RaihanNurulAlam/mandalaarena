@@ -88,13 +88,20 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
         title: const Text('Konfirmasi Hapus'),
         content: const Text('Apakah Anda yakin ingin menghapus tim ini?'),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(context).pop(false),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Batal'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Hapus'),
           ),
         ],
@@ -129,14 +136,22 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
           content: const Text(
               'Silakan pilih jenis lapangan basket yang ingin Anda booking.'),
           actions: [
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
               onPressed: () {
                 Navigator.pop(context);
                 _openBookingPage(team, 'Lapang Basket Vynil');
               },
               child: const Text('Vynil'),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
               onPressed: () {
                 Navigator.pop(context);
                 _openBookingPage(team, 'Lapang Basket Karet');
@@ -519,11 +534,19 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
         content: const Text(
             'Anda harus login terlebih dahulu untuk melakukan aksi ini.'),
         actions: [
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(context),
             child: const Text('Batal'),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               Navigator.pop(context);
               Navigator.push(context,

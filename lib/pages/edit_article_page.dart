@@ -209,11 +209,11 @@ class _EditArticlePageState extends State<EditArticlePage> {
               ElevatedButton(
                 onPressed: _updateArticle,
                 style: ElevatedButton.styleFrom(
-    foregroundColor: Colors.white, // Warna teks putih
-    backgroundColor: Colors.black, // Warna background hitam
-  ),
-  child: Text('Perbarui Artikel'),
-),
+                  foregroundColor: Colors.white, // Warna teks putih
+                  backgroundColor: Colors.black, // Warna background hitam
+                ),
+                child: Text('Perbarui Artikel'),
+              ),
             ],
           ),
         ),

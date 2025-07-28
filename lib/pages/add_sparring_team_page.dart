@@ -51,9 +51,9 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
     '20:00',
     '21:00',
   ];
+  // PERUBAHAN: Menghapus kategori 'Tim Basket 3x3'
   final List<String> _categories = [
     'Tim Basket',
-    'Tim Basket 3x3',
     'Tim Minisoccer',
   ];
 
@@ -195,20 +195,24 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
               const SizedBox(height: 32),
 
               // --- Tombol Simpan ---
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text('Tambahkan Tim'),
-                onPressed: _saveTeam,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+              // PERUBAHAN: Tombol dibungkus dengan Center dan style disesuaikan
+              Center(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: const Text('Tambahkan Tim'),
+                  onPressed: _saveTeam,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -269,12 +273,31 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
                   : null,
             ),
             const SizedBox(height: 16),
+            // PERUBAHAN: TextFormField untuk kontak diperbarui
             TextFormField(
               controller: _contactController,
-              decoration: _inputDecoration('Kontak (No. WA)', Icons.phone),
-              keyboardType: TextInputType.phone,
-              validator: (value) =>
-                  value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
+              decoration: _inputDecoration('Kontak (No. WA)', Icons.phone)
+                  .copyWith(
+                      hintText: '6281234567890',
+                      helperText: 'Awali dengan 62 tanpa spasi atau +',
+                      helperStyle: TextStyle(color: Colors.grey[600])),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Kontak tidak boleh kosong';
+                }
+                final isDigitsOnly = RegExp(r'^[0-9]+$').hasMatch(value);
+                if (!isDigitsOnly) {
+                  return 'Kontak hanya boleh berisi angka';
+                }
+                if (!value.startsWith('62')) {
+                  return 'Kontak harus diawali dengan 62';
+                }
+                if (value.length < 10) {
+                  return 'Nomor kontak tidak valid';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -330,23 +353,31 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
           runSpacing: 8.0,
           children: items.map((item) {
             final isSelected = selectedItem == item;
-            final isUnavailable = item == '18:00'; // Contoh jam tidak tersedia
+            // final isUnavailable = item == '18:00'; // Contoh jam tidak tersedia
 
             return ChoiceChip(
               label: Text(item),
               selected: isSelected,
-              onSelected: isUnavailable
-                  ? null
-                  : (selected) => onSelect(selected ? item : null),
-              backgroundColor:
-                  isUnavailable ? Colors.grey[300] : Colors.grey[100],
+              // onSelected: isUnavailable
+              //     ? null
+              //     : (selected) => onSelect(selected ? item : null),
+              // backgroundColor:
+              //     isUnavailable ? Colors.grey[300] : Colors.grey[100],
+              // selectedColor: Colors.black,
+              // labelStyle: TextStyle(
+              //     color: isUnavailable
+              //         ? Colors.grey[500]
+              //         : isSelected
+              //             ? Colors.white
+              //             : Colors.black,
+              //     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+              onSelected: (selected) => onSelect(selected ? item : null),
+              // Pengecekan isUnavailable dihapus dari sini
+              backgroundColor: Colors.grey[100],
               selectedColor: Colors.black,
               labelStyle: TextStyle(
-                  color: isUnavailable
-                      ? Colors.grey[500]
-                      : isSelected
-                          ? Colors.white
-                          : Colors.black,
+                  // Pengecekan isUnavailable dihapus dari sini
+                  color: isSelected ? Colors.white : Colors.black,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
               shape: StadiumBorder(
                   side: BorderSide(

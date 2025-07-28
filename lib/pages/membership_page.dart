@@ -133,7 +133,11 @@ class _MembershipPageState extends State<MembershipPage> {
           ],
         ),
         actions: [
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               Navigator.pop(context); // Tutup dialog
               setState(() => isProcessingPayment = false);

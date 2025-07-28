@@ -17,9 +17,6 @@ class EditSparringTeamPage extends StatefulWidget {
 }
 
 class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
-  // =======================================================================
-  // =                        LOGIKA (TIDAK DIUBAH)                        =
-  // =======================================================================
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
@@ -56,9 +53,9 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
     '21:00',
   ];
 
+  // --- PERUBAHAN: Menghapus 'Tim Basket 3x3' agar konsisten ---
   final List<String> _categories = [
     'Tim Basket',
-    'Tim Basket 3x3',
     'Tim Minisoccer',
   ];
 
@@ -143,7 +140,6 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         return;
       }
 
-      // Tampilkan dialog loading
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -160,33 +156,26 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         newImageUrl = await _uploadImage(_nameController.text.trim());
       }
 
-      final updatedTeam = SparringTeam(
-        id: widget.team.id,
-        name: _nameController.text.trim(),
-        imageUrl: newImageUrl ?? widget.team.imageUrl,
-        availableDays: [_selectedDay!],
-        availableHours: [_selectedHour!],
-        contact: _contactController.text.trim(),
-        category: _selectedCategory!,
-        createdBy: widget.team.createdBy,
-        createdAt: widget.team.createdAt,
-      );
+      final updatedData = {
+        'name': _nameController.text.trim(),
+        'imageUrl': newImageUrl ?? widget.team.imageUrl,
+        'availableDays': [_selectedDay!],
+        'availableHours': [_selectedHour!],
+        'contact': _contactController.text.trim(),
+        'category': _selectedCategory!,
+      };
 
       await FirebaseFirestore.instance
           .collection('sparring_teams')
-          .doc(updatedTeam.id)
-          .set(updatedTeam.toMap(), SetOptions(merge: true));
+          .doc(widget.team.id)
+          .update(updatedData);
 
-      // Tutup dialog loading
-      Navigator.pop(context);
-      // Kembali ke halaman sebelumnya dengan data baru
-      Navigator.pop(context, updatedTeam);
+      Navigator.pop(context); // Tutup dialog loading
+      Navigator.pop(context,
+          true); // Kembali ke halaman sebelumnya dan tandai ada perubahan
     }
   }
 
-  // =======================================================================
-  // =                        TAMPILAN (UI BARU)                           =
-  // =======================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -204,33 +193,37 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // --- Bagian Gambar ---
               _buildImagePickerSection(),
+              const SizedBox(height: 8),
+              Center(
+                  child: Text("Ganti Logo Tim",
+                      style: TextStyle(color: Colors.grey[600]))),
               const SizedBox(height: 24),
 
-              // --- Bagian Informasi Dasar ---
               _buildInfoCard(),
               const SizedBox(height: 24),
 
-              // --- Bagian Jadwal ---
               _buildScheduleCard(),
               const SizedBox(height: 32),
 
-              // --- Tombol Simpan ---
-              ElevatedButton.icon(
-                icon: const Icon(Icons.save, color: Colors.white),
-                label: const Text('Simpan Perubahan'),
-                onPressed: _updateTeam,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+              // --- PERUBAHAN: Style tombol disamakan ---
+              Center(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.save, color: Colors.white),
+                  label: const Text('Simpan Perubahan'),
+                  onPressed: _updateTeam,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12, horizontal: 24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -245,43 +238,31 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
     return Center(
       child: Stack(
         children: [
-          Container(
-            width: 130,
-            height: 130,
-            decoration: BoxDecoration(
-              border: Border.all(width: 4, color: Colors.white),
-              boxShadow: [
-                BoxShadow(
-                  spreadRadius: 2,
-                  blurRadius: 10,
-                  color: Colors.black.withOpacity(0.1),
-                ),
-              ],
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                fit: BoxFit.cover,
-                image: _imageFile != null
+          // Widget untuk menampilkan gambar (bisa dari file baru, web, atau network)
+          CircleAvatar(
+            radius: 65,
+            backgroundColor: Colors.grey[200],
+            backgroundImage: _webImage != null
+                ? MemoryImage(_webImage!)
+                : _imageFile != null
                     ? FileImage(_imageFile!)
-                    : _webImage != null
-                        ? MemoryImage(_webImage!)
-                        : NetworkImage(widget.team.imageUrl.isNotEmpty
-                                ? widget.team.imageUrl
-                                : 'https://via.placeholder.com/150')
-                            as ImageProvider,
-              ),
-            ),
+                    : NetworkImage(widget.team.imageUrl.isNotEmpty
+                        ? widget.team.imageUrl
+                        : 'https://via.placeholder.com/150') as ImageProvider,
           ),
+          // Tombol edit di pojok kanan bawah
           Positioned(
             bottom: 0,
             right: 0,
             child: InkWell(
               onTap: _pickImage,
+              borderRadius: BorderRadius.circular(20),
               child: Container(
                 height: 40,
                 width: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(width: 2, color: Colors.white),
+                  border: Border.all(width: 3, color: Colors.white),
                   color: Colors.black,
                 ),
                 child: const Icon(Icons.edit, color: Colors.white, size: 20),
@@ -310,12 +291,31 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
                   : null,
             ),
             const SizedBox(height: 16),
+            // --- PERUBAHAN: Validasi No. WA disamakan ---
             TextFormField(
               controller: _contactController,
-              decoration: _inputDecoration('Kontak (No. WA)', Icons.phone),
-              keyboardType: TextInputType.phone,
-              validator: (value) =>
-                  value!.isEmpty ? 'Kontak tidak boleh kosong' : null,
+              decoration: _inputDecoration('Kontak (No. WA)', Icons.phone)
+                  .copyWith(
+                      hintText: '6281234567890',
+                      helperText: 'Awali dengan 62 tanpa spasi atau +',
+                      helperStyle: TextStyle(color: Colors.grey[600])),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Kontak tidak boleh kosong';
+                }
+                final isDigitsOnly = RegExp(r'^[0-9]+$').hasMatch(value);
+                if (!isDigitsOnly) {
+                  return 'Kontak hanya boleh berisi angka';
+                }
+                if (!value.startsWith('62')) {
+                  return 'Kontak harus diawali dengan 62';
+                }
+                if (value.length < 10) {
+                  return 'Nomor kontak tidak valid';
+                }
+                return null;
+              },
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -343,7 +343,8 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Jadwal Tersedia',
+            // Judul diubah agar konsisten
+            const Text('Jadwal Sparring',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             _buildChoiceChipGroup('Hari', _daysOfWeek, _selectedDay, (day) {
@@ -359,6 +360,7 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
     );
   }
 
+  // --- PERUBAHAN: Logika jam 18:00 diaktifkan ---
   Widget _buildChoiceChipGroup(String title, List<String> items,
       String? selectedItem, Function(String?) onSelect) {
     return Column(
@@ -371,23 +373,20 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
           runSpacing: 8.0,
           children: items.map((item) {
             final isSelected = selectedItem == item;
-            final isUnavailable = item == '18:00'; // Contoh jam tidak tersedia
+            // Logika untuk membuat jam 18:00 tidak tersedia telah di-comment
+            // final isUnavailable = item == '18:00';
 
             return ChoiceChip(
               label: Text(item),
               selected: isSelected,
-              onSelected: isUnavailable
-                  ? null
-                  : (selected) => onSelect(selected ? item : null),
-              backgroundColor:
-                  isUnavailable ? Colors.grey[300] : Colors.grey[100],
+              // Pengecekan isUnavailable dihapus dari sini
+              onSelected: (selected) => onSelect(selected ? item : null),
+              // Pengecekan isUnavailable dihapus dari sini
+              backgroundColor: Colors.grey[100],
               selectedColor: Colors.black,
               labelStyle: TextStyle(
-                  color: isUnavailable
-                      ? Colors.grey[500]
-                      : isSelected
-                          ? Colors.white
-                          : Colors.black,
+                  // Pengecekan isUnavailable dihapus dari sini
+                  color: isSelected ? Colors.white : Colors.black,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
               shape: StadiumBorder(
                   side: BorderSide(
