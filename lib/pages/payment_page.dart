@@ -877,10 +877,13 @@ Terima kasih.
                     const Text('Menunggu konfirmasi pembayaran...',
                         style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 16),
-                    TextButton(
+                    ElevatedButton(
                       onPressed: _closePaymentPopup,
-                      child:
-                          const Text('Tutup', style: TextStyle(fontSize: 16)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Tutup'),
                     ),
                   ],
                 ),

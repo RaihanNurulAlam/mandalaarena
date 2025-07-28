@@ -338,8 +338,12 @@ Future<void> redeemPoints(BuildContext context, String userId, int cost,
           title: const Text('Error'),
           content: Text('Gagal menukarkan poin: ${e.toString()}'),
           actions: [
-            TextButton(
+            ElevatedButton(
               onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('OK'),
             ),
           ],
@@ -385,8 +389,12 @@ void showRedeemConfirmationDialog(BuildContext context, String userId, int cost,
       content:
           Text('Apakah Anda yakin ingin menukar $cost poin untuk $reward?'),
       actions: [
-        TextButton(
+        ElevatedButton(
           onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+          ),
           child: const Text('Batal'),
         ),
         TextButton(

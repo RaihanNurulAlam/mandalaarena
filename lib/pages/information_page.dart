@@ -138,10 +138,8 @@ class _InformationPageState extends State<InformationPage> {
                                     Navigator.pop(context);
                                   },
                                   style: TextButton.styleFrom(
-                                    backgroundColor:
-                                        Colors.black, // Warna hitam
-                                    foregroundColor:
-                                        Colors.white, // Font warna putih
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
                                   ),
                                   child: Text('Hapus'),
                                 ),

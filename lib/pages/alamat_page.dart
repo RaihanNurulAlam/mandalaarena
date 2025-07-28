@@ -13,24 +13,24 @@ class AlamatPage extends StatefulWidget {
 class _AlamatPageState extends State<AlamatPage> {
   final String address =
       "RW28+W56, Sukamentri, Kec. Garut Kota, Kabupaten Garut, Jawa Barat 44116";
-  final String virtualTourUrl =
-      "https://webobook.com/public/66d6aaf1182f59592758ee22,en";
+  // final String virtualTourUrl =
+  //     "https://webobook.com/public/66d6aaf1182f59592758ee22,en";
 
   static const LatLng destination =
       LatLng(-7.197780761030425, 107.9164070197299);
   Position? _currentPosition;
 
   // Method untuk membuka tautan Virtual Tour
-  Future<void> _openVirtualTour(BuildContext context) async {
-    final Uri url = Uri.parse(virtualTourUrl);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tidak dapat membuka tautan.')),
-      );
-    }
-  }
+  // Future<void> _openVirtualTour(BuildContext context) async {
+  //   final Uri url = Uri.parse(virtualTourUrl);
+  //   if (await canLaunchUrl(url)) {
+  //     await launchUrl(url, mode: LaunchMode.externalApplication);
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Tidak dapat membuka tautan.')),
+  //     );
+  //   }
+  // }
 
   // Method untuk mendapatkan lokasi saat ini
   Future<void> _determinePosition(BuildContext context) async {
@@ -164,15 +164,15 @@ class _AlamatPageState extends State<AlamatPage> {
       appBar: AppBar(
         title: const Text('Lokasi Lapang'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(
-                right: 16.0), // Tambahkan padding right sebesar 16
-            child: IconButton(
-              icon: const Icon(Icons.public, color: Colors.black),
-              onPressed: () => _openVirtualTour(context),
-              tooltip: 'Lihat Virtual Tour',
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.only(
+          //       right: 16.0), // Tambahkan padding right sebesar 16
+          //   child: IconButton(
+          //     icon: const Icon(Icons.public, color: Colors.black),
+          //     onPressed: () => _openVirtualTour(context),
+          //     tooltip: 'Lihat Virtual Tour',
+          //   ),
+          // ),
         ],
       ),
       body: Column(

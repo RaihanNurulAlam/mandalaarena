@@ -244,7 +244,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         onTap: _pickImage,
                         child: CircleAvatar(
                           radius: 20,
-                          backgroundColor: Colors.blue,
+                          backgroundColor: Colors.black,
                           child: Icon(Icons.edit, color: Colors.white),
                         ),
                       ),

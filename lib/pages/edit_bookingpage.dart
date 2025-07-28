@@ -1,190 +1,274 @@
+// [edit_booking_page.dart] - DENGAN LOGIKA MEMBER YANG DISEMPURNAKAN
+
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'dart:io';
+
+import 'package:intl/intl.dart';
 
 class EditBookingPage extends StatefulWidget {
   final String bookingId;
   final Map<String, dynamic> initialData;
-  final String lapangan;
 
   const EditBookingPage({
     super.key,
     required this.bookingId,
     required this.initialData,
-    required this.lapangan,
   });
 
   @override
-  _EditBookingPageState createState() => _EditBookingPageState();
+  State<EditBookingPage> createState() => _EditBookingPageState();
 }
 
+enum PaymentStatus { lunas, dp, booking }
+
 class _EditBookingPageState extends State<EditBookingPage> {
-  late int originalTotalAmount;
-  late int totalAmount;
+  final _formKey = GlobalKey<FormState>();
+
+  // State variables
+  int totalAmount = 0;
   late int bookingDuration;
   late bool usePhotographer;
   late bool useReferee;
+  late bool useIceBath;
   late String teamName;
-  late String userName;
-  late String userPhone;
-  final _formKey = GlobalKey<FormState>();
+  late PaymentStatus _paymentStatus;
+  late int _downPaymentAmount;
+  final TextEditingController _downPaymentController = TextEditingController();
+
+  // Image handling
   Uint8List? _webImage;
   File? _imageFile;
-  late String _paymentStatus;
-  late int _downPaymentAmount;
-  late int _remainingAmount;
-  final TextEditingController _downPaymentController = TextEditingController();
   String? _paymentProofUrl;
+
+  // Data dari booking awal
   late String lapangan;
   late String bookingDate;
   late String time;
-  late String endTime;
-  late int basePricePerHour;
-  late int photographerPrice = 200000;
-  late int refereePrice = 70000;
+  late bool isMember; // <-- Status member disimpan di sini
 
-  final List<Map<String, dynamic>> lapangData = [
-    {
-      "id": "1",
-      "name": "Lapang Basket Vynil",
-      "description": "Deskripsi Lapang Basket Vynil.",
-      "price": "250000",
-      "image_path": "assets/vynil.JPG",
-      "rating": "4.8",
-      "bookings": ["2024-12-24T08:00:00.000Z", "2024-12-24T09:00:00.000Z"],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    },
-    {
-      "id": "2",
-      "name": "Lapang Basket Karet",
-      "description": "Deskripsi Lapang Basket Karet.",
-      "price": "250000",
-      "image_path": "assets/rubber.JPG",
-      "rating": "4.9",
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    },
-    {
-      "id": "3",
-      "name": "Lapang Basket 3x3",
-      "description": "Deskripsi Lapang Basket 3x3.",
-      "price": "150000",
-      "image_path": "assets/3x3.JPG",
-      "rating": "4.8",
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    },
-    {
-      "id": "4",
-      "name": "Lapang Minisoccer",
-      "description": "Deskripsi Lapang Minisoccer.",
-      "price": "500000",
-      "image_path": "assets/mini.JPG",
-      "rating": "4.8",
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    },
-    {
-      "id": "5",
-      "name": "Gokart",
-      "description": "Deskripsi Gokart.",
-      "price": "100000",
-      "image_path": "assets/gokart.JPG",
-      "rating": "4.8",
-      "bookings": [],
-      "facilities": ["Shower", "Parking Area", "Locker Room"]
-    }
-  ];
+  final int photographerPrice = 200000;
+  final int refereePrice = 70000;
+  final int iceBathPrice = 50000;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    final items = widget.initialData['items'] as List<dynamic>? ?? [];
-    final firstItem = items.isNotEmpty ? items[0] : {};
-
-    setState(() {
-      lapangan = firstItem['name'] ?? "";
-      bookingDuration =
-          int.tryParse(firstItem['quantity']?.toString() ?? '1') ?? 1;
-      usePhotographer = firstItem['usePhotographer'] ?? false;
-      useReferee = firstItem['useReferee'] ?? false;
-      teamName = firstItem['teamName'] ?? "";
-      userName = widget.initialData['userName'] ?? "";
-      userPhone = widget.initialData['userPhone'] ?? "";
-      bookingDate = firstItem['bookingDate'] ?? "";
-      time = firstItem['time'] ?? "";
-      endTime = firstItem['endTime'] ?? "";
-
-      originalTotalAmount = widget.initialData['totalAmount'] ?? 0;
-      totalAmount = originalTotalAmount;
-      _paymentStatus = widget.initialData['statusBooking'] ?? 'Booking';
-      _downPaymentAmount = widget.initialData['downPaymentAmount'] ?? 0;
-      _remainingAmount = widget.initialData['remainingAmount'] ??
-          totalAmount - _downPaymentAmount;
-      _downPaymentController.text = _downPaymentAmount.toString();
-      _paymentProofUrl = widget.initialData['paymentProofUrl'];
-
-      basePricePerHour = (originalTotalAmount -
-              (usePhotographer ? photographerPrice : 0) -
-              (useReferee ? refereePrice : 0)) ~/
-          bookingDuration;
-    });
-    if (firstItem == null || firstItem.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Data booking tidak valid.")),
-      );
-      Navigator.of(context).pop();
-      return;
-    }
+  void initState() {
+    super.initState();
+    _initializeStateAndRecalculate();
   }
 
-  void _updatePaymentInfo() {
-    setState(() {
-      _downPaymentAmount = int.tryParse(_downPaymentController.text) ?? 0;
-      _remainingAmount = totalAmount - _downPaymentAmount;
-    });
+  void _initializeStateAndRecalculate() {
+    final items = widget.initialData['items'] as List<dynamic>? ?? [];
+    final firstItem = items.isNotEmpty ? items[0] as Map<String, dynamic> : {};
+
+    lapangan = firstItem['name'] ?? "";
+    bookingDuration =
+        int.tryParse(firstItem['quantity']?.toString() ?? '1') ?? 1;
+    usePhotographer = firstItem['usePhotographer'] ?? false;
+    useReferee = firstItem['useReferee'] ?? false;
+    useIceBath = firstItem['useIceBath'] ?? false;
+    teamName = firstItem['teamName'] ?? "";
+    bookingDate = firstItem['bookingDate'] ?? "";
+    time = firstItem['time'] ?? "";
+
+    // [PENTING] Mengambil status member dari data awal booking
+    isMember = widget.initialData['isMember'] ?? false;
+
+    final statusString =
+        widget.initialData['statusBooking']?.toString() ?? 'Booking';
+    if (statusString.contains('Sudah Bayar')) {
+      _paymentStatus = PaymentStatus.lunas;
+    } else if (statusString.toUpperCase().contains('DP')) {
+      _paymentStatus = PaymentStatus.dp;
+    } else {
+      _paymentStatus = PaymentStatus.booking;
+    }
+
+    _downPaymentAmount = widget.initialData['downPaymentAmount'] ?? 0;
+    _downPaymentController.text =
+        _downPaymentAmount > 0 ? _downPaymentAmount.toString() : '';
+    _paymentProofUrl = widget.initialData['paymentProofUrl'];
+
+    _updateTotalPrice();
+  }
+
+  // [LOGIKA KALKULASI HARGA DENGAN DISKON MEMBER]
+  int _calculateBaseRentalPrice() {
+    if (time.isEmpty || bookingDuration <= 0) return 0;
+
+    double cumulativePrice = 0.0;
+    final int startHour = int.parse(time.split(":")[0]);
+
+    for (int i = 0; i < bookingDuration; i++) {
+      final int currentHour = startHour + i;
+      double priceForThisHour = _getPriceForHour(currentHour).toDouble();
+
+      // [LOGIKA DISKON] Jika user adalah member, harga per jam dikalikan 0.9 (diskon 10%)
+      if (isMember) {
+        priceForThisHour *= 0.9;
+      }
+
+      cumulativePrice += priceForThisHour;
+    }
+    return cumulativePrice.round();
   }
 
   void _updateTotalPrice() {
-    int newTotal = basePricePerHour * bookingDuration;
+    int newTotal = _calculateBaseRentalPrice();
 
-    // Tambahkan biaya tambahan untuk jam tertentu jika bukan member
-    if (!widget.initialData['isMember']) {
-      final int startHour = int.parse(time.split(":")[0]);
-
-      if (startHour >= 13 && startHour < 18) {
-        newTotal += 50000; // Tambahan 50 ribu untuk jam 13:00 - 17:59
-      } else if (startHour >= 19 && startHour <= 21) {
-        newTotal += 100000; // Tambahan 100 ribu untuk jam 19:00 - 21:00
-      }
+    if (usePhotographer) {
+      newTotal += photographerPrice;
     }
-
-    // Tambahkan biaya tambahan untuk layanan
-    if (usePhotographer) newTotal += photographerPrice;
-    if (useReferee) newTotal += refereePrice;
+    if (useReferee) {
+      newTotal += refereePrice;
+    }
+    if (useIceBath) newTotal += iceBathPrice;
 
     setState(() {
       totalAmount = newTotal;
-
-      // Update remaining amount
-      if (_paymentStatus == 'DP') {
-        _remainingAmount = totalAmount - _downPaymentAmount;
-      } else if (_paymentStatus == 'Booking') {
-        _remainingAmount = totalAmount;
-      }
     });
+  }
+
+  int _getPriceForHour(int hour) {
+    int basePrice = 0;
+    if (lapangan == "Lapang Basket Vynil") basePrice = 150000;
+    if (lapangan == "Lapang Basket Karet") basePrice = 75000;
+    if (lapangan == "Lapang Basket 3x3") basePrice = 150000;
+    if (lapangan == "Lapang Minisoccer") basePrice = 450000;
+    if (lapangan == "Gokart") basePrice = 100000;
+
+    String lapangName = lapangan;
+
+    if (lapangName == "Lapang Minisoccer") {
+      if (hour >= 7 && hour < 14) return basePrice;
+      if (hour >= 14 && hour < 18) return basePrice + 100000;
+      if (hour >= 18 && hour < 23) return basePrice + 200000;
+    } else if (lapangName == "Lapang Basket Vynil") {
+      if (hour >= 7 && hour < 14) return basePrice;
+      if (hour >= 14 && hour < 18) return basePrice + 50000;
+      if (hour >= 18 && hour < 23) return basePrice + 100000;
+    } else if (lapangName == "Lapang Basket Karet") {
+      if (hour >= 7 && hour < 14) return basePrice;
+      if (hour >= 14 && hour < 18) return basePrice + 25000;
+      if (hour >= 18 && hour < 23) return basePrice + 50000;
+    }
+    return basePrice;
+  }
+
+  // Fungsi untuk menyimpan perubahan ke Firestore
+  Future<void> _updateBooking() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final dpAmount = int.tryParse(_downPaymentController.text) ?? 0;
+    if (_paymentStatus == PaymentStatus.dp &&
+        (dpAmount <= 0 || dpAmount >= totalAmount)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Jumlah DP tidak valid!")),
+      );
+      return;
+    }
+
+    try {
+      String? newPaymentProofUrl = await _uploadImage();
+      String finalStatus;
+      int finalDpAmount = 0;
+      int finalRemainingAmount = 0;
+
+      switch (_paymentStatus) {
+        case PaymentStatus.lunas:
+          finalStatus = 'Sudah Bayar (Offline)';
+          finalDpAmount = totalAmount;
+          finalRemainingAmount = 0;
+          break;
+        case PaymentStatus.dp:
+          finalStatus = 'DP (Bayar di Tempat)';
+          finalDpAmount = dpAmount;
+          finalRemainingAmount = totalAmount - dpAmount;
+          break;
+        case PaymentStatus.booking:
+          finalStatus = 'Booking (Bayar di Tempat)';
+          finalDpAmount = 0;
+          finalRemainingAmount = totalAmount;
+          newPaymentProofUrl = null;
+          break;
+      }
+
+      final items = widget.initialData['items'] as List<dynamic>? ?? [];
+      final firstItem =
+          items.isNotEmpty ? items[0] as Map<String, dynamic> : {};
+
+      await FirebaseFirestore.instance
+          .collection('bookings')
+          .doc(widget.bookingId)
+          .update({
+        'totalAmount': totalAmount,
+        'statusBooking': finalStatus,
+        'downPaymentAmount': finalDpAmount,
+        'remainingAmount': finalRemainingAmount,
+        'paymentProofUrl': newPaymentProofUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'isMember': isMember, // <-- [PENTING] Simpan kembali status member
+        'items': [
+          {
+            ...firstItem,
+            'quantity': bookingDuration.toString(),
+            'teamName': teamName,
+            'usePhotographer': usePhotographer,
+            'useReferee': useReferee,
+            'useIceBath': useIceBath,
+          }
+        ],
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Booking berhasil diperbarui!'),
+            backgroundColor: Colors.green),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text("Error memperbarui booking: $e"),
+            backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  // --- Sisa fungsi helper tidak ada perubahan ---
+  Future<String?> _uploadImage() async {
+    try {
+      if (_imageFile == null && _webImage == null) return _paymentProofUrl;
+      String fileName =
+          'buktipembayaran/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+      UploadTask uploadTask;
+      if (kIsWeb && _webImage != null) {
+        uploadTask = storageRef.putData(_webImage!);
+      } else if (_imageFile != null) {
+        uploadTask = storageRef.putFile(_imageFile!);
+      } else {
+        return _paymentProofUrl;
+      }
+      TaskSnapshot taskSnapshot = await uploadTask;
+      return await taskSnapshot.ref.getDownloadURL();
+    } catch (e) {
+      debugPrint('Error uploading image: $e');
+      return _paymentProofUrl;
+    }
   }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     try {
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
       if (pickedFile != null) {
         if (kIsWeb) {
           _webImage = await pickedFile.readAsBytes();
@@ -193,11 +277,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
         }
         setState(() {});
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memilih gambar: ${e.toString()}')),
-      );
-    }
+    } catch (e) {/* handle error */}
   }
 
   Future<void> _deletePaymentProof() async {
@@ -208,602 +288,408 @@ class _EditBookingPageState extends State<EditBookingPage> {
     });
   }
 
-  Future<String?> _uploadImage() async {
-    try {
-      if (_imageFile == null && _webImage == null) return _paymentProofUrl;
-
-      String fileName =
-          'buktipembayaran/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
-
-      UploadTask uploadTask;
-      if (kIsWeb && _webImage != null) {
-        uploadTask = storageRef.putData(_webImage!);
-      } else if (_imageFile != null) {
-        uploadTask = storageRef.putFile(_imageFile!);
-      } else {
-        throw Exception("Gambar tidak ditemukan");
-      }
-
-      TaskSnapshot taskSnapshot = await uploadTask;
-      return await taskSnapshot.ref.getDownloadURL();
-    } catch (e) {
-      debugPrint('Error uploading image: $e');
-      return _paymentProofUrl;
-    }
-  }
-
-  Future<void> _updateBooking() async {
-    if (!_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap isi semua field yang diperlukan!")),
-      );
-      return;
-    }
-
-    if (_paymentStatus == 'DP' && _downPaymentAmount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Harap isi jumlah DP yang dibayarkan!")),
-      );
-      return;
-    }
-
-    try {
-      String? newPaymentProofUrl = await _uploadImage();
-
-      // Ambil email pengguna dari Firestore atau sumber lain
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.initialData['userId'])
-          .get();
-
-      if (!userDoc.exists) throw Exception("User data not found");
-
-      final userEmail = userDoc['email'] ?? 'unknown';
-
-      final selectedLapang = lapangData.firstWhere(
-        (lapang) => lapang['name'] == widget.lapangan,
-        orElse: () => {},
-      );
-
-      // Update Firestore
-      await FirebaseFirestore.instance
-          .collection('bookings')
-          .doc(widget.bookingId)
-          .update({
-        'userName': userName,
-        'userPhone': userPhone,
-        'statusBooking': _paymentStatus,
-        'downPaymentAmount':
-            _paymentStatus == 'Booking' ? 0 : _downPaymentAmount,
-        'remainingAmount': _paymentStatus == 'Sudah Bayar'
-            ? 0
-            : _paymentStatus == 'Booking'
-                ? totalAmount
-                : totalAmount - _downPaymentAmount,
-        'paymentProofUrl':
-            _paymentStatus == 'Booking' ? null : newPaymentProofUrl,
-        'totalAmount': totalAmount,
-        'updatedAt': FieldValue.serverTimestamp(),
-        'items': [
-          {
-            'name': lapangan,
-            'bookingDate': bookingDate,
-            'time': time,
-            'endTime': endTime,
-            'quantity': bookingDuration.toString(),
-            'teamName': teamName,
-            'usePhotographer': usePhotographer,
-            'useReferee': useReferee,
-            'price': basePricePerHour,
-            'imagePath': selectedLapang['image_path'],
-          }
-        ],
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking berhasil diperbarui!')),
-      );
-      Navigator.of(context).pop();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
-    }
-  }
-
-  Widget _buildServiceOption({
-    required IconData icon,
-    required String title,
-    required String price,
-    required bool value,
-    required Function(bool) onChanged,
-  }) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: value ? Colors.black : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: value ? Colors.black : Colors.grey.shade300,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit Booking'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInfoCard(),
+              const SizedBox(height: 20),
+              _buildSectionTitle('Ubah Data Booking'),
+              _buildEditableFields(),
+              const SizedBox(height: 20),
+              _buildSectionTitle('Status Pembayaran'),
+              _buildPaymentSection(),
+              const SizedBox(height: 20),
+              if (lapangan != "Gokart") ...[
+                _buildSectionTitle('Layanan Tambahan'),
+                _buildAddonServices(),
+                const SizedBox(height: 20),
+              ],
+              _buildPriceDetailsCard(),
+            ],
           ),
         ),
-        child: Row(
+      ),
+      bottomNavigationBar: _buildBottomBar(),
+    );
+  }
+
+  // --- Widget build methods ---
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(title,
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: value ? Colors.white : Colors.black),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: value ? Colors.white : Colors.black,
-                  ),
-                ),
-                Text(
-                  price,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: value ? Colors.white : Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Icon(
-              value ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: value ? Colors.white : Colors.black,
-            ),
+            Text(lapangan,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const Divider(height: 20),
+            _buildInfoRow(
+                Icons.person_outline, widget.initialData['userName'] ?? 'N/A'),
+            _buildInfoRow(
+                Icons.calendar_today,
+                DateFormat('EEEE, dd MMMM yyyy')
+                    .format(DateTime.parse(bookingDate))),
+            _buildInfoRow(Icons.access_time, 'Jam $time'),
+            // [INDIKATOR VISUAL MEMBER]
+            if (isMember)
+              _buildInfoRow(Icons.star_border_purple500_outlined,
+                  'Status: Member (Diskon 10%)',
+                  color: Colors.purple.shade700),
           ],
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isGokart = lapangan == 'Gokart';
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Edit Booking - $lapangan'),
+  Widget _buildInfoRow(IconData icon, String text, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color ?? Colors.grey.shade700),
+          const SizedBox(width: 10),
+          Text(text,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(color: color)),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lapangan,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Tanggal: ${DateFormat('EEEE, dd MMMM yyyy').format(DateTime.parse(bookingDate))}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Jam: $time - $endTime',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Harga Dasar: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(basePricePerHour)}/jam',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
+    );
+  }
+
+  Widget _buildEditableFields() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextFormField(
+              initialValue: teamName,
+              decoration: const InputDecoration(
+                labelText: "Nama Tim / Atas Nama",
+                border: OutlineInputBorder(),
               ),
-              const SizedBox(height: 20),
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              onChanged: (value) => setState(() => teamName = value),
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'Nama tim wajib diisi' : null,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Durasi (jam)',
+                    style: Theme.of(context).textTheme.bodyLarge),
+                Row(
                   children: [
-                    const Text(
-                      "Nama Tim / Atas Nama:",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      initialValue: teamName,
-                      decoration: InputDecoration(
-                        hintText: "Masukkan nama tim atau nama pemesan",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return "Nama tim/nama pemesan wajib diisi!";
+                    IconButton(
+                      onPressed: () {
+                        if (bookingDuration > 1) {
+                          setState(() => bookingDuration--);
+                          _updateTotalPrice();
                         }
-                        return null;
                       },
-                      onChanged: (value) {
-                        setState(() {
-                          teamName = value;
-                        });
+                      icon: Icon(Icons.remove_circle_outline),
+                    ),
+                    Text('$bookingDuration',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold)),
+                    IconButton(
+                      onPressed: () {
+                        setState(() => bookingDuration++);
+                        _updateTotalPrice();
                       },
+                      icon: Icon(Icons.add_circle_outline),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Pilih Durasi Booking (jam):",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8.0,
-                          runSpacing: 8.0,
-                          children: List.generate(5, (index) {
-                            final quantity = index + 1;
-                            return ChoiceChip(
-                              label: Text("$quantity Jam"),
-                              selected: bookingDuration == quantity,
-                              onSelected: (bool selected) {
-                                setState(() {
-                                  bookingDuration = quantity;
-                                  _updateTotalPrice();
-                                });
-                              },
-                              selectedColor: Colors.grey.shade300,
-                              backgroundColor: Colors.grey.shade100,
-                              labelStyle: const TextStyle(
-                                color: Colors.black,
-                              ),
-                            );
-                          }),
-                        )
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Pembayaran:",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Text('Lunas'),
-                                selected: _paymentStatus == 'Sudah Bayar',
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _paymentStatus = 'Sudah Bayar';
-                                    _downPaymentController.text =
-                                        totalAmount.toString();
-                                    _downPaymentAmount = totalAmount;
-                                    _remainingAmount = 0;
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Text('DP'),
-                                selected: _paymentStatus == 'DP',
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _paymentStatus = 'DP';
-                                    _downPaymentController.text =
-                                        _downPaymentAmount > 0
-                                            ? _downPaymentAmount.toString()
-                                            : '';
-                                  });
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ChoiceChip(
-                                label: const Text('Tanpa DP'),
-                                selected: _paymentStatus == 'Booking',
-                                onSelected: (selected) {
-                                  setState(() {
-                                    _paymentStatus = 'Booking';
-                                    _downPaymentController.text = '0';
-                                    _downPaymentAmount = 0;
-                                    _remainingAmount = totalAmount;
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_paymentStatus == 'DP') ...[
-                          const SizedBox(height: 10),
-                          TextFormField(
-                            controller: _downPaymentController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Jumlah DP',
-                              hintText: 'Masukkan jumlah DP',
-                              border: OutlineInputBorder(),
-                              prefixText: 'Rp ',
-                            ),
-                            validator: (value) {
-                              if (_paymentStatus == 'DP' &&
-                                  (value == null || value.isEmpty)) {
-                                return 'Harap isi jumlah DP';
-                              }
-                              final amount = int.tryParse(value ?? '0') ?? 0;
-                              if (_paymentStatus == 'DP' && amount <= 0) {
-                                return 'Jumlah DP harus lebih dari 0';
-                              }
-                              return null;
-                            },
-                            onChanged: (value) => _updatePaymentInfo(),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Bukti Pembayaran:",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (_paymentStatus != 'Booking' &&
-                          (_paymentProofUrl != null ||
-                              _imageFile != null ||
-                              _webImage != null))
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: _deletePaymentProof,
-                          tooltip: 'Hapus Bukti Pembayaran',
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: _paymentStatus != 'Booking' ? _pickImage : null,
-                    child: Container(
-                      height: 150,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: _imageFile != null
-                          ? Image.file(_imageFile!, fit: BoxFit.cover)
-                          : _webImage != null
-                              ? Image.memory(_webImage!, fit: BoxFit.cover)
-                              : _paymentProofUrl != null
-                                  ? Image.network(
-                                      _paymentProofUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error,
-                                              stackTrace) =>
-                                          const Center(
-                                              child:
-                                                  Text('Gagal memuat gambar')),
-                                    )
-                                  : const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.add_a_photo, size: 40),
-                                          Text('Tambah Bukti Pembayaran'),
-                                        ],
-                                      ),
-                                    ),
-                    ),
-                  ),
-                  if (_paymentStatus == 'DP') ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      'Sisa Pembayaran: Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(_remainingAmount)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              if (!isGokart) ...[
-                const SizedBox(height: 20),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Tambahan Layanan:",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildServiceOption(
-                      icon: Icons.camera_alt,
-                      title: "Photographer",
-                      price: "Rp 200,000",
-                      value: usePhotographer,
-                      onChanged: (value) {
-                        setState(() {
-                          usePhotographer = value;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    _buildServiceOption(
-                      icon: Icons.sports,
-                      title: "Wasit",
-                      price: "Rp 70,000",
-                      value: useReferee,
-                      onChanged: (value) {
-                        setState(() {
-                          useReferee = value;
-                          _updateTotalPrice();
-                        });
-                      },
-                    ),
-                  ],
-                ),
+                )
               ],
-              const SizedBox(height: 30),
-              Card(
-                color: Colors.grey[200],
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Harga Dasar:",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(basePricePerHour * bookingDuration)}",
-                            style: const TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (usePhotographer) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Photographer:",
-                              style: TextStyle(
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              "Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(photographerPrice)}",
-                              style: const TextStyle(
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      if (useReferee) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Wasit:",
-                              style: TextStyle(
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              "Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(refereePrice)}",
-                              style: const TextStyle(
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const Divider(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Total Harga:",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            "Rp ${NumberFormat.currency(locale: 'id', symbol: '').format(totalAmount)}",
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentSection() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            SegmentedButton<PaymentStatus>(
+              segments: const [
+                ButtonSegment(
+                    value: PaymentStatus.booking,
+                    label: Text('Booking'),
+                    icon: Icon(Icons.bookmark_border)),
+                ButtonSegment(
+                    value: PaymentStatus.dp,
+                    label: Text('DP'),
+                    icon: Icon(Icons.monetization_on_outlined)),
+                ButtonSegment(
+                    value: PaymentStatus.lunas,
+                    label: Text('Lunas'),
+                    icon: Icon(Icons.check_circle_outline)),
+              ],
+              selected: {_paymentStatus},
+              onSelectionChanged: (newSelection) {
+                setState(() => _paymentStatus = newSelection.first);
+              },
+              style: SegmentedButton.styleFrom(
+                selectedBackgroundColor: Colors.black.withOpacity(0.1),
+                selectedForegroundColor: Colors.black,
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.black,
-                  ),
-                  onPressed: _updateBooking,
-                  child: const Text(
-                    "Simpan Perubahan",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                    ),
-                  ),
+            ),
+            if (_paymentStatus == PaymentStatus.dp) ...[
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _downPaymentController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Jumlah DP',
+                  prefixText: 'Rp ',
+                  border: OutlineInputBorder(),
                 ),
+                validator: (v) {
+                  if (_paymentStatus != PaymentStatus.dp) return null;
+                  final amount = int.tryParse(v ?? '');
+                  if (amount == null || amount <= 0) return 'DP harus diisi';
+                  if (amount >= totalAmount) return 'DP harus < total harga';
+                  return null;
+                },
               ),
             ],
-          ),
+            if (_paymentStatus != PaymentStatus.booking) ...[
+              const SizedBox(height: 16),
+              _buildPaymentProofUploader(),
+            ]
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentProofUploader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Bukti Pembayaran',
+                style: Theme.of(context).textTheme.bodyLarge),
+            if (_paymentProofUrl != null ||
+                _imageFile != null ||
+                _webImage != null)
+              IconButton(
+                  onPressed: _deletePaymentProof,
+                  icon: Icon(Icons.delete),
+                  color: Colors.red,
+                  tooltip: 'Hapus Bukti Bayar'),
+          ],
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            height: 150,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: (_webImage != null)
+                ? Image.memory(_webImage!, fit: BoxFit.cover)
+                : (_imageFile != null)
+                    ? Image.file(_imageFile!, fit: BoxFit.cover)
+                    : (_paymentProofUrl != null)
+                        ? Image.network(_paymentProofUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) =>
+                                const Center(child: Text('Gagal Muat')))
+                        : const Center(
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                Icon(Icons.add_a_photo_outlined),
+                                Text('Unggah Bukti')
+                              ])),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildAddonServices() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            SwitchListTile(
+              title: Text('Photographer'),
+              subtitle: Text(
+                  'Rp ${NumberFormat.simpleCurrency(locale: 'id_ID', decimalDigits: 0).format(photographerPrice)}'),
+              value: usePhotographer,
+              onChanged: (val) {
+                setState(() => usePhotographer = val);
+                _updateTotalPrice();
+              },
+              secondary: Icon(Icons.camera_alt_outlined),
+            ),
+            const Divider(),
+            SwitchListTile(
+              title: Text('Wasit'),
+              subtitle: Text(
+                  'Rp ${NumberFormat.simpleCurrency(locale: 'id_ID', decimalDigits: 0).format(refereePrice)}'),
+              value: useReferee,
+              onChanged: (val) {
+                setState(() => useReferee = val);
+                _updateTotalPrice();
+              },
+              secondary: Icon(Icons.sports_outlined),
+            ),
+            if (lapangan == "Lapang Minisoccer" && isMember) ...[
+              const Divider(),
+              SwitchListTile(
+                title: const Text('Ice Bath (Khusus Member)'),
+                subtitle: Text(
+                    'Rp ${NumberFormat.simpleCurrency(locale: 'id_ID', decimalDigits: 0).format(iceBathPrice)}'),
+                value: useIceBath,
+                onChanged: (val) {
+                  setState(() => useIceBath = val);
+                  _updateTotalPrice();
+                },
+                secondary: const Icon(Icons.ac_unit),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceDetailsCard() {
+    final dpAmount = (_paymentStatus == PaymentStatus.dp)
+        ? (int.tryParse(_downPaymentController.text) ?? 0)
+        : 0;
+    final remainingAmount = totalAmount - dpAmount;
+
+    return Card(
+      color: Colors.grey.shade100,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            _buildPriceRow('Subtotal Lapangan', _calculateBaseRentalPrice()),
+            if (usePhotographer)
+              _buildPriceRow('Photographer', photographerPrice),
+            if (useReferee) _buildPriceRow('Wasit', refereePrice),
+            const Divider(height: 20, thickness: 1),
+            if (useIceBath) _buildPriceRow('Ice Bath', iceBathPrice),
+            const Divider(height: 20, thickness: 1),
+            _buildPriceRow('Total Harga', totalAmount, isTotal: true),
+            if (_paymentStatus == PaymentStatus.dp && dpAmount > 0) ...[
+              const SizedBox(height: 8),
+              _buildPriceRow('DP Dibayar', dpAmount,
+                  color: Colors.green.shade700),
+              _buildPriceRow('Sisa Pembayaran', remainingAmount,
+                  color: Colors.red.shade700),
+            ]
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(String label, int amount,
+      {Color? color, bool isTotal = false}) {
+    final textStyle = TextStyle(
+      fontSize: isTotal ? 18 : 16,
+      fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+      color: color ?? (isTotal ? Colors.black : Colors.grey.shade800),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: textStyle),
+          Text(
+            NumberFormat.currency(
+                    locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+                .format(amount),
+            style: textStyle.copyWith(color: color ?? Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.all(16.0).copyWith(top: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, -2)),
+        ],
+      ),
+      child: FilledButton(
+        onPressed: _updateBooking,
+        style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            backgroundColor: Colors.black,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(50))),
+        child: const Text('Simpan Perubahan',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
   }

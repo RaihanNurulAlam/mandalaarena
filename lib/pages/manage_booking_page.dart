@@ -1,34 +1,41 @@
-// ignore_for_file: unnecessary_to_list_in_spreads, avoid_print
+// ignore_for_file: unnecessary_to_list_in_spreads, avoid_print, sort_child_properties_last, use_super_parameters, curly_braces_in_flow_control_structures
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mandalaarenaapp/pages/booking_schedule_page.dart';
-import 'package:mandalaarenaapp/provider/cart.dart';
-import 'package:provider/provider.dart';
+import 'package:mandalaarenaapp/pages/admin_add_booking_page.dart';
+// import 'package:mandalaarenaapp/pages/booking_schedule_page.dart';
+import 'package:mandalaarenaapp/pages/edit_bookingpage.dart';
+
+// FirebaseAuth, Cart, dan Provider tidak diperlukan di halaman ini, jadi importnya bisa dihapus.
 
 class ManageBookingsPage extends StatefulWidget {
   @override
   _ManageBookingsPageState createState() => _ManageBookingsPageState();
 }
 
+enum PaymentStatusFilter { semua, sudahBayar, booking, dp }
+
 class _ManageBookingsPageState extends State<ManageBookingsPage> {
   String? selectedLapangan;
-  String? selectedMonthYear; // Format: "YYYY-MM"
+  String? selectedMonthYear;
   DateTime? selectedDate;
+  PaymentStatusFilter _selectedPaymentStatus = PaymentStatusFilter.semua;
 
   List<String> lapanganList = ['Semua Lapangan'];
   List<String> availableMonths = ['Semua Bulan'];
-  bool _isFetchingMonths = false; // State untuk loading indicator
+  bool _isFetchingMonths = false;
 
   @override
   void initState() {
     super.initState();
     _fetchLapanganList();
+    Intl.defaultLocale = 'id_ID';
   }
 
   Future<void> _fetchLapanganList() async {
+    if (!mounted) return;
     final snapshot =
         await FirebaseFirestore.instance.collection('bookings').get();
     final lapanganSet = <String>{};
@@ -44,69 +51,70 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
       }
     }
     final sortedLapangan = lapanganSet.toList()..sort();
-    setState(() {
-      lapanganList = ['Semua Lapangan', ...sortedLapangan];
-    });
+    if (mounted) {
+      setState(() {
+        lapanganList = ['Semua Lapangan', ...sortedLapangan];
+      });
+    }
   }
 
-  // == FUNGSI YANG DIPERBAIKI ==
   Future<void> _updateAvailableMonths(String? lapanganName) async {
-    // Reset filter & aktifkan loading
+    if (!mounted) return;
     setState(() {
       selectedMonthYear = null;
       selectedDate = null;
       _isFetchingMonths = true;
-      availableMonths = []; // Kosongkan list untuk diisi ulang
+      availableMonths = [];
     });
 
     if (lapanganName == null || lapanganName == 'Semua Lapangan') {
-      setState(() {
-        availableMonths = ['Semua Bulan'];
-        _isFetchingMonths = false;
-      });
+      if (mounted) {
+        setState(() {
+          availableMonths = ['Semua Bulan'];
+          _isFetchingMonths = false;
+        });
+      }
       return;
     }
 
     try {
       final monthSet = <String>{};
-      final snapshot =
-          await FirebaseFirestore.instance.collection('bookings').get();
+      final query = FirebaseFirestore.instance
+          .collection('bookings')
+          .where('items.0.name', isEqualTo: lapanganName);
+
+      final snapshot = await query.get();
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final items = data['items'] as List<dynamic>?;
         if (items != null && items.isNotEmpty) {
-          // Ambil nama lapangan dari data dan dari pilihan dropdown
-          final String namaLapanganDiData =
-              (items[0]['name'] as String? ?? '').trim().toLowerCase();
-          final String namaLapanganDipilih =
-              (lapanganName).trim().toLowerCase();
-
-          // Bandingkan setelah diseragamkan
-          if (namaLapanganDiData == namaLapanganDipilih) {
-            final bookingDateStr = items[0]['bookingDate'] as String?;
-            if (bookingDateStr != null && bookingDateStr.length >= 7) {
-              monthSet.add(bookingDateStr.substring(0, 7));
-            }
+          final bookingDateStr = items[0]['bookingDate'] as String?;
+          if (bookingDateStr != null && bookingDateStr.length >= 7) {
+            monthSet.add(bookingDateStr.substring(0, 7));
           }
         }
       }
 
       final sortedMonths = monthSet.toList()..sort((a, b) => b.compareTo(a));
-      setState(() {
-        availableMonths = ['Semua Bulan', ...sortedMonths];
-      });
+      if (mounted) {
+        setState(() {
+          availableMonths = ['Semua Bulan', ...sortedMonths];
+        });
+      }
     } catch (e) {
-      // Handle error jika ada
       print("Error fetching months: $e");
-      setState(() {
-        availableMonths = ['Gagal memuat'];
-      });
+      if (mounted) {
+        setState(() {
+          availableMonths = ['Gagal memuat'];
+        });
+      }
     } finally {
-      // Pastikan loading indicator berhenti
-      setState(() {
-        _isFetchingMonths = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isFetchingMonths = false;
+        });
+      }
     }
   }
 
@@ -116,7 +124,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     }
     try {
       final date = DateFormat('yyyy-MM').parse(monthYear);
-      return DateFormat.yMMMM('id_ID').format(date);
+      return DateFormat.yMMMM().format(date);
     } catch (e) {
       return monthYear;
     }
@@ -127,147 +135,107 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
       selectedLapangan = null;
       selectedMonthYear = null;
       selectedDate = null;
+      _selectedPaymentStatus = PaymentStatusFilter.semua;
       availableMonths = ['Semua Bulan'];
     });
   }
 
+  // <-- FUNGSI BARU UNTUK MENGHAPUS BOOKING -->
+  Future<void> _deleteBooking(String bookingId) async {
+    // Tampilkan dialog konfirmasi untuk keamanan
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Konfirmasi Hapus'),
+        content: const Text(
+            'Apakah Anda yakin ingin menghapus data booking ini secara permanen?'),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    // Jika admin menekan "Hapus"
+    if (shouldDelete == true) {
+      try {
+        // Hapus dokumen dari Firestore
+        await FirebaseFirestore.instance
+            .collection('bookings')
+            .doc(bookingId)
+            .delete();
+
+        // Tutup modal detail booking
+        Navigator.of(context).pop();
+
+        // Tampilkan notifikasi sukses
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Booking berhasil dihapus.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (e) {
+        print("Error deleting booking: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghapus booking: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    int crossAxisCount;
-
-    if (screenWidth > 1250) {
-      crossAxisCount = 3;
-    } else if (screenWidth > 800) {
-      crossAxisCount = 2;
-    } else {
-      crossAxisCount = 1;
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kelola Booking'),
+        title: const Text('Kelola Booking'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 20.0),
-            child: IconButton(
-              icon: Icon(Icons.schedule_rounded),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BookingSchedulePage(),
-                  ),
-                );
-              },
-            ),
+          IconButton(
+            tooltip: 'Tambah Booking Manual',
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const AdminAddBookingPage()),
+              );
+            },
           ),
+          // IconButton(
+          //   tooltip: 'Lihat Jadwal Booking',
+          //   icon: const Icon(Icons.schedule_rounded),
+          //   onPressed: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (context) => BookingSchedulePage()),
+          //     );
+          //   },
+          // ),
+          IconButton(
+            tooltip: 'Hapus Filter',
+            icon: const Icon(Icons.refresh),
+            onPressed: _clearFilters,
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: DropdownButtonFormField<String>(
-                    value: selectedLapangan,
-                    hint: Text('Pilih Lapangan'),
-                    items: lapanganList.map((String lapangan) {
-                      return DropdownMenuItem<String>(
-                        value: lapangan == 'Semua Lapangan' ? null : lapangan,
-                        child: Text(lapangan),
-                      );
-                    }).toList(),
-                    onChanged: (String? value) {
-                      setState(() {
-                        selectedLapangan = value;
-                      });
-                      _updateAvailableMonths(value);
-                    },
-                  ),
-                ),
-                SizedBox(width: 16.0),
-                Expanded(
-                  flex: 2,
-                  child: DropdownButtonFormField<String>(
-                    value: selectedMonthYear,
-                    // Tampilkan hint berdasarkan status fetching
-                    hint: _isFetchingMonths
-                        ? Row(
-                            children: [
-                              SizedBox(
-                                width: 15,
-                                height: 15,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              ),
-                              SizedBox(width: 8),
-                              Text('Mencari...'),
-                            ],
-                          )
-                        : Text('Pilih Bulan'),
-                    // Nonaktifkan dropdown saat loading
-                    disabledHint:
-                        _isFetchingMonths ? null : Text('Pilih lapangan dulu'),
-                    items: availableMonths.map((String monthYear) {
-                      return DropdownMenuItem<String>(
-                        value: monthYear == 'Semua Bulan' ||
-                                monthYear == 'Gagal memuat'
-                            ? null
-                            : monthYear,
-                        child: Text(_formatMonthYear(monthYear)),
-                      );
-                    }).toList(),
-                    onChanged: _isFetchingMonths
-                        ? null // Nonaktifkan onchanged saat loading
-                        : (String? value) {
-                            setState(() {
-                              selectedMonthYear = value;
-                              selectedDate = null;
-                            });
-                          },
-                  ),
-                ),
-                SizedBox(width: 8.0),
-                Tooltip(
-                  message: 'Pilih Tanggal Spesifik',
-                  child: IconButton(
-                    icon: Icon(Icons.calendar_today),
-                    onPressed: () async {
-                      final DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(Duration(days: 365)),
-                      );
-                      if (pickedDate != null) {
-                        setState(() {
-                          selectedDate = pickedDate;
-                          final monthFromDate =
-                              DateFormat('yyyy-MM').format(pickedDate);
-                          if (availableMonths.contains(monthFromDate)) {
-                            selectedMonthYear = monthFromDate;
-                          }
-                        });
-                      }
-                    },
-                  ),
-                ),
-                Tooltip(
-                  message: 'Hapus Semua Filter',
-                  child: IconButton(
-                    icon: Icon(Icons.clear),
-                    onPressed: _clearFilters,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _buildFilterWidgets(),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -275,315 +243,94 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                // ... (KODE STREAMBUILDER ANDA DARI SINI KE BAWAH TIDAK ADA PERUBAHAN) ...
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text('Terjadi kesalahan: ${snapshot.error}'));
+                }
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('Tidak ada booking.'));
+                  return const Center(child: Text('Tidak ada data booking.'));
                 }
 
-                double totalIncome = 0.0;
-
-                final bookings = snapshot.data!.docs.where((doc) {
+                // Logika filter tidak berubah
+                final filteredBookings = snapshot.data!.docs.where((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final items = data['items'] as List<dynamic>? ?? [];
-
                   if (items.isEmpty) return false;
-                  final bookingDateStr = items[0]['bookingDate'] ?? '';
-                  if (bookingDateStr.isEmpty) return false;
+                  final bookingDateStr =
+                      items[0]['bookingDate'] as String? ?? '';
 
-                  // --- Logika Filter Bertingkat ---
-                  // 1. Filter Lapangan
                   if (selectedLapangan != null &&
-                      items[0]['name'] != selectedLapangan) {
-                    return false;
-                  }
-
-                  // 2. Filter Bulan
+                      items[0]['name'] != selectedLapangan) return false;
                   if (selectedMonthYear != null &&
-                      !bookingDateStr.startsWith(selectedMonthYear!)) {
+                      !bookingDateStr.startsWith(selectedMonthYear!))
                     return false;
-                  }
-
-                  // 3. Filter Tanggal (paling spesifik)
                   if (selectedDate != null) {
-                    final bookingDate =
-                        DateFormat('yyyy-MM-dd').parse(bookingDateStr);
-                    if (bookingDate.year != selectedDate!.year ||
-                        bookingDate.month != selectedDate!.month ||
-                        bookingDate.day != selectedDate!.day) {
+                    try {
+                      final bookingDate =
+                          DateFormat('yyyy-MM-dd').parse(bookingDateStr);
+                      if (bookingDate.year != selectedDate!.year ||
+                          bookingDate.month != selectedDate!.month ||
+                          bookingDate.day != selectedDate!.day) return false;
+                    } catch (e) {
                       return false;
                     }
                   }
-
-                  return true; // Lolos semua filter
+                  if (_selectedPaymentStatus != PaymentStatusFilter.semua) {
+                    final status = data['statusBooking'] as String? ?? '';
+                    if (_selectedPaymentStatus ==
+                            PaymentStatusFilter.sudahBayar &&
+                        !status.contains('Sudah Bayar')) return false;
+                    if (_selectedPaymentStatus == PaymentStatusFilter.booking &&
+                        !status.contains('Booking')) return false;
+                    if (_selectedPaymentStatus == PaymentStatusFilter.dp &&
+                        !status.toUpperCase().contains('DP')) return false;
+                  }
+                  return true;
                 }).toList();
 
-                if (bookings.isEmpty) {
-                  return Center(
+                if (filteredBookings.isEmpty) {
+                  return const Center(
                     child:
                         Text('Tidak ada booking dengan filter yang dipilih.'),
                   );
                 }
 
-                for (var doc in bookings) {
+                // Kalkulasi pendapatan tidak berubah
+                double totalIncome = 0.0;
+                for (var doc in filteredBookings) {
                   final data = doc.data() as Map<String, dynamic>;
-                  if (data['statusBooking'] != null &&
-                      data['statusBooking']
-                          .toString()
-                          .contains('Sudah Bayar')) {
-                    totalIncome += (data['totalAmount'] as num).toDouble();
+                  final status = data['statusBooking']?.toString() ?? '';
+                  if (status.contains('Sudah Bayar')) {
+                    totalIncome +=
+                        (data['totalAmount'] as num? ?? 0).toDouble();
+                  } else if (status.toUpperCase().contains('DP')) {
+                    totalIncome +=
+                        (data['downPaymentAmount'] as num? ?? 0).toDouble();
                   }
                 }
 
                 return Column(
                   children: [
                     Expanded(
-                      child: GridView.builder(
-                        padding: EdgeInsets.all(20),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          crossAxisSpacing: 20,
-                          mainAxisSpacing: 20,
-                          childAspectRatio: 1.5,
-                        ),
-                        itemCount: bookings.length,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 8),
+                        itemCount: filteredBookings.length,
                         itemBuilder: (context, index) {
-                          final bookingData =
-                              bookings[index].data() as Map<String, dynamic>;
-                          final bookingId = bookings[index].id;
-                          final items =
-                              bookingData['items'] as List<dynamic>? ?? [];
-                          final firstItem = items.isNotEmpty ? items[0] : {};
-
-                          // Extract data dari items
-                          final lapangan =
-                              firstItem['name'] ?? 'Lapangan Tidak Diketahui';
-                          final bookingDate = firstItem['bookingDate'] ?? '';
-                          final time = firstItem['time'] ?? '';
-                          final status =
-                              bookingData['statusBooking'] ?? 'Pending';
-                          final totalAmount = bookingData['totalAmount'] ?? 0;
-                          final namaPengguna =
-                              bookingData['userName'] ?? 'Tidak Diketahui';
-                          final noWhatsapp = bookingData['userPhone'] ?? '-';
-                          final imagePath = firstItem['imagePath'] ?? '';
-                          final teamName = firstItem['teamName'] ?? '';
-                          final usePhotographer =
-                              firstItem['usePhotographer'] ?? false;
-                          final useReferee = firstItem['useReferee'] ?? false;
-
-                          Color statusColor = Colors.grey;
-                          IconData statusIcon = Icons.access_time;
-
-                          if (status.contains('Sudah Bayar')) {
-                            statusColor = Colors.green;
-                            statusIcon = Icons.check_circle;
-                          } else if (status.contains('Booking')) {
-                            statusColor = Colors.blue;
-                            statusIcon = Icons.calendar_today;
-                          } else if (status.contains('Gagal') ||
-                              status.contains('expire')) {
-                            statusColor = Colors.red;
-                            statusIcon = Icons.error;
-                          }
-
-                          return Card(
-                            margin: EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: imagePath.isNotEmpty
-                                      ? Image.network(
-                                          imagePath,
-                                          width: double.infinity,
-                                          height: 150,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : Icon(Icons.image_not_supported,
-                                          size: 50),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                      left: 20, top: 10, bottom: 10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text('Lapangan: $lapangan',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                                Text('Tanggal: $bookingDate'),
-                                                Text('Jam: $time'),
-                                                Row(
-                                                  children: [
-                                                    Icon(statusIcon,
-                                                        size: 16,
-                                                        color: statusColor),
-                                                    SizedBox(width: 4),
-                                                    Text(
-                                                      status,
-                                                      style: TextStyle(
-                                                        color: statusColor,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Text('Nama: $namaPengguna'),
-                                                Text(
-                                                    'No WhatsApp: $noWhatsapp'),
-                                                if (teamName.isNotEmpty)
-                                                  Text('Atas Nama: $teamName'),
-                                                if (usePhotographer)
-                                                  Text(
-                                                      'Photographer: Rp 200,000'),
-                                                if (useReferee)
-                                                  Text('Wasit: Rp 70,000'),
-                                                Text(
-                                                  'Total Harga: Rp ${NumberFormat.currency(locale: 'id', symbol: '', decimalDigits: 0).format(totalAmount)}',
-                                                  style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
-                                            ),
-                                            onPressed: () async {
-                                              // ... KODE HAPUS ANDA TIDAK BERUBAH ...
-                                              final shouldDelete =
-                                                  await showDialog<bool>(
-                                                context: context,
-                                                builder: (context) =>
-                                                    AlertDialog(
-                                                  title:
-                                                      Text('Konfirmasi Hapus'),
-                                                  content: Text(
-                                                      'Yakin ingin menghapus booking ini?'),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.of(context)
-                                                              .pop(false),
-                                                      style:
-                                                          TextButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.black,
-                                                        foregroundColor:
-                                                            Colors.white,
-                                                      ),
-                                                      child: Text('Batal'),
-                                                    ),
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.of(context)
-                                                              .pop(true),
-                                                      style:
-                                                          TextButton.styleFrom(
-                                                        backgroundColor:
-                                                            Colors.black,
-                                                        foregroundColor:
-                                                            Colors.white,
-                                                      ),
-                                                      child: Text('Hapus'),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-
-                                              if (shouldDelete == true) {
-                                                try {
-                                                  await FirebaseFirestore
-                                                      .instance
-                                                      .collection('bookings')
-                                                      .doc(bookingId)
-                                                      .delete();
-
-                                                  final cart =
-                                                      Provider.of<Cart>(context,
-                                                          listen: false);
-                                                  cart.removeItemByDocId(
-                                                      bookingId);
-
-                                                  final User? user =
-                                                      FirebaseAuth
-                                                          .instance.currentUser;
-                                                  if (user != null) {
-                                                    await cart
-                                                        .loadCart(user.uid);
-                                                  }
-
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                    SnackBar(
-                                                        content: Text(
-                                                            'Booking berhasil dihapus.')),
-                                                  );
-                                                } catch (e) {
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                    SnackBar(
-                                                        content: Text(
-                                                            'Gagal menghapus booking.')),
-                                                  );
-                                                }
-                                              }
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          final doc = filteredBookings[index];
+                          return _BookingCard(
+                            bookingData: doc.data() as Map<String, dynamic>,
+                            bookingId: doc.id,
+                            onTap: () => _showBookingDetails(context,
+                                doc.data() as Map<String, dynamic>, doc.id),
                           );
                         },
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Card(
-                        elevation: 4,
-                        child: ListTile(
-                          leading: Icon(Icons.attach_money,
-                              color: Colors.green, size: 36),
-                          title: Text(
-                            'Total Pendapatan (Sesuai Filter)',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text(
-                            NumberFormat.currency(
-                                    locale: 'id_ID',
-                                    symbol: 'Rp ',
-                                    decimalDigits: 0)
-                                .format(totalIncome),
-                            style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildTotalIncomeCard(totalIncome),
                   ],
                 );
               },
@@ -591,6 +338,541 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showBookingDetails(BuildContext context,
+      Map<String, dynamic> bookingData, String bookingId) {
+    final items = bookingData['items'] as List<dynamic>? ?? [];
+    if (items.isEmpty) return;
+
+    final firstItem = items[0] as Map<String, dynamic>;
+    final lapangan = firstItem['name'] ?? 'N/A';
+    final bookingDate = firstItem['bookingDate'] ?? 'N/A';
+    final formattedDate =
+        DateFormat('EEEE, dd MMMM yyyy').format(DateTime.parse(bookingDate));
+    final time = firstItem['time'] ?? 'N/A';
+    final duration = firstItem['quantity'] ?? '1';
+    final status = bookingData['statusBooking'] ?? 'Pending';
+    final totalAmount = bookingData['totalAmount'] ?? 0;
+    final dpAmount = bookingData['downPaymentAmount'] ?? 0;
+    final remainingAmount = bookingData['remainingAmount'] ?? 0;
+    final userName = bookingData['userName'] ?? 'N/A';
+    final userPhone = bookingData['userPhone'] ?? '-';
+    final teamName = firstItem['teamName'] ?? '';
+    final usePhotographer = firstItem['usePhotographer'] ?? false;
+    final useReferee = firstItem['useReferee'] ?? false;
+    final isMember = bookingData['isMember'] ?? false;
+    final useIceBath = firstItem['useIceBath'] ?? false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (_, controller) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 5,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      controller: controller,
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      children: [
+                        Text('Detail Booking',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 20),
+                        _buildDetailRow(context, Icons.sports_basketball,
+                            'Lapangan', lapangan),
+                        _buildDetailRow(context, Icons.calendar_today,
+                            'Tanggal', formattedDate),
+                        _buildDetailRow(context, Icons.access_time_filled,
+                            'Jam', '$time ($duration jam)'),
+                        const Divider(height: 30),
+                        _buildDetailRow(
+                            context, Icons.person, 'Nama Pemesan', userName),
+                        _buildDetailRow(
+                            context, Icons.phone, 'No. WhatsApp', userPhone),
+                        if (teamName.isNotEmpty)
+                          _buildDetailRow(
+                              context, Icons.group, 'Nama Tim', teamName),
+                        if (isMember)
+                          _buildDetailRow(context, CupertinoIcons.star_fill,
+                              'Status User', 'Member',
+                              valueColor: Colors.purple.shade700),
+                        const Divider(height: 30),
+                        if (usePhotographer)
+                          _buildDetailRow(
+                              context, Icons.camera_alt, 'Photographer', 'Ya'),
+                        if (useReferee)
+                          _buildDetailRow(context, Icons.sports, 'Wasit', 'Ya'),
+                        if (useIceBath)
+                          _buildDetailRow(
+                              context, Icons.ac_unit, 'Ice Bath', 'Ya'),
+                        if (usePhotographer || useReferee || useIceBath)
+                          const Divider(height: 30),
+                        _buildDetailRow(
+                            context, Icons.payment, 'Status Pembayaran', status,
+                            valueColor: status.contains('Sudah Bayar')
+                                ? Colors.green
+                                : (status.toUpperCase().contains('DP')
+                                    ? Colors.orange.shade800
+                                    : Colors.blue)),
+                        _buildDetailRow(context, Icons.money, 'Total Harga',
+                            'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(totalAmount)}'),
+                        if (status.toUpperCase().contains('DP')) ...[
+                          _buildDetailRow(
+                              context,
+                              CupertinoIcons.arrow_down_right_square_fill,
+                              'Jumlah DP',
+                              'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(dpAmount)}',
+                              valueColor: Colors.green),
+                          _buildDetailRow(
+                              context,
+                              CupertinoIcons.arrow_right_square_fill,
+                              'Sisa Bayar',
+                              'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(remainingAmount)}',
+                              valueColor: Colors.red),
+                        ]
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        // <-- TOMBOL HAPUS DITAMBAHKAN DI SINI -->
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          color: Colors.red,
+                          tooltip: 'Hapus Booking',
+                          onPressed: () => _deleteBooking(bookingId),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Tutup'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditBookingPage(
+                                    bookingId: bookingId,
+                                    initialData: bookingData,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Edit'),
+                            style: FilledButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50)),
+                              backgroundColor: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Sisa kode (widget build, dll) tidak berubah dari sebelumnya...
+  // (Pastikan Anda menyalin sisa kode dari jawaban sebelumnya dari sini ke bawah)
+
+  Widget _buildDetailRow(
+      BuildContext context, IconData icon, String label, String value,
+      {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Colors.grey.shade600),
+          SizedBox(width: 16),
+          Expanded(
+              child:
+                  Text(label, style: Theme.of(context).textTheme.bodyMedium)),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: valueColor ?? Colors.black87,
+                ),
+            textAlign: TextAlign.end,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalIncomeCard(double totalIncome) {
+    return Card(
+      margin: const EdgeInsets.all(12.0),
+      elevation: 4,
+      child: ListTile(
+        leading:
+            const Icon(Icons.monetization_on, color: Colors.green, size: 36),
+        title: const Text(
+          'Total Pendapatan Diterima (Sesuai Filter)',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          NumberFormat.currency(
+                  locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+              .format(totalIncome),
+          style: const TextStyle(
+            color: Colors.green,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterWidgets() {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < 600) {
+                return Column(
+                  children: [
+                    _buildLapanganDropdown(),
+                    const SizedBox(height: 12),
+                    _buildMonthAndDateFilter(),
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 2, child: _buildLapanganDropdown()),
+                  const SizedBox(width: 16),
+                  Expanded(flex: 3, child: _buildMonthAndDateFilter()),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<PaymentStatusFilter>(
+              segments: const <ButtonSegment<PaymentStatusFilter>>[
+                ButtonSegment(
+                    value: PaymentStatusFilter.semua,
+                    label: Text('Semua'),
+                    icon: Icon(Icons.list)),
+                ButtonSegment(
+                    value: PaymentStatusFilter.sudahBayar,
+                    label: Text('Lunas'),
+                    icon: Icon(Icons.check_circle, color: Colors.green)),
+                ButtonSegment(
+                    value: PaymentStatusFilter.dp,
+                    label: Text('DP'),
+                    icon: Icon(CupertinoIcons.checkmark_seal_fill,
+                        color: Colors.orange)),
+                ButtonSegment(
+                    value: PaymentStatusFilter.booking,
+                    label: Text('Booking'),
+                    icon: Icon(Icons.bookmark, color: Colors.blue)),
+              ],
+              selected: <PaymentStatusFilter>{_selectedPaymentStatus},
+              onSelectionChanged: (Set<PaymentStatusFilter> newSelection) {
+                setState(() {
+                  _selectedPaymentStatus = newSelection.first;
+                });
+              },
+              style: SegmentedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLapanganDropdown() {
+    return DropdownButtonFormField<String>(
+      value: selectedLapangan,
+      hint: const Text('Pilih Lapangan'),
+      items: lapanganList.map((String lapangan) {
+        return DropdownMenuItem<String>(
+          value: lapangan == 'Semua Lapangan' ? null : lapangan,
+          child: Text(lapangan),
+        );
+      }).toList(),
+      onChanged: (String? value) {
+        setState(() => selectedLapangan = value);
+        _updateAvailableMonths(value);
+      },
+      decoration: InputDecoration(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+      ),
+    );
+  }
+
+  Widget _buildMonthAndDateFilter() {
+    return Row(
+      children: [
+        Expanded(
+          child: DropdownButtonFormField<String>(
+            value: selectedMonthYear,
+            hint: _isFetchingMonths
+                ? const Row(
+                    children: [
+                      SizedBox(
+                          width: 15,
+                          height: 15,
+                          child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(width: 8),
+                      Text('Mencari...'),
+                    ],
+                  )
+                : const Text('Pilih Bulan'),
+            items: availableMonths.map((String monthYear) {
+              return DropdownMenuItem<String>(
+                value: monthYear == 'Semua Bulan' || monthYear == 'Gagal memuat'
+                    ? null
+                    : monthYear,
+                child: Text(_formatMonthYear(monthYear)),
+              );
+            }).toList(),
+            onChanged: _isFetchingMonths
+                ? null
+                : (String? value) {
+                    setState(() {
+                      selectedMonthYear = value;
+                      selectedDate = null;
+                    });
+                  },
+            decoration: InputDecoration(
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton.filledTonal(
+          tooltip: 'Pilih Tanggal Spesifik',
+          icon: const Icon(Icons.calendar_today),
+          onPressed: () async {
+            final DateTime? pickedDate = await showDatePicker(
+              context: context,
+              initialDate: selectedDate ?? DateTime.now(),
+              firstDate: DateTime(2020),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
+            );
+            if (pickedDate != null && mounted) {
+              setState(() {
+                selectedDate = pickedDate;
+                final monthFromDate = DateFormat('yyyy-MM').format(pickedDate);
+                if (availableMonths.contains(monthFromDate)) {
+                  selectedMonthYear = monthFromDate;
+                } else {
+                  selectedMonthYear = null;
+                }
+              });
+            }
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _BookingCard extends StatelessWidget {
+  final Map<String, dynamic> bookingData;
+  final String bookingId;
+  final VoidCallback onTap;
+
+  const _BookingCard({
+    Key? key,
+    required this.bookingData,
+    required this.bookingId,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final items = bookingData['items'] as List<dynamic>? ?? [];
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    final firstItem = items[0] as Map<String, dynamic>;
+    final lapangan = firstItem['name'] ?? 'N/A';
+    final teamName = firstItem['teamName'] ?? '';
+    final status = bookingData['statusBooking'] ?? 'Pending';
+    final totalAmount = bookingData['totalAmount'] ?? 0;
+
+    Color statusColor;
+    String statusText = status;
+
+    switch (status) {
+      case var s when s.contains('Sudah Bayar'):
+        statusColor = Colors.green;
+        break;
+      case var s when s.toUpperCase().contains('DP'):
+        statusColor = Colors.orange.shade700;
+        statusText = 'DP';
+        break;
+      case var s when s.contains('Booking'):
+        statusColor = Colors.blue;
+        break;
+      case var s when s.contains('Gagal') || s.contains('expire'):
+        statusColor = Colors.red;
+        break;
+      default:
+        statusColor = Colors.grey;
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6.0),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          lapangan,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (teamName.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2.0),
+                            child: Text(
+                              teamName,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: Colors.grey.shade700),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Chip(
+                    label: Text(statusText),
+                    labelStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12),
+                    backgroundColor: statusColor,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                  ),
+                ],
+              ),
+              const Divider(height: 20),
+              _buildInfoRow(
+                  context, Icons.person, bookingData['userName'] ?? 'N/A'),
+              const SizedBox(height: 6),
+              _buildInfoRow(
+                  context,
+                  Icons.calendar_today,
+                  DateFormat('dd MMMM yyyy').format(DateTime.parse(
+                      firstItem['bookingDate'] ??
+                          DateTime.now().toIso8601String()))),
+              const SizedBox(height: 6),
+              _buildInfoRow(context, Icons.access_time,
+                  '${firstItem['time'] ?? 'N/A'} (${firstItem['quantity'] ?? '1'} jam)'),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  NumberFormat.currency(
+                          locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+                      .format(totalAmount),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey.shade600),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(text,
+              style: Theme.of(context).textTheme.bodyMedium,
+              overflow: TextOverflow.ellipsis),
+        ),
+      ],
     );
   }
 }

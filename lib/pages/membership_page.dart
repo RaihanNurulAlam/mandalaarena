@@ -209,12 +209,16 @@ class _MembershipPageState extends State<MembershipPage> {
         content:
             const Text('Selamat! Anda sekarang adalah member Mandala Arena.'),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(); // Tutup dialog sukses
               Navigator.of(context)
                   .pop(); // Kembali ke halaman sebelumnya (homepage)
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('OK'),
           ),
         ],

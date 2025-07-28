@@ -238,7 +238,7 @@ class _GalleryPageState extends State<GalleryPage> {
               onPressed: () =>
                   Navigator.of(context).pop(true), // Konfirmasi hapus
               style: TextButton.styleFrom(
-                backgroundColor: Colors.black, // Warna latar belakang hitam
+                backgroundColor: Colors.red,
                 foregroundColor: Colors.white, // Warna teks putih
               ),
               child: Text('Hapus'),

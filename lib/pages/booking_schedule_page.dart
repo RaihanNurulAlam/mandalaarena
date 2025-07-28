@@ -235,7 +235,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
                       onPressed: () => Navigator.of(context).pop(true),
                       style: TextButton.styleFrom(
                         backgroundColor:
-                            Colors.black, // Warna latar belakang hitam
+                            Colors.red, // Warna latar belakang hitam
                         foregroundColor: Colors.white, // Warna teks putih
                       ),
                       child: Text('Hapus'),
@@ -278,7 +278,7 @@ class _BookingSchedulePageState extends State<BookingSchedulePage> {
         builder: (context) => EditBookingPage(
           bookingId: booking.id,
           initialData: data,
-          lapangan: selectedLapangan!,
+          // lapangan: selectedLapangan!,
         ),
       ),
     );

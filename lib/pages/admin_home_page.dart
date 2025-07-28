@@ -132,13 +132,21 @@ class _AdminHomePageState extends State<AdminHomePage> {
           title: const Text('Konfirmasi Hapus'),
           content: const Text('Apakah Anda yakin ingin menghapus banner ini?'),
           actions: <Widget>[
-            TextButton(
+            ElevatedButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Batal'),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Hapus'),
             ),
           ],
         );
