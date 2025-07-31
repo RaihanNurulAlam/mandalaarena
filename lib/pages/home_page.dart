@@ -29,7 +29,7 @@ import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+// Hapus import youtube_player_flutter karena sudah tidak digunakan
 
 class HomePage extends StatefulWidget {
   @override
@@ -40,43 +40,52 @@ class _HomePageState extends State<HomePage> {
   List<Lapang> lapangs = [];
   bool isExpanded = false;
   bool isHoveredToggle = false;
-  YoutubePlayerController? _controller;
+
+  // Variabel untuk pemutar video "palsu"
+  String? videoUrl;
+  String? videoTitle;
+  String? thumbnailUrl;
 
   @override
   void initState() {
     super.initState();
     getLapangs();
     Intl.defaultLocale = 'id_ID';
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      const videoUrl = 'https://www.youtube.com/watch?v=Ke-n-g-3P2U';
-      final videoId = YoutubePlayer.convertUrlToId(videoUrl);
-
-      if (mounted) {
-        setState(() {
-          _controller = YoutubePlayerController(
-            initialVideoId: videoId ?? '',
-            flags: const YoutubePlayerFlags(
-              autoPlay: false,
-              mute: false,
-            ),
-          );
-        });
-      }
-    });
+    _initializeYoutubeData();
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
+  // --- FUNGSI BARU UNTUK MENGAMBIL DATA VIDEO ---
+  void _initializeYoutubeData() {
+    // --- KONFIGURASI VIDEO YOUTUBE (UBAH DI SINI) ---
+    const myUrl = 'https://www.youtube.com/watch?v=60ItHLz5WEA';
+    const myTitle = 'Alan Walker - Faded [NCS Release]';
+    // ----------------------------------------------------
+
+    // Ekstrak ID video dari URL untuk membuat link thumbnail
+    final videoId = Uri.parse(myUrl).queryParameters['v'];
+
+    if (videoId != null && videoId.isNotEmpty && mounted) {
+      setState(() {
+        videoUrl = myUrl;
+        videoTitle = myTitle;
+        // Membuat URL thumbnail dari ID video
+        thumbnailUrl = 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+      });
+    } else {
+      print("URL video YouTube tidak valid.");
+    }
   }
+
+  // Method dispose tidak lagi dibutuhkan untuk controller
+  // @override
+  // void dispose() {
+  //   super.dispose();
+  // }
 
   Future<void> getLapangs() async {
     String dataLapangJson =
         await rootBundle.loadString('assets/json/lapang.json');
     List<dynamic> jsonMap = json.decode(dataLapangJson);
-
     setState(() {
       lapangs = jsonMap.map((e) => Lapang.fromJson(e)).toList();
     });
@@ -156,8 +165,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             actions: [
-              // 1. Ikon Poin (Bintang)
-              // Hanya muncul jika user sudah login
               if (user != null)
                 TextButton.icon(
                   onPressed: () {
@@ -167,63 +174,54 @@ class _HomePageState extends State<HomePage> {
                           builder: (context) => const PointsPage()),
                     );
                   },
-                  icon: const Icon(Icons.star,
-                      color: Colors.orange, size: 22), // Ukuran diperkecil
+                  icon: const Icon(Icons.star, color: Colors.orange, size: 17),
                   label: Text(
                     userProvider.points.toString(),
                     style: const TextStyle(
                         color: Colors.black, fontWeight: FontWeight.bold),
                   ),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10), // Padding dikurangi
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                     minimumSize: const Size(30, 30),
                   ),
                 ),
-              if (user != null) const SizedBox(width: 2), // Jarak antar ikon
-
-              // 2. Ikon Alamat
+              if (user != null) const SizedBox(width: 2),
               IconButton(
                 onPressed: () {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => AlamatPage()));
                 },
-                icon: const Icon(Icons.location_on,
-                    size: 30), // Ukuran diperkecil
+                icon: const Icon(Icons.location_on, size: 25),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
-              const SizedBox(width: 8), // Jarak antar ikon
-
-              // 3. Ikon Keranjang (Cart)
+              const SizedBox(width: 2),
               Consumer<Cart>(
                 builder: (context, value, child) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8.0), // Padding disesuaikan
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         IconButton(
                           onPressed: goToCart,
-                          icon: const Icon(CupertinoIcons.bag,
-                              size: 30), // Ukuran diperkecil
+                          icon: const Icon(CupertinoIcons.bag, size: 25),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
                         if (value.cart.isNotEmpty)
                           Positioned(
-                            top: 4, // Posisi badge disesuaikan
-                            right: 0,
+                            top: 2,
+                            right: -2,
                             child: CircleAvatar(
-                              radius: 8, // Ukuran badge diperkecil
+                              radius: 7,
                               backgroundColor: Colors.yellow,
                               child: Center(
                                 child: Text(
                                   value.cart.length.toString(),
                                   style: const TextStyle(
                                     color: Colors.black,
-                                    fontSize: 10, // Font diperkecil
+                                    fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -235,9 +233,7 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              const SizedBox(width: 14), // Jarak sebelum tombol Login/Avatar
-
-              // 4. Tombol Login atau Avatar Profil
+              const SizedBox(width: 7),
               if (user == null)
                 Padding(
                   padding: const EdgeInsets.only(right: 30.0),
@@ -256,7 +252,7 @@ class _HomePageState extends State<HomePage> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 12), // Padding diperkecil
+                          horizontal: 18, vertical: 12),
                     ),
                   ),
                 )
@@ -267,9 +263,9 @@ class _HomePageState extends State<HomePage> {
                       Scaffold.of(newContext).openEndDrawer();
                     },
                     child: Padding(
-                      padding: const EdgeInsets.only(right: 16.0),
+                      padding: const EdgeInsets.only(right: 30.0),
                       child: CircleAvatar(
-                        radius: 18, // Ukuran avatar diperkecil
+                        radius: 15,
                         backgroundImage: NetworkImage(
                           userProvider.profileImageUrl.isNotEmpty
                               ? userProvider.profileImageUrl
@@ -429,35 +425,83 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Widget _buildYoutubePlayer() {
-  //   if (_controller == null) {
-  //     return const SizedBox(
-  //       height: 200,
-  //       child: Center(
-  //         child: CircularProgressIndicator(),
-  //       ),
-  //     );
-  //   }
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-  //     child: Card(
-  //       elevation: 4,
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-  //       clipBehavior: Clip.antiAlias,
-  //       child: YoutubePlayer(
-  //         controller: _controller!,
-  //         showVideoProgressIndicator: true,
-  //         progressIndicatorColor: Colors.amber,
-  //         progressColors: const ProgressBarColors(
-  //           playedColor: Colors.amber,
-  //           handleColor: Colors.amberAccent,
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+  // --- WIDGET PEMUTAR VIDEO PALSU ---
+  Widget _buildYoutubePlayer() {
+    // Tampilkan loading jika data thumbnail belum siap
+    if (thumbnailUrl == null) {
+      return const SizedBox(
+        height: 250,
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    // Tampilkan gambar jika thumbnail sudah ada
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        clipBehavior: Clip.antiAlias,
+        child: GestureDetector(
+          onTap: () {
+            // Langsung buka URL di aplikasi YouTube
+            if (videoUrl != null) {
+              _launchURL(videoUrl!);
+            }
+          },
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Gambar Thumbnail dari YouTube
+              Image.network(
+                thumbnailUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 250,
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : const SizedBox(
+                        height: 250,
+                        child: Center(child: CircularProgressIndicator())),
+                errorBuilder: (context, error, stack) => const SizedBox(
+                    height: 250, child: Center(child: Icon(Icons.error))),
+              ),
+              // Lapisan gelap untuk memperjelas teks dan ikon
+              Container(
+                height: 250,
+                color: Colors.black.withOpacity(0.5),
+              ),
+              // Judul Video
+              Positioned(
+                top: 12,
+                left: 12,
+                right: 12,
+                child: Text(
+                  videoTitle ?? 'Video YouTube',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    shadows: [Shadow(blurRadius: 2, color: Colors.black87)],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Ikon Play Besar di Tengah
+              const Icon(
+                Icons.play_circle_fill,
+                color: Colors.white,
+                size: 64.0,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-  // WIDGET BARU: PRATINJAU GALERI
   Widget _buildGalleryPreview(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,7 +544,7 @@ class _HomePageState extends State<HomePage> {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
-                height: 220, // Disesuaikan dari 200 menjadi 220
+                height: 220,
                 child: Center(child: CircularProgressIndicator()),
               );
             }
@@ -513,12 +557,12 @@ class _HomePageState extends State<HomePage> {
             return CarouselSlider.builder(
               itemCount: galleryDocs.length,
               options: CarouselOptions(
-                height: 220, // Disesuaikan dari 200 menjadi 220
+                height: 220,
                 autoPlay: galleryDocs.length > 1,
                 autoPlayInterval: const Duration(seconds: 5),
                 enlargeCenterPage: true,
-                viewportFraction: 0.9, // Disesuaikan dari 0.85 menjadi 0.9
-                aspectRatio: 16 / 9, // Ditambahkan agar sesuai
+                viewportFraction: 0.9,
+                aspectRatio: 16 / 9,
               ),
               itemBuilder: (context, index, realIndex) {
                 final doc = galleryDocs[index];
@@ -565,9 +609,8 @@ class _HomePageState extends State<HomePage> {
               _buildMemberStatusCard(context, userProvider)
             else
               _buildMembershipBanner(context),
-
           _buildDiscountBanner(context),
-          // _buildYoutubePlayer(),
+          _buildYoutubePlayer(),
           _buildGalleryPreview(context),
           const Padding(
             padding: EdgeInsets.fromLTRB(30, 20, 20, 10),
@@ -746,6 +789,20 @@ class _HomePageState extends State<HomePage> {
     final expiryDate = provider.memberUntil != null
         ? DateFormat('dd MMMM yyyy').format(provider.memberUntil!)
         : 'Tidak diketahui';
+    String getFriendlyMembershipName(String typeId) {
+      switch (typeId) {
+        case 'minisoccer':
+          return 'Member Mini Soccer';
+        case 'basket_vinyl':
+          return 'Member Basket Vynil';
+        case 'basket_karet':
+          return 'Member Basket Karet';
+        default:
+          return 'Member'; // Fallback jika tidak dikenali
+      }
+    }
+
+    final membershipName = getFriendlyMembershipName(provider.membershipType);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -763,9 +820,9 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Anda Adalah Member',
-                      style: TextStyle(
+                    Text(
+                      membershipName, // <-- TAMPILKAN NAMA MEMBER DI SINI
+                      style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.green),
@@ -810,7 +867,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// WIDGET BARU UNTUK SLIDER PROFIL
 class ProfileSlider extends StatefulWidget {
   const ProfileSlider({Key? key}) : super(key: key);
 
@@ -845,7 +901,7 @@ class _ProfileSliderState extends State<ProfileSlider> {
             userEmail: user.email ?? '',
             profileImageUrl: userData['profileImageUrl'] ?? '',
             userPhone: userData['phone'] ?? '',
-            isMember: userData['member'] ?? false,
+            isMember: userData['isMember'] ?? false,
             points: userData['points'] ?? 0,
             memberUntil: (userData['memberUntil'] as Timestamp?)?.toDate(),
           );
@@ -870,12 +926,8 @@ class _ProfileSliderState extends State<ProfileSlider> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          // Header Profil Kustom yang Baru
           _buildProfileHeader(userProvider),
-
-          const SizedBox(height: 10), // Spasi sebelum menu
-
-          // Menu Item
+          const SizedBox(height: 10),
           _buildListTile(
             context,
             'Ubah Profil',
@@ -893,8 +945,9 @@ class _ProfileSliderState extends State<ProfileSlider> {
                   ),
                 ),
               );
-              if (result == true) {
-                _syncUserData(context);
+
+              if (result == true && mounted) {
+                await _syncUserData(context);
               }
             },
           ),
@@ -951,7 +1004,6 @@ class _ProfileSliderState extends State<ProfileSlider> {
     );
   }
 
-  // Widget header profil yang baru dengan info terpusat
   Widget _buildProfileHeader(UserProvider userProvider) {
     return Container(
       width: double.infinity,
@@ -1003,7 +1055,6 @@ class _ProfileSliderState extends State<ProfileSlider> {
     );
   }
 
-  // Widget helper untuk tombol admin
   Widget _buildAdminButton(BuildContext context, String uid) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
@@ -1032,7 +1083,6 @@ class _ProfileSliderState extends State<ProfileSlider> {
     );
   }
 
-  // Widget helper untuk membuat ListTile
   Widget _buildListTile(
       BuildContext context, String title, IconData icon, VoidCallback onTap) {
     return ListTile(

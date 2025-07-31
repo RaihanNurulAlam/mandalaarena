@@ -5,6 +5,7 @@ import 'package:mandalaarenaapp/pages/add_article_page.dart';
 import 'package:mandalaarenaapp/pages/edit_article_page.dart'; // Import halaman edit artikel
 import 'package:mandalaarenaapp/pages/models/articlecard.dart';
 import 'package:mandalaarenaapp/pages/models/articlecard_page.dart';
+import 'package:mandalaarenaapp/theme/app_styles.dart';
 
 class InformationPage extends StatefulWidget {
   @override
@@ -47,8 +48,11 @@ class _InformationPageState extends State<InformationPage> {
     return Scaffold(
       appBar: AppBar(
         title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: const Text('Artikel', style: TextStyle(color: Colors.black)),
+          padding: EdgeInsets.symmetric(horizontal: 10.0),
+          child: const Text(
+            'Artikel',
+            style: kAppBarTitleStyle,
+          ),
         ),
         actions: [
           if (_isAdmin)

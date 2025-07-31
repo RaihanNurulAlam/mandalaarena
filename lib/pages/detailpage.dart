@@ -194,7 +194,12 @@ class _DetailPageState extends State<DetailPage> {
 
       if (usePhotographer) totalPrice += photographerPrice;
       if (useReferee) totalPrice += refereePrice;
-      if (useIceBath && isMember && widget.lapang.name == "Lapang Minisoccer") {
+      if (useIceBath &&
+          isMember &&
+          (widget.lapang.name == "Lapang Minisoccer" ||
+              useIceBath &&
+                  isMember &&
+                  widget.lapang.name == "Lapang Basket Vynil")) {
         totalPrice += iceBathPrice;
       }
     }
@@ -1076,7 +1081,8 @@ class _DetailPageState extends State<DetailPage> {
                         _updateTotalPrice();
                       }),
                     ),
-                    if (isMember && widget.lapang.name == "Lapang Minisoccer")
+                    if (isMember && widget.lapang.name == "Lapang Minisoccer" ||
+                        isMember && widget.lapang.name == "Lapang Basket Vynil")
                       Padding(
                         padding: const EdgeInsets.only(top: 10.0),
                         child: _buildServiceOption(

@@ -30,7 +30,7 @@ import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:mandalaarenaapp/pages/sparring_team_page.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+// Hapus import youtube_player_flutter karena sudah tidak digunakan
 
 import 'models/banner_model.dart';
 
@@ -43,35 +43,48 @@ class _AdminHomePageState extends State<AdminHomePage> {
   List<Lapang> lapangs = [];
   bool isExpanded = false;
   bool isHoveredToggle = false;
-  YoutubePlayerController? _controller;
+  // Hapus YoutubePlayerController
+
+  // Variabel untuk pemutar video "palsu" dari homepage
+  String? videoUrl;
+  String? videoTitle;
+  String? thumbnailUrl;
 
   @override
   void initState() {
     super.initState();
     getLapangs();
     Intl.defaultLocale = 'id_ID';
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      const videoUrl = 'https://www.youtube.com/watch?v=Ke-n-g-3P2U';
-      final videoId = YoutubePlayer.convertUrlToId(videoUrl);
-
-      if (mounted) {
-        setState(() {
-          _controller = YoutubePlayerController(
-            initialVideoId: videoId ?? '',
-            flags: const YoutubePlayerFlags(
-              autoPlay: false,
-              mute: false,
-            ),
-          );
-        });
-      }
-    });
+    // Panggil fungsi untuk inisialisasi data YouTube
+    _initializeYoutubeData();
   }
 
+  // --- FUNGSI BARU UNTUK MENGAMBIL DATA VIDEO (diadaptasi dari homepage) ---
+  void _initializeYoutubeData() {
+    // --- KONFIGURASI VIDEO YOUTUBE ---
+    // BARU: Tentukan ID video yang sebenarnya
+    const String videoId = '60ItHLz5WEA';
+    const String myTitle = 'Alan Walker - Faded [NCS Release]';
+
+    // UBAH: Gunakan URL video YouTube yang valid
+    const String myUrl = 'https://www.youtube.com/watch?v=$videoId';
+    // ----------------------------------------------------
+
+    if (mounted) {
+      setState(() {
+        videoUrl = myUrl;
+        videoTitle = myTitle;
+        // UBAH: Buat URL thumbnail yang valid dari ID video
+        thumbnailUrl = 'https://img.youtube.com/vi/$videoId/sddefault.jpg';
+      });
+    } else {
+      print("URL video YouTube tidak valid.");
+    }
+  }
+
+  // Method dispose tidak lagi dibutuhkan untuk controller
   @override
   void dispose() {
-    _controller?.dispose();
     super.dispose();
   }
 
@@ -190,7 +203,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
                   Text(
-                    'Mandala Arena (Admin)',
+                    'Admin',
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: 16,
@@ -217,8 +230,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 ],
               ),
             ),
+            // ## PERUBAHAN KODE: Menyesuaikan ukuran tombol AppBar ##
             actions: [
-              // ## PENAMBAHAN KODE: Menampilkan ikon Poin (star) agar konsisten ##
               if (user != null)
                 TextButton.icon(
                   onPressed: () {
@@ -229,7 +242,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     );
                   },
                   icon: const Icon(Icons.star,
-                      color: Colors.orange, size: 22), // Ukuran diperkecil
+                      color: Colors.orange, size: 17), // Ukuran disamakan
                   label: Text(
                     userProvider.points.toString(),
                     style: const TextStyle(
@@ -237,44 +250,46 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10), // Padding dikurangi
+                        horizontal: 8), // Padding disamakan
                     minimumSize: const Size(30, 30),
                   ),
                 ),
               if (user != null) const SizedBox(width: 2),
 
-              // Ikon Alamat (tetap ada)
+              // Ikon Alamat (disesuaikan)
               IconButton(
                 onPressed: () {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (context) => AlamatPage()));
                 },
-                icon: const Icon(Icons.location_on, size: 30),
+                icon:
+                    const Icon(Icons.location_on, size: 25), // Ukuran disamakan
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 2),
 
-              // Ikon Keranjang (Cart) - Disesuaikan agar konsisten
+              // Ikon Keranjang (Cart) - Disesuaikan
               Consumer<Cart>(
                 builder: (context, value, child) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         IconButton(
                           onPressed: goToCart,
-                          icon: const Icon(CupertinoIcons.bag, size: 30),
+                          icon: const Icon(CupertinoIcons.bag,
+                              size: 25), // Ukuran disamakan
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
                         if (value.cart.isNotEmpty)
                           Positioned(
-                            top: 4,
-                            right: 0,
+                            top: 2, // Posisi disamakan
+                            right: -2, // Posisi disamakan
                             child: CircleAvatar(
-                              radius: 8,
+                              radius: 7, // Ukuran disamakan
                               backgroundColor: Colors.yellow,
                               child: Center(
                                 child: Text(
@@ -293,18 +308,18 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   );
                 },
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 7),
 
-              // Avatar Profil Admin (selalu ditampilkan)
+              // Avatar Profil Admin (disesuaikan)
               Builder(
                 builder: (context) => GestureDetector(
                   onTap: () {
                     Scaffold.of(context).openEndDrawer();
                   },
                   child: Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
+                    padding: const EdgeInsets.only(right: 30.0),
                     child: CircleAvatar(
-                      radius: 18,
+                      radius: 15, // Ukuran disamakan
                       backgroundImage: NetworkImage(
                         userProvider.profileImageUrl.isNotEmpty
                             ? userProvider.profileImageUrl
@@ -464,6 +479,76 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
+  // ## PENAMBAHAN KODE: Widget pemutar YouTube palsu dari homepage ##
+  Widget _buildYoutubePlayer() {
+    if (thumbnailUrl == null) {
+      return const SizedBox(
+        height: 250,
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        clipBehavior: Clip.antiAlias,
+        child: GestureDetector(
+          onTap: () {
+            if (videoUrl != null) {
+              _launchURL(videoUrl!);
+            }
+          },
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Image.network(
+                thumbnailUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 250,
+                loadingBuilder: (context, child, progress) => progress == null
+                    ? child
+                    : const SizedBox(
+                        height: 250,
+                        child: Center(child: CircularProgressIndicator())),
+                errorBuilder: (context, error, stack) => const SizedBox(
+                    height: 250, child: Center(child: Icon(Icons.error))),
+              ),
+              Container(
+                height: 250,
+                color: Colors.black.withOpacity(0.5),
+              ),
+              Positioned(
+                top: 12,
+                left: 12,
+                right: 12,
+                child: Text(
+                  videoTitle ?? 'Video YouTube',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    shadows: [Shadow(blurRadius: 2, color: Colors.black87)],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Icon(
+                Icons.play_circle_fill,
+                color: Colors.white,
+                size: 64.0,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildHomeContent(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = FirebaseAuth.instance.currentUser;
@@ -471,7 +556,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ## PENAMBAHAN KODE: Menampilkan banner member agar konsisten ##
           if (user != null)
             if (userProvider.isMembershipActive)
               _buildMemberStatusCard(context, userProvider)
@@ -479,6 +563,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               _buildMembershipBanner(context),
 
           _buildDiscountBanner(context),
+          _buildYoutubePlayer(), // ## PANGGIL WIDGET YOUTUBE DI SINI ##
           _buildGalleryPreview(context),
           const Padding(
             padding: EdgeInsets.fromLTRB(30, 20, 20, 10),
@@ -758,7 +843,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // ## PENAMBAHAN KODE: Widget untuk banner membership ##
   Widget _buildMembershipBanner(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -811,11 +895,24 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  // ## PENAMBAHAN KODE: Widget untuk status member ##
   Widget _buildMemberStatusCard(BuildContext context, UserProvider provider) {
     final expiryDate = provider.memberUntil != null
         ? DateFormat('dd MMMM yyyy').format(provider.memberUntil!)
         : 'Tidak diketahui';
+    String getFriendlyMembershipName(String typeId) {
+      switch (typeId) {
+        case 'minisoccer':
+          return 'Member Mini Soccer';
+        case 'basket_vinyl':
+          return 'Member Basket Vynil';
+        case 'basket_karet':
+          return 'Member Basket Karet';
+        default:
+          return 'Member'; // Fallback jika tidak dikenali
+      }
+    }
+
+    final membershipName = getFriendlyMembershipName(provider.membershipType);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
@@ -833,9 +930,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Anda Adalah Member',
-                      style: TextStyle(
+                    Text(
+                      membershipName,
+                      style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.green),
@@ -902,11 +999,27 @@ class _ProfileSliderState extends State<ProfileSlider> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        await Provider.of<UserProvider>(context, listen: false)
-            .fetchUserData(user.uid);
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        final userData = userDoc.data();
+        if (userData != null && mounted) {
+          // Menggunakan logika yang sama seperti di homepage untuk memastikan konsistensi
+          Provider.of<UserProvider>(context, listen: false).setUserData(
+            userId: user.uid,
+            userName: userData['name'] ?? '',
+            userEmail: user.email ?? '',
+            profileImageUrl: userData['profileImageUrl'] ?? '',
+            userPhone: userData['phone'] ?? '',
+            isMember: userData['isMember'] ?? false,
+            points: userData['points'] ?? 0,
+            memberUntil: (userData['memberUntil'] as Timestamp?)?.toDate(),
+          );
+        }
       }
     } catch (e) {
-      debugPrint('Kesalahan sinkronisasi data pengguna: $e');
+      debugPrint('Kesalahan sinkronisasi data pengguna di Admin Page: $e');
     }
   }
 
@@ -943,8 +1056,9 @@ class _ProfileSliderState extends State<ProfileSlider> {
                   ),
                 ),
               );
-              if (result == true) {
-                _syncUserData(context);
+
+              if (result == true && mounted) {
+                await _syncUserData(context);
               }
             },
           ),
@@ -958,7 +1072,6 @@ class _ProfileSliderState extends State<ProfileSlider> {
               final navigator = Navigator.of(context);
               final userProvider =
                   Provider.of<UserProvider>(context, listen: false);
-              // ## PENAMBAHAN LOGIKA: Dapatkan Cart provider ##
               final cartProvider = Provider.of<Cart>(context, listen: false);
 
               final confirmLogout = await showDialog<bool>(
@@ -990,7 +1103,6 @@ class _ProfileSliderState extends State<ProfileSlider> {
               if (confirmLogout == true) {
                 await FirebaseAuth.instance.signOut();
                 userProvider.clearUserData();
-                // ## PENAMBAHAN LOGIKA: Panggil clearCart() ##
                 cartProvider.clearCart();
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const WelcomePage()),

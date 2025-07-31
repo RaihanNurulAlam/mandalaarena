@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:mandalaarenaapp/theme/app_styles.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -313,30 +314,28 @@ class _AboutPageState extends State<AboutPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.grey[100],
-        body: SafeArea(
-            child: Column(children: [
-          _buildHeader(),
-          Expanded(child: _buildBody()),
-        ])));
-  }
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Ulasan Pengguna',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold, color: Colors.black87)),
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10.0),
+          child: const Text(
+            'Ulasan Pengguna',
+            style: kAppBarTitleStyle, // 3. Terapkan style yang sudah dibuat
+          ),
+        ),
+        backgroundColor: Colors.grey[100], // Samakan dengan warna background
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        actions: [
           IconButton(
             icon: const Icon(Icons.add_circle, color: Colors.black, size: 32),
             tooltip: 'Tambah Ulasan',
             onPressed: _showAddReviewSheet,
           ),
+          const SizedBox(width: 8),
         ],
       ),
+      body: _buildBody(),
     );
   }
 

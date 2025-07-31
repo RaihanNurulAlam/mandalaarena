@@ -72,7 +72,7 @@ class FirebaseServices {
         'profileImageUrl': user.photoURL ?? 'https://via.placeholder.com/150',
         'isAdmin': false,
         'points': 0,
-        'member': false,
+        'isMember': false,
         'memberUntil': null,
       });
     }

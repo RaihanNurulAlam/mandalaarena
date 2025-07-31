@@ -1,3 +1,5 @@
+// lib/provider/user_provider.dart
+
 // ignore_for_file: avoid_print, unnecessary_brace_in_string_interps
 
 import 'dart:async';
@@ -14,6 +16,7 @@ class UserProvider with ChangeNotifier {
   int _points = 0;
   DateTime? _memberUntil;
   bool _isAdmin = false;
+  String _membershipType = '';
 
   StreamSubscription<DocumentSnapshot>? _userSubscription;
 
@@ -26,6 +29,7 @@ class UserProvider with ChangeNotifier {
   int get points => _points;
   DateTime? get memberUntil => _memberUntil;
   bool get isAdmin => _isAdmin;
+  String get membershipType => _membershipType;
 
   bool get isMembershipActive {
     if (!_isMember || _memberUntil == null) {
@@ -42,8 +46,6 @@ class UserProvider with ChangeNotifier {
       return;
     }
 
-    print("--- Memasang Listener untuk User ID: $uid ---");
-
     _userSubscription = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -52,19 +54,11 @@ class UserProvider with ChangeNotifier {
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
 
-        print("===================================");
-        print("🔥 Listener Firestore Menerima Data Baru 🔥");
-        print("Data mentah: $data");
-
         _userId = uid;
-        _isMember = data['member'] ?? false;
+        _isMember = data['isMember'] ?? false;
         _memberUntil = (data['memberUntil'] as Timestamp?)?.toDate();
         _isAdmin = data['isAdmin'] ?? false;
-
-        print("✅ isMember di-set menjadi: $_isMember");
-        print("✅ memberUntil di-set menjadi: $_memberUntil");
-        print("💡 Status isMembershipActive: ${isMembershipActive}");
-        print("===================================");
+        _membershipType = (data['membershipType'] as String?)!;
 
         _userName = data['name'] ?? 'No Name';
         _userEmail = data['email'] ?? 'No Email';
@@ -82,7 +76,6 @@ class UserProvider with ChangeNotifier {
   }
 
   void clearUserData() {
-    print("--- Membersihkan data user dan membatalkan listener ---");
     _userSubscription?.cancel();
     _userId = "";
     _userName = "";
@@ -93,6 +86,7 @@ class UserProvider with ChangeNotifier {
     _points = 0;
     _memberUntil = null;
     _isAdmin = false;
+    _membershipType = '';
     notifyListeners();
   }
 
@@ -111,6 +105,7 @@ class UserProvider with ChangeNotifier {
     required bool isMember,
     required int points,
     required DateTime? memberUntil,
+    String? membershipType,
   }) {
     _userId = userId;
     _userName = userName;
@@ -120,16 +115,15 @@ class UserProvider with ChangeNotifier {
     _isMember = isMember;
     _points = points;
     _memberUntil = memberUntil;
+    _membershipType = membershipType ?? '';
     notifyListeners();
   }
 
-  /// Mengambil data terbaru dari Firestore dan memperbarui provider.
   Future<void> fetchUserData(String uid) async {
     if (uid.isEmpty) {
       clearUserData();
       return;
     }
-
     try {
       final doc =
           await FirebaseFirestore.instance.collection('users').doc(uid).get();
@@ -139,9 +133,10 @@ class UserProvider with ChangeNotifier {
         _userName = data['name'] ?? 'No Name';
         _userEmail = data['email'] ?? 'No Email';
         _userPhone = data['phone'] ?? 'No Phone';
-        _isMember = data['member'] ?? false;
+        _isMember = data['isMember'] ?? false; // Koreksi
         _points = data['points'] ?? 0;
         _memberUntil = (data['memberUntil'] as Timestamp?)?.toDate();
+        _membershipType = (data['membershipType'] as String?)!;
       }
     } catch (e) {
       print("Gagal mengambil data user: $e");
@@ -150,14 +145,14 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Memperbarui status membership secara spesifik.
-  void updateMembershipStatus(bool newIsMember, DateTime newMemberUntil) {
+  void updateMembershipStatus(bool newIsMember, DateTime newMemberUntil,
+      {String? membershipType}) {
     _isMember = newIsMember;
     _memberUntil = newMemberUntil;
+    _membershipType = membershipType ?? _membershipType;
     notifyListeners();
   }
 
-  /// Method untuk memperbarui sebagian data pengguna (profil).
   void updateUserData({
     required String userName,
     required String userEmail,
@@ -171,10 +166,8 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Memperbarui poin pengguna.
   void updateUserPoints(int newPoints) {
     _points = newPoints;
     notifyListeners();
-    print("UserProvider: Poin diperbarui menjadi $_points");
   }
 }

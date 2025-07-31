@@ -1,14 +1,12 @@
-// ignore_for_file: unnecessary_null_comparison, use_build_context_synchronously, avoid_print, unused_field, prefer_interpolation_to_compose_strings
+// ignore_for_file: use_build_context_synchronously, avoid_print, prefer_interpolation_to_compose_strings
 
-// import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 
 class EditProfilePage extends StatefulWidget {
   final String userName;
@@ -17,6 +15,7 @@ class EditProfilePage extends StatefulWidget {
   final String phoneNumber;
 
   const EditProfilePage({
+    super.key,
     required this.userName,
     required this.userEmail,
     required this.profileImageUrl,
@@ -29,6 +28,7 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   Uint8List? _imageBytes;
+  File? _imageFile;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -37,7 +37,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  File? _imageFile;
+
   bool isLoading = false;
   bool _isOldPasswordVisible = false;
   bool _isNewPasswordVisible = false;
@@ -53,39 +53,39 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    final pickedImage =
+        await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
 
     if (pickedImage != null) {
       final imageBytes = await pickedImage.readAsBytes();
       setState(() {
         _imageBytes = imageBytes;
-        _imageFile = File(pickedImage.path);
+        if (!kIsWeb) {
+          _imageFile = File(pickedImage.path);
+        }
       });
     }
   }
 
   Future<void> _deleteOldImage(String imageUrl) async {
+    if (!imageUrl.contains('firebasestorage.googleapis.com')) {
+      print("Skipping delete: URL is not a Firebase Storage URL.");
+      return;
+    }
     try {
-      // Dapatkan referensi ke file gambar lama di Firebase Storage
       Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
       await storageRef.delete();
+      print("Old image deleted successfully.");
     } catch (e) {
       print('Error deleting old image: $e');
     }
   }
 
-  Future<String?> _uploadImage(String userName) async {
+  Future<String?> _uploadImage(String userId) async {
+    if (_imageFile == null && _imageBytes == null) return null;
+
     try {
-      if (_imageFile == null && _imageBytes == null) {
-        return null; // Jika tidak ada gambar baru, kembalikan null
-      }
-
-      // Format nama file: hapus spasi dan karakter khusus, lalu tambahkan .jpg
-      String fileName =
-          userName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase() +
-              '.jpg';
-
-      // Referensi ke Firebase Storage dengan nama file yang sesuai
+      String fileName = '$userId.jpg';
       Reference storageRef =
           FirebaseStorage.instance.ref().child('profile/$fileName');
 
@@ -95,7 +95,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       } else if (_imageFile != null) {
         uploadTask = storageRef.putFile(_imageFile!);
       } else {
-        throw Exception("Gambar tidak ditemukan");
+        return null;
       }
 
       TaskSnapshot taskSnapshot = await uploadTask;
@@ -107,104 +107,84 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _updateProfile() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        isLoading = true;
-      });
+    if (!_formKey.currentState!.validate()) return;
 
-      try {
-        final user = FirebaseAuth.instance.currentUser;
-        final userId = user?.uid;
+    setState(() => isLoading = true);
 
-        if (user == null) throw Exception('Pengguna tidak ditemukan');
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) throw Exception('Pengguna tidak ditemukan');
+      final userId = user.uid;
 
-        // Validasi password lama sebelum mengganti password
-        if (_oldPasswordController.text.isNotEmpty ||
-            _newPasswordController.text.isNotEmpty ||
-            _confirmPasswordController.text.isNotEmpty) {
-          final cred = EmailAuthProvider.credential(
-            email: user.email!,
-            password: _oldPasswordController.text,
-          );
+      bool passwordFieldsAreFilled = _oldPasswordController.text.isNotEmpty ||
+          _newPasswordController.text.isNotEmpty ||
+          _confirmPasswordController.text.isNotEmpty;
 
-          try {
-            await user.reauthenticateWithCredential(cred);
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(
-                      'Password lama anda salah, sehingga ganti password tidak bisa dilakukan')),
-            );
-            setState(() {
-              isLoading = false;
-            });
-            return;
-          }
-
-          if (_newPasswordController.text != _confirmPasswordController.text) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(
-                      'Password baru dan konfirmasi password tidak sinkron, sehingga tidak bisa melakukan perubahan')),
-            );
-            setState(() {
-              isLoading = false;
-            });
-            return;
-          }
-
-          await user.updatePassword(_newPasswordController.text);
+      if (passwordFieldsAreFilled) {
+        if (_oldPasswordController.text.isEmpty ||
+            _newPasswordController.text.isEmpty ||
+            _confirmPasswordController.text.isEmpty) {
+          throw Exception("Harap isi semua field password untuk menggantinya.");
+        }
+        if (_newPasswordController.text != _confirmPasswordController.text) {
+          throw Exception('Password baru dan konfirmasi password tidak cocok.');
         }
 
-        String? newProfileUrl = widget.profileImageUrl;
+        final cred = EmailAuthProvider.credential(
+          email: user.email!,
+          password: _oldPasswordController.text,
+        );
+        await user.reauthenticateWithCredential(cred);
+        await user.updatePassword(_newPasswordController.text);
+      }
 
-        // Jika ada gambar baru, hapus gambar lama dan upload gambar baru
-        if (_imageFile != null || _imageBytes != null) {
-          // Hapus gambar lama dari Firebase Storage
-          if (widget.profileImageUrl.isNotEmpty) {
-            await _deleteOldImage(widget.profileImageUrl);
-          }
+      String? newProfileUrl;
 
-          // Upload gambar baru ke Firebase Storage dengan nama pengguna yang baru
-          newProfileUrl = await _uploadImage(_nameController.text.trim());
-          if (newProfileUrl == null) throw Exception('Gagal mengunggah gambar');
+      if (_imageBytes != null) {
+        if (widget.profileImageUrl.isNotEmpty) {
+          await _deleteOldImage(widget.profileImageUrl);
         }
+        newProfileUrl = await _uploadImage(userId);
+        if (newProfileUrl == null) throw Exception('Gagal mengunggah gambar');
+      }
 
-        // Update data profil di Firestore
+      Map<String, dynamic> dataToUpdate = {};
+
+      if (_nameController.text != widget.userName) {
+        dataToUpdate['name'] = _nameController.text;
+      }
+      if (_phoneController.text != widget.phoneNumber) {
+        dataToUpdate['phone'] = _phoneController.text;
+      }
+      if (newProfileUrl != null) {
+        dataToUpdate['profileImageUrl'] = newProfileUrl;
+      }
+
+      if (dataToUpdate.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
-            .update({
-          'name': _nameController.text,
-          'email': _emailController.text,
-          'phone': _phoneController.text,
-          'profileImageUrl': newProfileUrl,
-        });
-
-        // Update display name di Firebase Auth
-        await user.updateDisplayName(_nameController.text);
-        await user.reload();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profil berhasil diperbarui!')),
-        );
-
-        Navigator.pop(context, {
-          'userName': _nameController.text,
-          'userEmail': _emailController.text,
-          'profileImageUrl': newProfileUrl,
-          'phoneNumber': _phoneController.text,
-        });
-      } catch (e) {
-        print(e);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memperbarui profil: $e')),
-        );
+            .update(dataToUpdate);
       }
 
-      setState(() {
-        isLoading = false;
-      });
+      if (_nameController.text != user.displayName) {
+        await user.updateDisplayName(_nameController.text);
+      }
+
+      await user.reload();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profil berhasil diperbarui!')),
+      );
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -212,10 +192,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ubah Profil'),
+        title: const Text('Ubah Profil'), // UI CHANGE: centerTitle dihapus
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+        padding:
+            const EdgeInsets.all(16.0), // UI CHANGE: Padding utama dikembalikan
         child: Form(
           key: _formKey,
           child: Column(
@@ -229,8 +210,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       backgroundColor: Colors.grey.shade200,
                       backgroundImage: _imageBytes != null
                           ? MemoryImage(_imageBytes!)
-                          : NetworkImage(widget.profileImageUrl)
-                              as ImageProvider?,
+                          : (widget.profileImageUrl.isNotEmpty
+                              ? NetworkImage(widget.profileImageUrl)
+                              : null) as ImageProvider?,
                       child:
                           _imageBytes == null && widget.profileImageUrl.isEmpty
                               ? Icon(Icons.person,
@@ -242,7 +224,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       right: 0,
                       child: InkWell(
                         onTap: _pickImage,
-                        child: CircleAvatar(
+                        child: const CircleAvatar(
                           radius: 20,
                           backgroundColor: Colors.black,
                           child: Icon(Icons.edit, color: Colors.white),
@@ -252,58 +234,68 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ],
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20), // UI CHANGE: Jarak dikembalikan
               _buildTextField(_nameController, 'Nama'),
-              SizedBox(height: 20),
-              _buildTextField(_emailController, 'Email'),
-              SizedBox(height: 20),
-              _buildTextField(
-                  _phoneController, 'Nomor Telepon', TextInputType.phone),
-              SizedBox(height: 20),
-              Divider(),
+              const SizedBox(height: 20),
+              _buildTextField(_emailController, 'Email', isReadOnly: true),
+              const SizedBox(height: 20),
+              _buildTextField(_phoneController, 'Nomor Telepon',
+                  keyboardType: TextInputType.phone),
+              const SizedBox(height: 20),
+              const Divider(), // UI CHANGE: Divider dikembalikan
               Padding(
+                // UI CHANGE: Padding untuk judul dikembalikan
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Text('Ganti Password',
+                child: const Text('Ganti Password',
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-              SizedBox(height: 20),
-              _buildPasswordField(_oldPasswordController, 'Password Lama',
-                  _isOldPasswordVisible, () {
-                setState(() {
-                  _isOldPasswordVisible = !_isOldPasswordVisible;
-                });
-              }),
-              SizedBox(height: 20),
-              _buildPasswordField(_newPasswordController, 'Password Baru',
-                  _isNewPasswordVisible, () {
-                setState(() {
-                  _isNewPasswordVisible = !_isNewPasswordVisible;
-                });
-              }),
-              SizedBox(height: 20),
-              _buildPasswordField(_confirmPasswordController,
-                  'Konfirmasi Password Baru', _isConfirmPasswordVisible, () {
-                setState(() {
-                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                });
-              }),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
+              _buildPasswordField(
+                  _oldPasswordController,
+                  'Password Lama',
+                  _isOldPasswordVisible,
+                  () => setState(
+                      () => _isOldPasswordVisible = !_isOldPasswordVisible)),
+              const SizedBox(height: 20),
+              _buildPasswordField(
+                  _newPasswordController,
+                  'Password Baru',
+                  _isNewPasswordVisible,
+                  () => setState(
+                      () => _isNewPasswordVisible = !_isNewPasswordVisible)),
+              const SizedBox(height: 20),
+              _buildPasswordField(
+                  _confirmPasswordController,
+                  'Konfirmasi Password Baru',
+                  _isConfirmPasswordVisible,
+                  () => setState(() =>
+                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible)),
+              const SizedBox(height: 20),
+              // UI CHANGE: Struktur tombol Simpan dikembalikan seperti asli
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IntrinsicWidth(
                     child: ElevatedButton(
-                      onPressed: _updateProfile,
+                      onPressed: isLoading ? null : _updateProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
-                        padding:
-                            EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 20),
                       ),
-                      child: Text(
-                        'Simpan Perubahan',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Text(
+                              'Simpan Perubahan',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16),
+                            ),
                     ),
                   ),
                 ],
@@ -315,21 +307,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+  // UI CHANGE: Padding dikembalikan ke dalam helper method
   Widget _buildTextField(TextEditingController controller, String label,
-      [TextInputType? keyboardType]) {
+      {TextInputType? keyboardType, bool isReadOnly = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        readOnly: isReadOnly,
         decoration: InputDecoration(
           labelText: label,
-          border: OutlineInputBorder(),
+          filled: isReadOnly,
+          fillColor: isReadOnly ? Colors.grey.shade200 : null,
+          border: const OutlineInputBorder(),
         ),
+        validator: (value) {
+          if (label != 'Email' && (value == null || value.isEmpty)) {
+            return 'Field $label tidak boleh kosong';
+          }
+          return null;
+        },
       ),
     );
   }
 
+  // UI CHANGE: Padding dikembalikan ke dalam helper method
   Widget _buildPasswordField(TextEditingController controller, String labelText,
       bool isVisible, VoidCallback toggleVisibility) {
     return Padding(
@@ -339,7 +342,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         obscureText: !isVisible,
         decoration: InputDecoration(
           labelText: labelText,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
           suffixIcon: IconButton(
             icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off),
             onPressed: toggleVisibility,

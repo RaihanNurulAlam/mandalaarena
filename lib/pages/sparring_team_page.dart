@@ -8,6 +8,7 @@ import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/edit_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 import 'package:mandalaarenaapp/pages/sparring_booking_page.dart';
+import 'package:mandalaarenaapp/theme/app_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SparringTeamPage extends StatefulWidget {
@@ -211,11 +212,13 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
           return [
             SliverAppBar(
               title: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: const Text("Cari Lawan Sparring",
-                    style: TextStyle(
-                        color: Colors.black, fontWeight: FontWeight.bold)),
+                padding: EdgeInsets.symmetric(horizontal: 10.0),
+                child: const Text(
+                  "Cari Lawan Sparring",
+                  style: kAppBarTitleStyle, // Terapkan style yang sudah dibuat
+                ),
               ),
+              centerTitle: false, // Menjaga agar judul tetap di kiri
               backgroundColor: Colors.white,
               floating: true,
               pinned: true,

@@ -65,8 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         builder: (context) => EditProfilePage(
                           userName: userProvider.userName,
                           userEmail: userProvider.userEmail,
-                          profileImageUrl: userProvider
-                              .profileImageUrl, // Kirim URL gambar lama
+                          profileImageUrl: userProvider.profileImageUrl,
                           phoneNumber: userProvider.userPhone,
                         ),
                       ),

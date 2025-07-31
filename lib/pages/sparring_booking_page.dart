@@ -123,7 +123,10 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       if (useReferee) totalPrice += refereePrice;
       if (useIceBath &&
           isMember &&
-          selectedLapang!.name == "Lapang Minisoccer") {
+          (selectedLapang!.name == "Lapang Minisoccer" ||
+              useIceBath &&
+                  isMember &&
+                  selectedLapang!.name == "Lapang Basket Vynil")) {
         totalPrice += iceBathPrice;
       }
     }
@@ -430,10 +433,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       MaterialPageRoute(builder: (context) => BookingSummaryPage()),
     );
   }
-
-  // =======================================================================
-  // [UI BARU] - Mengadopsi seluruh struktur `build` method dari DetailPage
-  // =======================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -843,7 +842,10 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                         _updateTotalPrice();
                       }),
                     ),
-                    if (isMember && selectedLapang!.name == "Lapang Minisoccer")
+                    if (isMember &&
+                            selectedLapang!.name == "Lapang Minisoccer" ||
+                        isMember &&
+                            selectedLapang!.name == "Lapang Basket Vynil")
                       Padding(
                         padding: const EdgeInsets.only(top: 10.0),
                         child: _buildServiceOption(

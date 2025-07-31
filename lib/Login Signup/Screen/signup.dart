@@ -66,8 +66,8 @@ class _SignupScreenState extends State<SignupScreen> {
           'uid': userId,
           'points': 0,
           'isAdmin': false,
-          'member': false,
-          'memberUntil': null, // <-- 3. TAMBAHKAN FIELD INI
+          'isMember': false,
+          'memberUntil': null,
         });
 
         // --- PERUBAHAN DI SINI ---
