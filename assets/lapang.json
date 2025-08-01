@@ -1,6 +1,16 @@
 [
   {
     "id": "1",
+    "name": "Lapang Minisoccer",
+    "description": "Deskripsi Lapang Minisoccer.",
+    "price": "450000",
+    "image_path": "assets/mini.JPG",
+    "rating": "4.8",
+    "bookings": [],
+    "facilities": ["Shower", "Parking Area", "Locker Room"]
+  },
+  {
+    "id": "2",
     "name": "Lapang Basket Vynil",
     "description": "Deskripsi Lapang Basket Vynil.",
     "price": "150000",
@@ -10,22 +20,12 @@
     "facilities": ["Shower", "Parking Area", "Locker Room"]
   },
   {
-    "id": "2",
+    "id": "3",
     "name": "Lapang Basket Karet",
     "description": "Deskripsi Lapang Basket Karet.",
     "price": "75000",
     "image_path": "assets/rubber.JPG",
     "rating": "4.9",
-    "bookings": [],
-    "facilities": ["Shower", "Parking Area", "Locker Room"]
-  },
-  {
-    "id": "3",
-    "name": "Lapang Minisoccer",
-    "description": "Deskripsi Lapang Minisoccer.",
-    "price": "450000",
-    "image_path": "assets/mini.JPG",
-    "rating": "4.8",
     "bookings": [],
     "facilities": ["Shower", "Parking Area", "Locker Room"]
   }

@@ -89,7 +89,7 @@ class _MembershipPageState extends State<MembershipPage> {
         id: 'basket_karet',
         title: 'Member Basket Ball Karet',
         subtitle: 'Uang muka dengan 2 kali permainan',
-        downPayment: 350000,
+        downPayment: 300000,
         description: 'Pembayaran Uang Muka Member Basket Karet',
         benefits: [
           'Priority booking',

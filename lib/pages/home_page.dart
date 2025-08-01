@@ -29,7 +29,6 @@ import 'package:mandalaarenaapp/provider/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../cubit/navigation_cubit.dart';
-// Hapus import youtube_player_flutter karena sudah tidak digunakan
 
 class HomePage extends StatefulWidget {
   @override
@@ -41,7 +40,6 @@ class _HomePageState extends State<HomePage> {
   bool isExpanded = false;
   bool isHoveredToggle = false;
 
-  // Variabel untuk pemutar video "palsu"
   String? videoUrl;
   String? videoTitle;
   String? thumbnailUrl;
@@ -51,36 +49,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     getLapangs();
     Intl.defaultLocale = 'id_ID';
-    _initializeYoutubeData();
   }
-
-  // --- FUNGSI BARU UNTUK MENGAMBIL DATA VIDEO ---
-  void _initializeYoutubeData() {
-    // --- KONFIGURASI VIDEO YOUTUBE (UBAH DI SINI) ---
-    const myUrl = 'https://www.youtube.com/watch?v=60ItHLz5WEA';
-    const myTitle = 'Alan Walker - Faded [NCS Release]';
-    // ----------------------------------------------------
-
-    // Ekstrak ID video dari URL untuk membuat link thumbnail
-    final videoId = Uri.parse(myUrl).queryParameters['v'];
-
-    if (videoId != null && videoId.isNotEmpty && mounted) {
-      setState(() {
-        videoUrl = myUrl;
-        videoTitle = myTitle;
-        // Membuat URL thumbnail dari ID video
-        thumbnailUrl = 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
-      });
-    } else {
-      print("URL video YouTube tidak valid.");
-    }
-  }
-
-  // Method dispose tidak lagi dibutuhkan untuk controller
-  // @override
-  // void dispose() {
-  //   super.dispose();
-  // }
 
   Future<void> getLapangs() async {
     String dataLapangJson =
@@ -124,390 +93,342 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = FirebaseAuth.instance.currentUser;
-    return BlocProvider(
-      create: (context) => NavigationCubit(),
-      child: Builder(builder: (BuildContext newContext) {
-        return Scaffold(
-          endDrawer: const ProfileSlider(),
-          appBar: AppBar(
-            toolbarHeight: 80,
-            title: Padding(
-              padding: const EdgeInsets.only(left: 15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Mandala Arena',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Icon(
-                        CupertinoIcons.map_pin,
-                        size: 12,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(width: 1),
+
+    // Gunakan LayoutBuilder untuk mendapatkan padding yang responsif
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tentukan padding horizontal berdasarkan lebar layar
+        final double horizontalPadding;
+        const double mobileBreakpoint =
+            600; // Titik batas untuk dianggap "bukan HP"
+        const double desktopMaxWidth = 1200; // Lebar konten maksimum di desktop
+
+        if (constraints.maxWidth < mobileBreakpoint) {
+          // Jika layar adalah HP
+          horizontalPadding = 20.0;
+        } else {
+          // Jika layar lebih lebar (tablet/desktop), buat padding agar konten di tengah
+          horizontalPadding = (constraints.maxWidth - desktopMaxWidth) / 2 > 20
+              ? (constraints.maxWidth - desktopMaxWidth) / 2
+              : 20.0;
+        }
+
+        return BlocProvider(
+          create: (context) => NavigationCubit(),
+          child: Builder(builder: (BuildContext newContext) {
+            return Scaffold(
+              endDrawer: const ProfileSlider(),
+              appBar: AppBar(
+                toolbarHeight: 80,
+                // Terapkan padding responsif di sini
+                title: Padding(
+                  padding:
+                      EdgeInsets.only(left: horizontalPadding > 20 ? 0 : 15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
                       Text(
-                        'Garut, Indonesia',
+                        'Mandala Arena',
                         style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
+                          color: Colors.black,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.map_pin,
+                            size: 12,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(width: 1),
+                          Text(
+                            'Garut, Indonesia',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            actions: [
-              if (user != null)
-                TextButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const PointsPage()),
-                    );
-                  },
-                  icon: const Icon(Icons.star, color: Colors.orange, size: 17),
-                  label: Text(
-                    userProvider.points.toString(),
-                    style: const TextStyle(
-                        color: Colors.black, fontWeight: FontWeight.bold),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    minimumSize: const Size(30, 30),
-                  ),
                 ),
-              if (user != null) const SizedBox(width: 2),
-              IconButton(
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => AlamatPage()));
-                },
-                icon: const Icon(Icons.location_on, size: 25),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 2),
-              Consumer<Cart>(
-                builder: (context, value, child) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        IconButton(
-                          onPressed: goToCart,
-                          icon: const Icon(CupertinoIcons.bag, size: 25),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                        if (value.cart.isNotEmpty)
-                          Positioned(
-                            top: 2,
-                            right: -2,
-                            child: CircleAvatar(
-                              radius: 7,
-                              backgroundColor: Colors.yellow,
-                              child: Center(
-                                child: Text(
-                                  value.cart.length.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                actions: [
+                  if (user != null)
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const PointsPage()),
+                        );
+                      },
+                      icon: const Icon(Icons.star,
+                          color: Colors.orange, size: 17),
+                      label: Text(
+                        userProvider.points.toString(),
+                        style: const TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        minimumSize: const Size(30, 30),
+                      ),
+                    ),
+                  if (user != null) const SizedBox(width: 2),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => AlamatPage()));
+                    },
+                    icon: const Icon(Icons.location_on, size: 25),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 2),
+                  Consumer<Cart>(
+                    builder: (context, value, child) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            IconButton(
+                              onPressed: goToCart,
+                              icon: const Icon(CupertinoIcons.bag, size: 25),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            if (value.cart.isNotEmpty)
+                              Positioned(
+                                top: 2,
+                                right: -2,
+                                child: CircleAvatar(
+                                  radius: 7,
+                                  backgroundColor: Colors.yellow,
+                                  child: Center(
+                                    child: Text(
+                                      value.cart.length.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 7),
+                  // Terapkan padding responsif di sini
+                  Padding(
+                    padding: EdgeInsets.only(right: horizontalPadding),
+                    child: user == null
+                        ? ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const LoginScreen()),
+                              );
+                            },
+                            child: const Text("Login",
+                                style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 12),
+                            ),
+                          )
+                        : Builder(
+                            builder: (newContext) => GestureDetector(
+                              onTap: () {
+                                Scaffold.of(newContext).openEndDrawer();
+                              },
+                              child: CircleAvatar(
+                                radius: 15,
+                                backgroundImage: NetworkImage(
+                                  userProvider.profileImageUrl.isNotEmpty
+                                      ? userProvider.profileImageUrl
+                                      : "https://via.placeholder.com/150",
                                 ),
                               ),
                             ),
                           ),
+                  ),
+                ],
+              ),
+              body: Stack(
+                children: [
+                  BlocBuilder<NavigationCubit, NavigationState>(
+                    builder: (context, state) {
+                      switch (state) {
+                        case NavigationState.sparring:
+                          return SparringTeamPage();
+                        case NavigationState.information:
+                          return InformationPage();
+                        case NavigationState.about:
+                          return AboutPage();
+                        default:
+                          // Kirim padding ke konten utama
+                          return _buildHomeContent(context, horizontalPadding);
+                      }
+                    },
+                  ),
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Visibility(
+                          visible: isExpanded,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: FloatingActionButton(
+                              heroTag: "whatsapp",
+                              onPressed: () =>
+                                  _launchURL('https://wa.me/6281111122525'),
+                              backgroundColor: Colors.green,
+                              child: Image.network(
+                                "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
+                                width: 25,
+                                height: 25,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Visibility(
+                          visible: isExpanded,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: FloatingActionButton(
+                              heroTag: "facebook",
+                              onPressed: () => _launchURL(
+                                  'https://www.facebook.com/mandala.arena'),
+                              backgroundColor: Colors.blue,
+                              child: const Icon(Icons.facebook,
+                                  color: Colors.white),
+                            ),
+                          ),
+                        ),
+                        Visibility(
+                          visible: isExpanded,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: FloatingActionButton(
+                                heroTag: "instagram",
+                                onPressed: () => _launchURL(
+                                    'https://www.instagram.com/mandalaarena'),
+                                backgroundColor: Colors.purple,
+                                child: Image.network(
+                                  "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                                  width: 25,
+                                  height: 25,
+                                )),
+                          ),
+                        ),
+                        Visibility(
+                          visible: isExpanded,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: FloatingActionButton(
+                              heroTag: "email",
+                              onPressed: () =>
+                                  _launchURL('mailto:mandalaarena@gmail.com'),
+                              backgroundColor: Colors.red,
+                              child: Image.network(
+                                "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
+                                width: 25,
+                                height: 25,
+                              ),
+                            ),
+                          ),
+                        ),
+                        MouseRegion(
+                          onEnter: (_) => setState(() {
+                            isHoveredToggle = true;
+                          }),
+                          onExit: (_) => setState(() {
+                            isHoveredToggle = false;
+                          }),
+                          child: FloatingActionButton(
+                            heroTag: "toggle",
+                            onPressed: _toggleMenu,
+                            backgroundColor: Colors.black
+                                .withOpacity(isHoveredToggle ? 1.0 : 0.5),
+                            child: Icon(
+                              isExpanded ? Icons.close : Icons.add_comment,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
+                  ),
+                ],
+              ),
+              bottomNavigationBar:
+                  BlocBuilder<NavigationCubit, NavigationState>(
+                builder: (context, state) {
+                  return BottomNavigationBar(
+                    currentIndex: state.index,
+                    selectedItemColor: Colors.black,
+                    unselectedItemColor: Colors.black,
+                    onTap: (index) {
+                      context.read<NavigationCubit>().navigateToIndex(index);
+                    },
+                    items: const [
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.home),
+                        label: 'Beranda',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.group),
+                        label: 'Sparring',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.article_rounded),
+                        label: 'Artikel',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.question_answer_rounded),
+                        label: 'Ulasan',
+                      ),
+                    ],
                   );
                 },
               ),
-              const SizedBox(width: 7),
-              if (user == null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 30.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const LoginScreen()),
-                      );
-                    },
-                    child: const Text("Login", style: TextStyle(fontSize: 12)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 12),
-                    ),
-                  ),
-                )
-              else
-                Builder(
-                  builder: (newContext) => GestureDetector(
-                    onTap: () {
-                      Scaffold.of(newContext).openEndDrawer();
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 30.0),
-                      child: CircleAvatar(
-                        radius: 15,
-                        backgroundImage: NetworkImage(
-                          userProvider.profileImageUrl.isNotEmpty
-                              ? userProvider.profileImageUrl
-                              : "https://via.placeholder.com/150",
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          body: Stack(
-            children: [
-              BlocBuilder<NavigationCubit, NavigationState>(
-                builder: (context, state) {
-                  switch (state) {
-                    case NavigationState.sparring:
-                      return SparringTeamPage();
-                    case NavigationState.information:
-                      return InformationPage();
-                    case NavigationState.about:
-                      return AboutPage();
-                    default:
-                      return _buildHomeContent(context);
-                  }
-                },
-              ),
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Visibility(
-                      visible: isExpanded,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(bottom: 10),
-                        child: FloatingActionButton(
-                          heroTag: "whatsapp",
-                          onPressed: () =>
-                              _launchURL('https://wa.me/6281111122525'),
-                          backgroundColor: Colors.green,
-                          child: Image.network(
-                            "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
-                            width: 25,
-                            height: 25,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Visibility(
-                      visible: isExpanded,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(bottom: 10),
-                        child: FloatingActionButton(
-                          heroTag: "facebook",
-                          onPressed: () => _launchURL(
-                              'https://www.facebook.com/mandala.arena'),
-                          backgroundColor: Colors.blue,
-                          child:
-                              const Icon(Icons.facebook, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    Visibility(
-                      visible: isExpanded,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(bottom: 10),
-                        child: FloatingActionButton(
-                            heroTag: "instagram",
-                            onPressed: () => _launchURL(
-                                'https://www.instagram.com/mandalaarena'),
-                            backgroundColor: Colors.purple,
-                            child: Image.network(
-                              "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
-                              width: 25,
-                              height: 25,
-                            )),
-                      ),
-                    ),
-                    Visibility(
-                      visible: isExpanded,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(bottom: 10),
-                        child: FloatingActionButton(
-                          heroTag: "email",
-                          onPressed: () =>
-                              _launchURL('mailto:mandalaarena@gmail.com'),
-                          backgroundColor: Colors.red,
-                          child: Image.network(
-                            "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
-                            width: 25,
-                            height: 25,
-                          ),
-                        ),
-                      ),
-                    ),
-                    MouseRegion(
-                      onEnter: (_) => setState(() {
-                        isHoveredToggle = true;
-                      }),
-                      onExit: (_) => setState(() {
-                        isHoveredToggle = false;
-                      }),
-                      child: FloatingActionButton(
-                        heroTag: "toggle",
-                        onPressed: _toggleMenu,
-                        backgroundColor: Colors.black
-                            .withOpacity(isHoveredToggle ? 1.0 : 0.5),
-                        child: Icon(
-                          isExpanded ? Icons.close : Icons.add_comment,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
-            builder: (context, state) {
-              return BottomNavigationBar(
-                currentIndex: state.index,
-                selectedItemColor: Colors.black,
-                unselectedItemColor: Colors.black,
-                onTap: (index) {
-                  context.read<NavigationCubit>().navigateToIndex(index);
-                },
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.home),
-                    label: 'Beranda',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.group),
-                    label: 'Sparring',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.article_rounded),
-                    label: 'Artikel',
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.question_answer_rounded),
-                    label: 'Ulasan',
-                  ),
-                ],
-              );
-            },
-          ),
+            );
+          }),
         );
-      }),
+      },
     );
   }
 
-  // --- WIDGET PEMUTAR VIDEO PALSU ---
-  Widget _buildYoutubePlayer() {
-    // Tampilkan loading jika data thumbnail belum siap
-    if (thumbnailUrl == null) {
-      return const SizedBox(
-        height: 250,
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    // Tampilkan gambar jika thumbnail sudah ada
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        clipBehavior: Clip.antiAlias,
-        child: GestureDetector(
-          onTap: () {
-            // Langsung buka URL di aplikasi YouTube
-            if (videoUrl != null) {
-              _launchURL(videoUrl!);
-            }
-          },
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Gambar Thumbnail dari YouTube
-              Image.network(
-                thumbnailUrl!,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: 250,
-                loadingBuilder: (context, child, progress) => progress == null
-                    ? child
-                    : const SizedBox(
-                        height: 250,
-                        child: Center(child: CircularProgressIndicator())),
-                errorBuilder: (context, error, stack) => const SizedBox(
-                    height: 250, child: Center(child: Icon(Icons.error))),
-              ),
-              // Lapisan gelap untuk memperjelas teks dan ikon
-              Container(
-                height: 250,
-                color: Colors.black.withOpacity(0.5),
-              ),
-              // Judul Video
-              Positioned(
-                top: 12,
-                left: 12,
-                right: 12,
-                child: Text(
-                  videoTitle ?? 'Video YouTube',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    shadows: [Shadow(blurRadius: 2, color: Colors.black87)],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // Ikon Play Besar di Tengah
-              const Icon(
-                Icons.play_circle_fill,
-                color: Colors.white,
-                size: 64.0,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGalleryPreview(BuildContext context) {
+  Widget _buildGalleryPreview(BuildContext context, double horizontalPadding) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Terapkan padding responsif di sini
         Padding(
-          padding: const EdgeInsets.fromLTRB(30, 10, 30, 10),
+          padding:
+              EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -597,7 +518,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHomeContent(BuildContext context) {
+  // Terima `horizontalPadding` sebagai parameter
+  Widget _buildHomeContent(BuildContext context, double horizontalPadding) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = FirebaseAuth.instance.currentUser;
     return SingleChildScrollView(
@@ -606,15 +528,16 @@ class _HomePageState extends State<HomePage> {
         children: [
           if (user != null)
             if (userProvider.isMembershipActive)
-              _buildMemberStatusCard(context, userProvider)
+              _buildMemberStatusCard(context, userProvider, horizontalPadding)
             else
-              _buildMembershipBanner(context),
+              _buildMembershipBanner(context, horizontalPadding),
           _buildDiscountBanner(context),
-          _buildYoutubePlayer(),
-          _buildGalleryPreview(context),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(30, 20, 20, 10),
-            child: Text(
+          _buildGalleryPreview(context, horizontalPadding),
+          // Terapkan padding responsif di sini
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                horizontalPadding, 20, horizontalPadding, 10),
+            child: const Text(
               'Pilih Lapang',
               style: TextStyle(
                 color: Colors.black,
@@ -623,7 +546,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          _buildGridLapangs(context),
+          _buildGridLapangs(context, horizontalPadding),
           const SizedBox(height: 20),
         ],
       ),
@@ -733,9 +656,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildMembershipBanner(BuildContext context) {
+  Widget _buildMembershipBanner(
+      BuildContext context, double horizontalPadding) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      // Terapkan padding responsif di sini
+      padding:
+          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10.0),
       child: Card(
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.2),
@@ -785,7 +711,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildMemberStatusCard(BuildContext context, UserProvider provider) {
+  Widget _buildMemberStatusCard(
+      BuildContext context, UserProvider provider, double horizontalPadding) {
     final expiryDate = provider.memberUntil != null
         ? DateFormat('dd MMMM yyyy').format(provider.memberUntil!)
         : 'Tidak diketahui';
@@ -805,7 +732,9 @@ class _HomePageState extends State<HomePage> {
     final membershipName = getFriendlyMembershipName(provider.membershipType);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      // Terapkan padding responsif di sini
+      padding:
+          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10.0),
       child: Card(
         color: Colors.green[50],
         elevation: 2,
@@ -839,11 +768,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildGridLapangs(BuildContext context) {
+  Widget _buildGridLapangs(BuildContext context, double horizontalPadding) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+      // Terapkan padding responsif di sini
+      padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 10),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: MediaQuery.of(context).size.width > 1650
             ? 5
@@ -867,6 +797,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+// ... (Sisa kode: ProfileSlider, LapangGridItem, dan BannerModel tetap sama)
 class ProfileSlider extends StatefulWidget {
   const ProfileSlider({Key? key}) : super(key: key);
 
