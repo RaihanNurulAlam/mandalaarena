@@ -1,13 +1,15 @@
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mandalaarenaapp/pages/add_article_page.dart';
-import 'package:mandalaarenaapp/pages/edit_article_page.dart'; // Import halaman edit artikel
+import 'package:mandalaarenaapp/pages/edit_article_page.dart';
 import 'package:mandalaarenaapp/pages/models/articlecard.dart';
 import 'package:mandalaarenaapp/pages/models/articlecard_page.dart';
-import 'package:mandalaarenaapp/theme/app_styles.dart';
 
 class InformationPage extends StatefulWidget {
+  const InformationPage({super.key});
   @override
   _InformationPageState createState() => _InformationPageState();
 }
@@ -30,147 +32,242 @@ class _InformationPageState extends State<InformationPage> {
           .collection('users')
           .doc(user.uid)
           .get();
-      if (userDoc.exists) {
+      if (mounted && userDoc.exists) {
         setState(() {
           _isAdmin = userDoc.get('isAdmin') as bool;
           _isLoading = false;
         });
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } else {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.0),
-          child: const Text(
-            'Artikel',
-            style: kAppBarTitleStyle,
-          ),
-        ),
-        actions: [
-          if (_isAdmin)
-            Padding(
-              padding: const EdgeInsets.only(right: 20),
-              child: IconButton(
-                icon: Icon(Icons.add, color: Colors.black),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddArtikelPage(),
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF5F5F5),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('articles')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text('Belum ada artikel.'));
-                }
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: snapshot.data!.docs.map((doc) {
-                    var data = doc.data() as Map<String, dynamic>;
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8, // Tambahkan margin vertikal
-                      ),
-                      child: ArticleCard(
-                        title: data['title'],
-                        subtitle: data['subtitle'],
-                        imagePath: data['imageUrl'],
-                        isAdmin: _isAdmin,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ArticleDetailPage(
-                                title: data['title'],
-                                subtitle: data['subtitle'],
-                                imageUrl: data['imageUrl'],
-                                content: [
-                                  Text(data['content']),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                        onDelete: () async {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text('Hapus Artikel'),
-                              content: Text(
-                                  'Apakah Anda yakin ingin menghapus artikel ini?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  style: TextButton.styleFrom(
-                                    backgroundColor:
-                                        Colors.black, // Warna hitam
-                                    foregroundColor:
-                                        Colors.white, // Font warna putih
-                                  ),
-                                  child: Text('Batal'),
+          ? const Center(child: CircularProgressIndicator())
+          : _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const double desktopMaxWidth = 1200;
+        final double horizontalPadding =
+            (constraints.maxWidth > desktopMaxWidth)
+                ? (constraints.maxWidth - desktopMaxWidth) / 2
+                : 20.0;
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('articles')
+              .orderBy('timestamp', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return _buildEmptyState(horizontalPadding);
+            }
+
+            // ### PERUBAHAN ### Menggunakan SingleChildScrollView dan Wrap
+            return SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Artikel',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        if (_isAdmin)
+                          IconButton(
+                            icon: const Icon(Icons.add_circle,
+                                color: Colors.black, size: 32),
+                            tooltip: 'Tambah Artikel',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddArtikelPage(),
                                 ),
-                                TextButton(
-                                  onPressed: () async {
-                                    await FirebaseFirestore.instance
-                                        .collection('articles')
-                                        .doc(doc.id)
-                                        .delete();
-                                    Navigator.pop(context);
-                                  },
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: Text('Hapus'),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        onEdit: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => EditArticlePage(
-                                documentId: doc.id,
-                                initialTitle: data['title'],
-                                initialSubtitle: data['subtitle'],
-                                initialContent: data['content'],
-                                initialImageUrl: data['imageUrl'],
-                              ),
-                            ),
-                          );
-                        },
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                  _buildArticlesContent(
+                      constraints, horizontalPadding, snapshot.data!.docs),
+                  const SizedBox(height: 30),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ### PERUBAHAN ### Widget baru menggunakan Wrap
+  Widget _buildArticlesContent(BoxConstraints constraints, double pagePadding,
+      List<QueryDocumentSnapshot> docs) {
+    final bool isWideScreen = constraints.maxWidth > 750;
+
+    final double availableWidth = constraints.maxWidth - (pagePadding * 2);
+    final int crossAxisCount = isWideScreen ? 2 : 1;
+    const double spacing = 16.0;
+    final double itemWidth =
+        (availableWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      children: List.generate(docs.length, (index) {
+        return SizedBox(
+          width: itemWidth,
+          child: _buildArticleCard(docs[index]),
+        );
+      }),
+    );
+  }
+
+  Widget _buildArticleCard(DocumentSnapshot doc) {
+    var data = doc.data() as Map<String, dynamic>;
+    return ArticleCard(
+      title: data['title'],
+      subtitle: data['subtitle'],
+      imagePath: data['imageUrl'],
+      isAdmin: _isAdmin,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArticleDetailPage(
+              title: data['title'],
+              subtitle: data['subtitle'],
+              imageUrl: data['imageUrl'],
+              content: [
+                Text(data['content']),
+              ],
+            ),
+          ),
+        );
+      },
+      onDelete: () async {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Hapus Artikel'),
+            content:
+                const Text('Apakah Anda yakin ingin menghapus artikel ini?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await FirebaseFirestore.instance
+                      .collection('articles')
+                      .doc(doc.id)
+                      .delete();
+                  Navigator.pop(context);
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Hapus'),
+              ),
+            ],
+          ),
+        );
+      },
+      onEdit: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditArticlePage(
+              documentId: doc.id,
+              initialTitle: data['title'],
+              initialSubtitle: data['subtitle'],
+              initialContent: data['content'],
+              initialImageUrl: data['imageUrl'],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(double horizontalPadding) {
+    return Column(
+      children: [
+        Padding(
+          padding:
+              EdgeInsets.fromLTRB(horizontalPadding, 24, horizontalPadding, 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Artikel',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              if (_isAdmin)
+                IconButton(
+                  icon: const Icon(Icons.add_circle,
+                      color: Colors.black, size: 32),
+                  tooltip: 'Tambah Artikel',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddArtikelPage(),
                       ),
                     );
-                  }).toList(),
-                );
-              },
-            ),
+                  },
+                ),
+            ],
+          ),
+        ),
+        const Expanded(
+          child: Center(
+            child: Text('Belum ada artikel.'),
+          ),
+        ),
+      ],
     );
   }
 }

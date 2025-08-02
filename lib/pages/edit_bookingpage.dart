@@ -136,8 +136,8 @@ class _EditBookingPageState extends State<EditBookingPage> {
 
   int _getPriceForHour(int hour) {
     int basePrice = 0;
-    if (lapangan == "Lapang Basket Vynil") basePrice = 150000;
-    if (lapangan == "Lapang Basket Karet") basePrice = 75000;
+    if (lapangan == "Lapang Basket A") basePrice = 150000;
+    if (lapangan == "Lapang Basket B") basePrice = 75000;
     if (lapangan == "Lapang Basket 3x3") basePrice = 150000;
     if (lapangan == "Lapang Minisoccer") basePrice = 450000;
     if (lapangan == "Gokart") basePrice = 100000;
@@ -148,11 +148,11 @@ class _EditBookingPageState extends State<EditBookingPage> {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 100000;
       if (hour >= 18 && hour < 23) return basePrice + 200000;
-    } else if (lapangName == "Lapang Basket Vynil") {
+    } else if (lapangName == "Lapang Basket A") {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 50000;
       if (hour >= 18 && hour < 23) return basePrice + 100000;
-    } else if (lapangName == "Lapang Basket Karet") {
+    } else if (lapangName == "Lapang Basket B") {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 25000;
       if (hour >= 18 && hour < 23) return basePrice + 50000;

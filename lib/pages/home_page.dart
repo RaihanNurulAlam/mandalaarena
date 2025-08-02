@@ -400,7 +400,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Galeri Aktivitas',
+                'Galeri',
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 20,
@@ -423,44 +423,44 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('gallery')
-                .orderBy('timestamp', descending: true)
-                .limit(3)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  height: 220,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const SizedBox.shrink();
-              }
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('gallery')
+              .orderBy('timestamp', descending: true)
+              .limit(3)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 220,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return const SizedBox.shrink();
+            }
 
-              final galleryDocs = snapshot.data!.docs;
+            final galleryDocs = snapshot.data!.docs;
 
-              return CarouselSlider.builder(
-                itemCount: galleryDocs.length,
-                options: CarouselOptions(
-                  height: 220,
-                  autoPlay: galleryDocs.length > 1,
-                  autoPlayInterval: const Duration(seconds: 5),
-                  enlargeCenterPage: true,
-                  viewportFraction: 0.9,
-                  aspectRatio: 16 / 9,
-                ),
-                itemBuilder: (context, index, realIndex) {
-                  final doc = galleryDocs[index];
-                  final imageUrl = doc['imageUrl'];
+            return CarouselSlider.builder(
+              itemCount: galleryDocs.length,
+              options: CarouselOptions(
+                height: 220,
+                autoPlay: galleryDocs.length > 1,
+                autoPlayInterval: const Duration(seconds: 5),
+                enlargeCenterPage: false, // Diubah ke false agar lebih pas
+                viewportFraction: 1.0, // ### DIUBAH DI SINI ###
+                aspectRatio: 16 / 9,
+              ),
+              itemBuilder: (context, index, realIndex) {
+                final doc = galleryDocs[index];
+                final imageUrl = doc['imageUrl'];
 
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 5.0, vertical: 4.0),
+                // Gunakan padding di dalam item builder untuk memberi jarak
+                return Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4.0),
                     elevation: 4,
                     shadowColor: Colors.black.withOpacity(0.2),
                     clipBehavior: Clip.antiAlias,
@@ -479,11 +479,11 @@ class _HomePageState extends State<HomePage> {
                         return const Center(child: CircularProgressIndicator());
                       },
                     ),
-                  );
-                },
-              );
-            },
-          ),
+                  ),
+                );
+              },
+            );
+          },
         ),
       ],
     );
@@ -528,48 +528,47 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildDiscountBanner(BuildContext context, double horizontalPadding) {
-    return Padding(
-      padding: EdgeInsets.only(
-          left: horizontalPadding, right: horizontalPadding, bottom: 16),
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('banners')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Container(
-              height: 220,
-              alignment: Alignment.center,
-              child: const CircularProgressIndicator(),
-            );
-          }
-          if (snapshot.hasError) {
-            return const SizedBox.shrink();
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const SizedBox.shrink();
-          }
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('banners')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 220,
+            alignment: Alignment.center,
+            child: const CircularProgressIndicator(),
+          );
+        }
+        if (snapshot.hasError) {
+          return const SizedBox.shrink();
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SizedBox.shrink();
+        }
 
-          final banners = snapshot.data!.docs
-              .map((doc) => BannerModel.fromFirestore(doc))
-              .toList();
+        final banners = snapshot.data!.docs
+            .map((doc) => BannerModel.fromFirestore(doc))
+            .toList();
 
-          return CarouselSlider.builder(
-            itemCount: banners.length,
-            options: CarouselOptions(
-              height: 220,
-              autoPlay: banners.length > 1,
-              autoPlayInterval: const Duration(seconds: 4),
-              enlargeCenterPage: true,
-              viewportFraction: 0.9,
-              aspectRatio: 16 / 9,
-            ),
-            itemBuilder: (context, index, realIndex) {
-              final banner = banners[index];
-              return Card(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 5.0, vertical: 4.0),
+        return CarouselSlider.builder(
+          itemCount: banners.length,
+          options: CarouselOptions(
+            height: 220,
+            autoPlay: banners.length > 1,
+            autoPlayInterval: const Duration(seconds: 4),
+            enlargeCenterPage: false, // Diubah ke false agar lebih pas
+            viewportFraction: 1.0, // ### DIUBAH DI SINI ###
+            aspectRatio: 16 / 9,
+          ),
+          itemBuilder: (context, index, realIndex) {
+            final banner = banners[index];
+            // Gunakan padding di dalam item builder untuk memberi jarak
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Card(
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
                 elevation: 4,
                 shadowColor: Colors.black.withOpacity(0.2),
                 clipBehavior: Clip.antiAlias,
@@ -623,11 +622,11 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-              );
-            },
-          );
-        },
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -635,7 +634,7 @@ class _HomePageState extends State<HomePage> {
       BuildContext context, double horizontalPadding) {
     return Padding(
       padding:
-          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
+          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
       child: Card(
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.2),
@@ -696,9 +695,9 @@ class _HomePageState extends State<HomePage> {
         case 'minisoccer':
           return 'Member Mini Soccer';
         case 'basket_vinyl':
-          return 'Member Basket Vynil';
+          return 'Member Basket A';
         case 'basket_karet':
-          return 'Member Basket Karet';
+          return 'Member Basket B';
         default:
           return 'Member';
       }

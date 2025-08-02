@@ -51,7 +51,6 @@ class _AddSparringTeamPageState extends State<AddSparringTeamPage> {
     '20:00',
     '21:00',
   ];
-  // PERUBAHAN: Menghapus kategori 'Tim Basket 3x3'
   final List<String> _categories = [
     'Tim Basket',
     'Tim Minisoccer',

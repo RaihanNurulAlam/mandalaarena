@@ -34,11 +34,11 @@ class _PaymentPageState extends State<PaymentPage> {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 100000;
       if (hour >= 18 && hour < 23) return basePrice + 200000;
-    } else if (lapangName == "Lapang Basket Vynil") {
+    } else if (lapangName == "Lapang Basket A") {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 50000;
       if (hour >= 18 && hour < 23) return basePrice + 100000;
-    } else if (lapangName == "Lapang Basket Karet") {
+    } else if (lapangName == "Lapang Basket B") {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 25000;
       if (hour >= 18 && hour < 23) return basePrice + 50000;

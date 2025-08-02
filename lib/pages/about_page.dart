@@ -1,11 +1,10 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously, deprecated_member_use
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:mandalaarenaapp/theme/app_styles.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
@@ -24,8 +23,7 @@ class _AboutPageState extends State<AboutPage> {
   String? _errorMessage;
 
   // Form Controllers
-  final TextEditingController _nameController =
-      TextEditingController(); // Diperlukan untuk pengguna anonim
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   double _currentRating = 3.0;
   bool _isAdmin = false;
@@ -39,7 +37,7 @@ class _AboutPageState extends State<AboutPage> {
 
   @override
   void dispose() {
-    _nameController.dispose(); // Jangan lupa dispose
+    _nameController.dispose();
     _descriptionController.dispose();
     for (var controller in _replyControllers.values) {
       controller.dispose();
@@ -47,7 +45,7 @@ class _AboutPageState extends State<AboutPage> {
     super.dispose();
   }
 
-  // --- Data Fetching and Manipulation ---
+  // --- Data Fetching and Manipulation (LOGIKA TIDAK DIUBAH) ---
 
   Future<void> _fetchData() async {
     await _checkAdminStatus();
@@ -124,9 +122,7 @@ class _AboutPageState extends State<AboutPage> {
     String? uid;
     String? photoURL;
 
-    // Kondisi untuk menentukan detail pengguna
     if (user != null) {
-      // --- PENGGUNA LOGIN ---
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -137,7 +133,6 @@ class _AboutPageState extends State<AboutPage> {
           userDoc.exists ? userDoc.get('profileImageUrl') : user.photoURL;
       uid = user.uid;
     } else {
-      // --- PENGGUNA ANONIM ---
       if (_nameController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Nama tidak boleh kosong.')));
@@ -244,8 +239,6 @@ class _AboutPageState extends State<AboutPage> {
                             .headlineSmall
                             ?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 20),
-
-                    // --- KONDISI TAMPILAN NAMA ---
                     if (user == null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 16.0),
@@ -257,7 +250,6 @@ class _AboutPageState extends State<AboutPage> {
                               prefixIcon: Icon(Icons.person_outline)),
                         ),
                       ),
-
                     TextField(
                       controller: _descriptionController,
                       decoration: const InputDecoration(
@@ -310,31 +302,12 @@ class _AboutPageState extends State<AboutPage> {
     );
   }
 
-  // --- Build Method and UI Widgets ---
+  // --- UI WIDGETS ---
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.0),
-          child: const Text(
-            'Ulasan Pengguna',
-            style: kAppBarTitleStyle, // 3. Terapkan style yang sudah dibuat
-          ),
-        ),
-        backgroundColor: Colors.grey[100], // Samakan dengan warna background
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle, color: Colors.black, size: 32),
-            tooltip: 'Tambah Ulasan',
-            onPressed: _showAddReviewSheet,
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF5F5F5),
       body: _buildBody(),
     );
   }
@@ -351,10 +324,144 @@ class _AboutPageState extends State<AboutPage> {
         ElevatedButton(onPressed: _fetchReviews, child: const Text('Coba Lagi'))
       ]));
     }
-    if (_reviews.isEmpty) {
-      return _buildEmptyState();
-    }
-    return _buildReviewsList();
+
+    return LayoutBuilder(builder: (context, constraints) {
+      const double desktopMaxWidth = 1200;
+      final double horizontalPadding = (constraints.maxWidth > desktopMaxWidth)
+          ? (constraints.maxWidth - desktopMaxWidth) / 2
+          : 20.0;
+
+      if (_reviews.isEmpty) {
+        return _buildEmptyState();
+      }
+
+      // ### PERUBAHAN ### Menggunakan SingleChildScrollView dan Wrap
+      return SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Ulasan Pengguna',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle,
+                        color: Colors.black, size: 32),
+                    tooltip: 'Tambah Ulasan',
+                    onPressed: _showAddReviewSheet,
+                  ),
+                ],
+              ),
+            ),
+            // Konten menggunakan Wrap
+            _buildReviewsContent(constraints, horizontalPadding),
+            const SizedBox(height: 30),
+          ],
+        ),
+      );
+    });
+  }
+
+  // ### PERUBAHAN ### Widget baru menggunakan Wrap
+  Widget _buildReviewsContent(BoxConstraints constraints, double pagePadding) {
+    final bool isWideScreen = constraints.maxWidth > 750;
+
+    // Kalkulasi lebar item
+    final double availableWidth = constraints.maxWidth - (pagePadding * 2);
+    final int crossAxisCount =
+        isWideScreen ? (constraints.maxWidth > 1200 ? 3 : 2) : 1;
+    const double spacing = 16.0;
+    final double itemWidth =
+        (availableWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      children: List.generate(_reviews.length, (index) {
+        return SizedBox(
+          width: itemWidth,
+          child: _buildReviewCard(index),
+        );
+      }),
+    );
+  }
+
+  Widget _buildReviewCard(int index) {
+    final review = _reviews[index];
+    _replyControllers[index] ??= TextEditingController();
+    final Timestamp? timestamp = review['timestamp'];
+    final String formattedDate = timestamp != null
+        ? DateFormat('EEEE, d MMMM yyyy').format(timestamp.toDate())
+        : 'Beberapa waktu lalu';
+    final photoURL = review['profileImageUrl'];
+
+    return Card(
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.1),
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+            mainAxisSize: MainAxisSize.min, // Penting untuk Wrap
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ListTile(
+                leading: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.grey[200],
+                    backgroundImage: (photoURL != null && photoURL.isNotEmpty)
+                        ? NetworkImage(photoURL)
+                        : null,
+                    child: (photoURL == null || photoURL.isEmpty)
+                        ? const Icon(Icons.person_outline,
+                            color: Colors.black54)
+                        : null),
+                title: Text(review['name'],
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle:
+                    Text(formattedDate, style: const TextStyle(fontSize: 12)),
+                trailing: _isAdmin
+                    ? IconButton(
+                        icon: const Icon(Icons.delete_outline,
+                            color: Colors.redAccent),
+                        onPressed: () => _deleteReview(index),
+                        tooltip: 'Hapus Ulasan')
+                    : null,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RatingBarIndicator(
+                          rating: review['rating'],
+                          itemBuilder: (context, index) =>
+                              const Icon(Icons.star, color: Colors.amber),
+                          itemCount: 5,
+                          itemSize: 20.0),
+                      const SizedBox(height: 12),
+                      Text(review['description'],
+                          style: const TextStyle(
+                              fontSize: 14.5,
+                              color: Colors.black87,
+                              height: 1.4)),
+                    ]),
+              ),
+              if (review['replies'].isNotEmpty)
+                _buildAdminReply(review['replies']),
+              if (_isAdmin) _buildReplyField(index),
+            ]));
   }
 
   Widget _buildEmptyState() {
@@ -372,82 +479,10 @@ class _AboutPageState extends State<AboutPage> {
     );
   }
 
-  Widget _buildReviewsList() {
-    return ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _reviews.length,
-        itemBuilder: (context, index) {
-          final review = _reviews[index];
-          _replyControllers[index] ??= TextEditingController();
-          final Timestamp? timestamp = review['timestamp'];
-          final String formattedDate = timestamp != null
-              ? DateFormat('EEEE, d MMMM yyyy').format(timestamp.toDate())
-              : 'Beberapa waktu lalu';
-          final photoURL = review['profileImageUrl'];
-
-          return Card(
-              elevation: 2,
-              margin: const EdgeInsets.symmetric(vertical: 8.0),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      leading: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.grey[200],
-                          backgroundImage:
-                              (photoURL != null && photoURL.isNotEmpty)
-                                  ? NetworkImage(photoURL)
-                                  : null,
-                          child: (photoURL == null || photoURL.isEmpty)
-                              ? const Icon(Icons.person_outline,
-                                  color: Colors.black54)
-                              : null),
-                      title: Text(review['name'],
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(formattedDate,
-                          style: const TextStyle(fontSize: 12)),
-                      trailing: _isAdmin
-                          ? IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  color: Colors.redAccent),
-                              onPressed: () => _deleteReview(index),
-                              tooltip: 'Hapus Ulasan')
-                          : null,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            RatingBarIndicator(
-                                rating: review['rating'],
-                                itemBuilder: (context, index) =>
-                                    const Icon(Icons.star, color: Colors.amber),
-                                itemCount: 5,
-                                itemSize: 20.0),
-                            const SizedBox(height: 12),
-                            Text(review['description'],
-                                style: const TextStyle(
-                                    fontSize: 14.5,
-                                    color: Colors.black87,
-                                    height: 1.4)),
-                          ]),
-                    ),
-                    if (review['replies'].isNotEmpty)
-                      _buildAdminReply(review['replies']),
-                    if (_isAdmin) _buildReplyField(index),
-                  ]));
-        });
-  }
-
   Widget _buildAdminReply(List<dynamic> replies) {
     return Container(
       width: double.infinity,
-      color: Colors.grey[100],
+      color: Colors.black.withOpacity(0.05),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,7 +501,7 @@ class _AboutPageState extends State<AboutPage> {
 
   Widget _buildReplyField(int index) {
     return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         child: TextField(
             controller: _replyControllers[index],
             decoration: InputDecoration(

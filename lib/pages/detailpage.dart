@@ -76,14 +76,12 @@ class _DetailPageState extends State<DetailPage> {
     }
 
     // Diskon untuk member basket vynil hanya di lapang basket vynil
-    if (_membershipType == 'basket_vinyl' &&
-        lapangName == 'Lapang Basket Vynil') {
+    if (_membershipType == 'basket_vinyl' && lapangName == 'Lapang Basket A') {
       return true;
     }
 
     // Diskon untuk member basket karet hanya di lapang basket karet
-    if (_membershipType == 'basket_karet' &&
-        lapangName == 'Lapang Basket Karet') {
+    if (_membershipType == 'basket_karet' && lapangName == 'Lapang Basket B') {
       return true;
     }
 
@@ -121,7 +119,7 @@ class _DetailPageState extends State<DetailPage> {
       if (useIceBath &&
           isMember &&
           (widget.lapang.name == "Lapang Minisoccer" ||
-              widget.lapang.name == "Lapang Basket Vynil")) {
+              widget.lapang.name == "Lapang Basket A")) {
         totalPrice += iceBathPrice;
       }
     }
@@ -216,11 +214,11 @@ class _DetailPageState extends State<DetailPage> {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 100000;
       if (hour >= 18 && hour < 23) return basePrice + 200000;
-    } else if (lapangName == "Lapang Basket Vynil") {
+    } else if (lapangName == "Lapang Basket A") {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 50000;
       if (hour >= 18 && hour < 23) return basePrice + 100000;
-    } else if (lapangName == "Lapang Basket Karet") {
+    } else if (lapangName == "Lapang Basket B") {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 25000;
       if (hour >= 18 && hour < 23) return basePrice + 50000;
@@ -1081,7 +1079,7 @@ class _DetailPageState extends State<DetailPage> {
                     ),
                     if (isMember &&
                         (widget.lapang.name == "Lapang Minisoccer" ||
-                            widget.lapang.name == "Lapang Basket Vynil"))
+                            widget.lapang.name == "Lapang Basket A"))
                       Padding(
                         padding: const EdgeInsets.only(top: 10.0),
                         child: _buildServiceOption(

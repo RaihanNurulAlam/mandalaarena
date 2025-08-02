@@ -8,7 +8,6 @@ import 'package:mandalaarenaapp/pages/add_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/edit_sparring_team_page.dart';
 import 'package:mandalaarenaapp/pages/models/sparring_team_model.dart';
 import 'package:mandalaarenaapp/pages/sparring_booking_page.dart';
-import 'package:mandalaarenaapp/theme/app_styles.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SparringTeamPage extends StatefulWidget {
@@ -144,7 +143,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
               ),
               onPressed: () {
                 Navigator.pop(context);
-                _openBookingPage(team, 'Lapang Basket Vynil');
+                _openBookingPage(team, 'Lapang Basket A');
               },
               child: const Text('Vynil'),
             ),
@@ -155,7 +154,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
               ),
               onPressed: () {
                 Navigator.pop(context);
-                _openBookingPage(team, 'Lapang Basket Karet');
+                _openBookingPage(team, 'Lapang Basket B');
               },
               child: const Text('Karet'),
             ),
@@ -203,65 +202,90 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     }
   }
 
+  // --- ### PERUBAHAN TAMPILAN DIMULAI DARI SINI ### ---
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              title: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.0),
-                child: const Text(
-                  "Cari Lawan Sparring",
-                  style: kAppBarTitleStyle, // Terapkan style yang sudah dibuat
-                ),
-              ),
-              centerTitle: false, // Menjaga agar judul tetap di kiri
-              backgroundColor: Colors.white,
-              floating: true,
-              pinned: true,
-              snap: true,
-              forceElevated: innerBoxIsScrolled,
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 20.0),
-                  child: IconButton(
-                    icon: const Icon(Icons.add_circle_outline,
-                        color: Colors.black, size: 28),
-                    tooltip: 'Buat Tim Sparring',
-                    onPressed: () {
-                      if (_auth.currentUser == null) {
-                        _showLoginDialog();
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const AddSparringTeamPage()),
-                        );
-                      }
-                    },
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Kalkulasi padding responsif yang konsisten
+          const double desktopMaxWidth = 1200;
+          final double horizontalPadding =
+              (constraints.maxWidth > desktopMaxWidth)
+                  ? (constraints.maxWidth - desktopMaxWidth) / 2
+                  : 0.0; // Padding 0 karena filter akan mengisi lebar penuh
+
+          return NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverAppBar(
+                  title: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: const Text(
+                      "Cari Lawan Sparring",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  centerTitle: false,
+                  backgroundColor: Colors.white,
+                  floating: true,
+                  pinned: true,
+                  snap: true,
+                  forceElevated: innerBoxIsScrolled,
+                  // Terapkan padding pada title dan actions
+                  titleSpacing: horizontalPadding + 20.0,
+                  actions: [
+                    Padding(
+                      padding: EdgeInsets.only(right: horizontalPadding + 20.0),
+                      child: IconButton(
+                        icon: const Icon(Icons.add_circle,
+                            color: Colors.black, size: 32),
+                        tooltip: 'Buat Tim Sparring',
+                        onPressed: () {
+                          if (_auth.currentUser == null) {
+                            _showLoginDialog();
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const AddSparringTeamPage(),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(130.0),
+                    // Filter section dibungkus padding agar sejajar
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: horizontalPadding),
+                      color: Colors.white,
+                      child: _buildFilterSection(),
+                    ),
                   ),
                 ),
-              ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(130.0),
-                child: _buildFilterSection(),
-              ),
-            ),
-          ];
+              ];
+            },
+            body: _buildTeamList(constraints, horizontalPadding),
+          );
         },
-        body: _buildTeamList(),
       ),
     );
   }
 
   Widget _buildFilterSection() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      color: Colors.white,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -346,7 +370,17 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
     );
   }
 
-  Widget _buildTeamList() {
+  Widget _buildTeamList(BoxConstraints constraints, double pagePadding) {
+    final bool isWideScreen = constraints.maxWidth > 750;
+
+    // Kalkulasi lebar item untuk Wrap
+    final double availableWidth = constraints.maxWidth - (pagePadding * 2);
+    final int crossAxisCount =
+        isWideScreen ? (constraints.maxWidth > 1200 ? 3 : 2) : 1;
+    const double spacing = 16.0;
+    final double itemWidth =
+        (availableWidth - (spacing * (crossAxisCount + 1))) / crossAxisCount;
+
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore.collection('sparring_teams').snapshots(),
       builder: (context, snapshot) {
@@ -377,14 +411,21 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
           return const Center(child: Text('Tim tidak ditemukan.'));
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: filteredTeams.length,
-          itemBuilder: (context, index) {
-            final team = filteredTeams[index];
-            final isCreator = team.createdBy == _auth.currentUser?.uid;
-            return _buildTeamCard(team, isCreator);
-          },
+        // Menggunakan SingleChildScrollView + Wrap untuk layout responsif
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Wrap(
+            spacing: spacing,
+            runSpacing: spacing,
+            alignment: WrapAlignment.center,
+            children: filteredTeams.map((team) {
+              final isCreator = team.createdBy == _auth.currentUser?.uid;
+              return SizedBox(
+                width: itemWidth,
+                child: _buildTeamCard(team, isCreator),
+              );
+            }).toList(),
+          ),
         );
       },
     );
@@ -392,7 +433,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
 
   Widget _buildTeamCard(SparringTeam team, bool isCreator) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      // margin dihilangkan karena diatur oleh Wrap
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -407,6 +448,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Agar tinggi kartu menyesuaikan konten
         children: [
           Row(
             children: [
@@ -432,7 +474,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                             Icons.sports_soccer, team.category, Colors.blue),
                         _buildInfoTag(
                             Icons.calendar_today,
-                            '${team.availableDays.join(', ')} at ${team.availableHours.join(', ')}',
+                            '${team.availableDays.join(', ')} - ${team.availableHours.join(', ')}',
                             Colors.orange),
                       ],
                     )
@@ -461,7 +503,7 @@ class _SparringTeamPageState extends State<SparringTeamPage> {
                 child: OutlinedButton.icon(
                   onPressed: () => _launchWhatsApp(team.contact),
                   icon: Image.network(
-                    'https://img.icons8.com/?size=100&id=16733&format=png&color=2ECC71', // URL dengan warna hijau
+                    'https://img.icons8.com/?size=100&id=16733&format=png&color=2ECC71',
                     width: 18,
                     height: 18,
                   ),

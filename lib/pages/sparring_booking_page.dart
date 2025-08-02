@@ -28,6 +28,7 @@ class SparringBookingPage extends StatefulWidget {
 }
 
 class _SparringBookingPageState extends State<SparringBookingPage> {
+  // Variabel State
   Lapang? selectedLapang;
   int totalPrice = 0;
   String selectedHour = "";
@@ -36,6 +37,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
   List<String> unavailableTimes = [];
   bool isLoved = false;
   bool isMember = false;
+  String _membershipType = ''; // Variabel baru untuk tipe member
   bool usePhotographer = false;
   int photographerPrice = 200000;
   bool useReferee = false;
@@ -54,11 +56,135 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     _fetchLapangData();
     _loadLovedState();
     _setInitialBookingTime();
+    // Ambil data member dan tipe member dari provider
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    isMember = userProvider.isMember;
+    isMember = userProvider.isMembershipActive;
+    _membershipType = userProvider.membershipType;
   }
 
-  // [LOGIKA BARU] - Mengadopsi fungsi harga dinamis dari DetailPage
+  // Fungsi baru untuk mengecek apakah diskon berlaku
+  bool _isDiscountApplicable() {
+    if (!isMember || selectedLapang == null) return false;
+
+    final String lapangName = selectedLapang!.name ?? '';
+
+    if (_membershipType == 'minisoccer' && lapangName == 'Lapang Minisoccer') {
+      return true;
+    }
+
+    if (_membershipType == 'basket_vinyl' && lapangName == 'Lapang Basket A') {
+      return true;
+    }
+
+    if (_membershipType == 'basket_karet' && lapangName == 'Lapang Basket B') {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Fungsi update total harga yang sudah disesuaikan
+  void _updateTotalPrice() {
+    if (selectedLapang == null) return;
+    totalPrice = 0;
+
+    if (selectedHour.isNotEmpty && bookingDuration > 0) {
+      final int startHour = int.parse(selectedHour.split(":")[0]);
+      double cumulativePrice = 0;
+
+      for (int i = 0; i < bookingDuration; i++) {
+        final int currentHour = startHour + i;
+        if (currentHour >= 23) break;
+
+        double priceForThisHour = _getPriceForHour(currentHour).toDouble();
+
+        // Gunakan fungsi pengecekan diskon yang baru
+        if (_isDiscountApplicable()) {
+          priceForThisHour *= 0.9; // Diskon 10%
+        }
+        cumulativePrice += priceForThisHour;
+      }
+      totalPrice = cumulativePrice.round();
+
+      if (usePhotographer) totalPrice += photographerPrice;
+      if (useReferee) totalPrice += refereePrice;
+      if (useIceBath &&
+          isMember &&
+          (selectedLapang!.name == "Lapang Minisoccer" ||
+              selectedLapang!.name == "Lapang Basket A")) {
+        totalPrice += iceBathPrice;
+      }
+    }
+    setState(() {});
+  }
+
+  // Widget Info Section yang disesuaikan untuk menampilkan teks diskon
+  Widget _buildInfoSection(BuildContext context) {
+    return Container(
+      transform: Matrix4.translationValues(0.0, -20.0, 0.0),
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            selectedLapang!.name.toString(),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                _getPriceRangeString(),
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black),
+              ),
+              const Text(
+                " / jam",
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.grey),
+              ),
+            ],
+          ),
+          if (_isDiscountApplicable()) // Tampilkan teks diskon jika berlaku
+            Padding(
+              padding: const EdgeInsets.only(top: 6.0),
+              child: Text(
+                "Harga belum termasuk diskon member 10%",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.green[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          const Divider(height: 30, thickness: 1),
+          const Text(
+            "Deskripsi",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            selectedLapang!.description.toString(),
+            style:
+                TextStyle(fontSize: 15, color: Colors.grey[700], height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =======================================================================
+  // Sisa kode di bawah ini mayoritas tidak berubah
+  // =======================================================================
+
   int _getPriceForHour(int hour) {
     if (selectedLapang == null || selectedLapang!.price == null) return 0;
 
@@ -69,11 +195,11 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 100000;
       if (hour >= 18 && hour < 23) return basePrice + 200000;
-    } else if (lapangName == "Lapang Basket Vynil") {
+    } else if (lapangName == "Lapang Basket A") {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 50000;
       if (hour >= 18 && hour < 23) return basePrice + 100000;
-    } else if (lapangName == "Lapang Basket Karet") {
+    } else if (lapangName == "Lapang Basket B") {
       if (hour >= 7 && hour < 14) return basePrice;
       if (hour >= 14 && hour < 18) return basePrice + 25000;
       if (hour >= 18 && hour < 23) return basePrice + 50000;
@@ -81,7 +207,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     return basePrice;
   }
 
-  // [LOGIKA BARU] - Mengadopsi format rentang harga dari DetailPage
   String _getPriceRangeString() {
     if (selectedLapang == null) return "Rp 0";
     int pagiPrice = _getPriceForHour(8);
@@ -95,42 +220,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     } else {
       return "${formatCurrency.format(pagiPrice)} - ${formatCurrency.format(malamPrice)}";
     }
-  }
-
-  // [LOGIKA BARU] - Mengganti fungsi update total harga dengan yang dari DetailPage
-  void _updateTotalPrice() {
-    if (selectedLapang == null) return;
-    totalPrice = 0;
-
-    if (selectedHour.isNotEmpty && bookingDuration > 0) {
-      final int startHour = int.parse(selectedHour.split(":")[0]);
-      double cumulativePrice = 0;
-
-      for (int i = 0; i < bookingDuration; i++) {
-        final int currentHour = startHour + i;
-        if (currentHour >= 23) break; // Batas jam operasional
-
-        double priceForThisHour = _getPriceForHour(currentHour).toDouble();
-        if (isMember) {
-          priceForThisHour *= 0.9; // Diskon 10% untuk member
-        }
-        cumulativePrice += priceForThisHour;
-      }
-      totalPrice = cumulativePrice.round();
-
-      // Tambahkan biaya layanan tambahan
-      if (usePhotographer) totalPrice += photographerPrice;
-      if (useReferee) totalPrice += refereePrice;
-      if (useIceBath &&
-          isMember &&
-          (selectedLapang!.name == "Lapang Minisoccer" ||
-              useIceBath &&
-                  isMember &&
-                  selectedLapang!.name == "Lapang Basket Vynil")) {
-        totalPrice += iceBathPrice;
-      }
-    }
-    setState(() {});
   }
 
   Future<void> _fetchLapangData() async {
@@ -211,9 +300,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     String? nearestHour;
     int weekOffset = 0;
 
-    // Logika untuk menemukan hari dan jam tersedia terdekat
     while (nearestDate == null && weekOffset < 4) {
-      // Cek untuk 4 minggu ke depan
       for (var dayName in availableDays) {
         int dayIndex = _getDayIndex(dayName);
         if (dayIndex == -1) continue;
@@ -222,9 +309,8 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
             .add(Duration(days: dayIndex + (7 * weekOffset)));
 
         if (potentialDate.isBefore(now) && potentialDate.day != now.day) {
-          continue; // Lewati hari yang sudah lewat
+          continue;
         }
-        // Cari jam yang tersedia di hari itu
         for (var hourStr in availableHours) {
           final hour = int.parse(hourStr.split(":")[0]);
           final bookingTime = DateTime(
@@ -233,10 +319,10 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
           if (bookingTime.isAfter(now)) {
             nearestDate = potentialDate;
             nearestHour = hourStr;
-            break; // Jam ditemukan
+            break;
           }
         }
-        if (nearestDate != null) break; // Hari ditemukan
+        if (nearestDate != null) break;
       }
       weekOffset++;
     }
@@ -247,7 +333,7 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
         _currentStartOfWeek =
             nearestDate!.subtract(Duration(days: nearestDate.weekday - 1));
         selectedHour = nearestHour!;
-        bookingDuration = 1; // Default durasi
+        bookingDuration = 1;
       });
       await _fetchUnavailableTimes();
       _updateTotalPrice();
@@ -297,11 +383,9 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      // Handle not logged in
       return;
     }
 
-    // Validasi tambahan jika diperlukan
     final int currentStartHour = int.parse(selectedHour.split(":")[0]);
     if (currentStartHour + bookingDuration > 23) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -343,7 +427,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     }
   }
 
-  // [UI BARU] - Mengadopsi dialog pop-up dari DetailPage
   void popUpDialog() {
     final formattedDate =
         DateFormat('dd MMMM yyyy', 'id_ID').format(selectedDate!);
@@ -436,8 +519,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    isMember = userProvider.isMember;
     final cart = context.watch<Cart>();
 
     if (selectedLapang == null) {
@@ -575,68 +656,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     );
   }
 
-  Widget _buildInfoSection(BuildContext context) {
-    return Container(
-      transform: Matrix4.translationValues(0.0, -20.0, 0.0),
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            selectedLapang!.name.toString(),
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(
-                _getPriceRangeString(),
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black),
-              ),
-              const Text(
-                " / jam",
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey),
-              ),
-            ],
-          ),
-          if (isMember)
-            Padding(
-              padding: const EdgeInsets.only(top: 6.0),
-              child: Text(
-                "Harga belum termasuk diskon member 10%",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.green[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          const Divider(height: 30, thickness: 1),
-          const Text(
-            "Deskripsi",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            selectedLapang!.description.toString(),
-            style:
-                TextStyle(fontSize: 15, color: Colors.grey[700], height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFacilitiesSection(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -686,7 +705,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     );
   }
 
-  // [UI DIMODIFIKASI] - Form booking dengan tampilan read-only untuk jadwal
   Widget _buildBookingForm(BuildContext context) {
     return Container(
       color: Colors.white,
@@ -727,7 +745,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
             ),
             const SizedBox(height: 20),
             _buildSectionTitle("Jadwal Telah Ditentukan"),
-            // Tampilan Read-only untuk tanggal, jam, dan durasi
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
@@ -761,7 +778,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     );
   }
 
-  // Widget helper untuk menampilkan info read-only
   Widget _buildReadOnlyInfo(
       {required IconData icon, required String label, required String value}) {
     return Container(
@@ -843,9 +859,8 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                       }),
                     ),
                     if (isMember &&
-                            selectedLapang!.name == "Lapang Minisoccer" ||
-                        isMember &&
-                            selectedLapang!.name == "Lapang Basket Vynil")
+                        (selectedLapang!.name == "Lapang Minisoccer" ||
+                            selectedLapang!.name == "Lapang Basket A"))
                       Padding(
                         padding: const EdgeInsets.only(top: 10.0),
                         child: _buildServiceOption(

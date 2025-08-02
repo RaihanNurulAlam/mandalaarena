@@ -72,10 +72,10 @@ class _MembershipPageState extends State<MembershipPage> {
       ),
       MembershipOption(
         id: 'basket_vinyl',
-        title: 'Member Basket Ball Vynil',
+        title: 'Member Basket Ball A',
         subtitle: 'Uang muka dengan 2 kali permainan',
         downPayment: 600000,
-        description: 'Pembayaran Uang Muka Member Basket Vynil',
+        description: 'Pembayaran Uang Muka Member Basket A',
         benefits: [
           'All access di semua fasilitas basket ball',
           'Harga diskon 10% tiap bermain',
@@ -87,10 +87,10 @@ class _MembershipPageState extends State<MembershipPage> {
       ),
       MembershipOption(
         id: 'basket_karet',
-        title: 'Member Basket Ball Karet',
+        title: 'Member Basket Ball B',
         subtitle: 'Uang muka dengan 2 kali permainan',
         downPayment: 300000,
-        description: 'Pembayaran Uang Muka Member Basket Karet',
+        description: 'Pembayaran Uang Muka Member Basket B',
         benefits: [
           'Priority booking',
           'Bisa menempelkan logo member atau academy',
