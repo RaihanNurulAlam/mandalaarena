@@ -26,9 +26,7 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
-  // =======================================================================
-  // [LOGIKA TIDAK BERUBAH] - Semua variabel state dan logika inti tetap sama
-  // =======================================================================
+  // Variabel State
   int totalPrice = 0;
   int photographerPrice = 200000;
   int refereePrice = 70000;
@@ -42,6 +40,7 @@ class _DetailPageState extends State<DetailPage> {
   String? userPhone;
   User? user;
   bool isMember = false;
+  String _membershipType = ''; // Variabel untuk menyimpan tipe member
   bool usePhotographer = false;
   bool useReferee = false;
   bool useIceBath = false;
@@ -52,7 +51,83 @@ class _DetailPageState extends State<DetailPage> {
   DateTime _currentStartOfWeek =
       DateTime.now().subtract(Duration(days: DateTime.now().weekday - 1));
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk menampilkan dialog jika ada booking ---
+  @override
+  void initState() {
+    super.initState();
+    selectedDate = DateTime.now();
+    _loadLovedState();
+    _fetchUnavailableTimes();
+    user = FirebaseAuth.instance.currentUser;
+    // Ambil data member dan tipe member saat inisialisasi
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    isMember = userProvider.isMembershipActive;
+    _membershipType = userProvider.membershipType;
+  }
+
+  /// Fungsi baru untuk mengecek apakah diskon berlaku
+  bool _isDiscountApplicable() {
+    if (!isMember) return false;
+
+    final String lapangName = widget.lapang.name ?? '';
+
+    // Diskon untuk member minisoccer hanya di lapang minisoccer
+    if (_membershipType == 'minisoccer' && lapangName == 'Lapang Minisoccer') {
+      return true;
+    }
+
+    // Diskon untuk member basket vynil hanya di lapang basket vynil
+    if (_membershipType == 'basket_vinyl' &&
+        lapangName == 'Lapang Basket Vynil') {
+      return true;
+    }
+
+    // Diskon untuk member basket karet hanya di lapang basket karet
+    if (_membershipType == 'basket_karet' &&
+        lapangName == 'Lapang Basket Karet') {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Fungsi untuk update total harga
+  void _updateTotalPrice() {
+    totalPrice = 0;
+
+    if (selectedHour.isNotEmpty && bookingDuration > 0) {
+      final int startHour = int.parse(selectedHour.split(":")[0]);
+      int hoursCounted = 0;
+      double cumulativePrice = 0;
+
+      for (int i = 0; hoursCounted < bookingDuration; i++) {
+        final int currentHour = startHour + i;
+        if (currentHour >= 23) break;
+
+        double priceForThisHour = _getPriceForHour(currentHour).toDouble();
+
+        // Gunakan fungsi pengecekan diskon yang baru
+        if (_isDiscountApplicable()) {
+          priceForThisHour *= 0.9; // Potongan 10%
+        }
+
+        cumulativePrice += priceForThisHour;
+        hoursCounted++;
+      }
+      totalPrice = cumulativePrice.round();
+
+      if (usePhotographer) totalPrice += photographerPrice;
+      if (useReferee) totalPrice += refereePrice;
+      // Logika ice bath disederhanakan
+      if (useIceBath &&
+          isMember &&
+          (widget.lapang.name == "Lapang Minisoccer" ||
+              widget.lapang.name == "Lapang Basket Vynil")) {
+        totalPrice += iceBathPrice;
+      }
+    }
+    setState(() {});
+  }
+
   void _showExistingBookingDialog() {
     if (!mounted) return;
     showDialog(
@@ -86,7 +161,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi terpusat untuk menangani aksi booking ---
   void _handleBookingAction() {
     final cart = context.read<Cart>();
     final user = FirebaseAuth.instance.currentUser;
@@ -134,7 +208,6 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk mendapatkan harga per jam ---
   int _getPriceForHour(int hour) {
     int basePrice = int.tryParse(widget.lapang.price ?? '0') ?? 0;
     String lapangName = widget.lapang.name.toString();
@@ -155,7 +228,6 @@ class _DetailPageState extends State<DetailPage> {
     return basePrice;
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk format rentang harga ---
   String _getPriceRangeString() {
     int pagiPrice = _getPriceForHour(8);
     int malamPrice = _getPriceForHour(19);
@@ -170,43 +242,6 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk update total harga ---
-  void _updateTotalPrice() {
-    totalPrice = 0;
-
-    if (selectedHour.isNotEmpty && bookingDuration > 0) {
-      final int startHour = int.parse(selectedHour.split(":")[0]);
-      int hoursCounted = 0;
-      double cumulativePrice = 0;
-
-      for (int i = 0; hoursCounted < bookingDuration; i++) {
-        final int currentHour = startHour + i;
-        if (currentHour >= 23) break;
-
-        double priceForThisHour = _getPriceForHour(currentHour).toDouble();
-        if (isMember) {
-          priceForThisHour *= 0.9;
-        }
-        cumulativePrice += priceForThisHour;
-        hoursCounted++;
-      }
-      totalPrice = cumulativePrice.round();
-
-      if (usePhotographer) totalPrice += photographerPrice;
-      if (useReferee) totalPrice += refereePrice;
-      if (useIceBath &&
-          isMember &&
-          (widget.lapang.name == "Lapang Minisoccer" ||
-              useIceBath &&
-                  isMember &&
-                  widget.lapang.name == "Lapang Basket Vynil")) {
-        totalPrice += iceBathPrice;
-      }
-    }
-    setState(() {});
-  }
-
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk cek ketersediaan durasi ---
   bool isDurationAvailable(int startHour, int duration) {
     int hoursCounted = 0;
     for (int i = 0; hoursCounted < duration; i++) {
@@ -218,22 +253,9 @@ class _DetailPageState extends State<DetailPage> {
     return true;
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk cek ketersediaan slot waktu ---
   bool isTimeSlotAvailable(int hour) {
     if (hour < 7 || hour >= 23) return false;
     return !unavailableTimes.contains("$hour:00");
-  }
-
-  // --- [LOGIKA TIDAK BERUBAH] initState & fungsi lifecycle ---
-  @override
-  void initState() {
-    super.initState();
-    selectedDate = DateTime.now();
-    _loadLovedState();
-    _fetchUnavailableTimes();
-    user = FirebaseAuth.instance.currentUser;
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    isMember = userProvider.isMember;
   }
 
   Future<void> _loadLovedState() async {
@@ -252,7 +274,6 @@ class _DetailPageState extends State<DetailPage> {
     await prefs.setBool(key, isLoved);
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk mengambil data booking dari Firestore ---
   Future<void> _fetchUnavailableTimes() async {
     if (selectedDate != null) {
       final formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate!);
@@ -294,7 +315,6 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk menambahkan item ke keranjang ---
   Future<void> addToCart() async {
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -370,7 +390,6 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi untuk menampilkan pop-up sukses ---
   void popUpDialog() {
     final formattedDate =
         DateFormat('dd MMMM yyyy', 'id_ID').format(selectedDate!);
@@ -454,7 +473,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  // --- [LOGIKA TIDAK BERUBAH] Fungsi navigasi dan date picker ---
   void goToCart() {
     Navigator.push(
       context,
@@ -496,14 +514,8 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  // =======================================================================
-  // [UI BERUBAH] - Build method utama dan semua widget UI
-  // =======================================================================
-
   @override
   Widget build(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context);
-    isMember = userProvider.isMember;
     final cart = context.watch<Cart>();
 
     return Scaffold(
@@ -511,12 +523,10 @@ class _DetailPageState extends State<DetailPage> {
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, cart),
       body: _buildContent(context, cart),
-      bottomNavigationBar:
-          _buildBottomBar(cart), // [PERUBAHAN] Menggunakan bottomNavigationBar
+      bottomNavigationBar: _buildBottomBar(cart),
     );
   }
 
-  /// AppBar Transparan
   AppBar _buildAppBar(BuildContext context, Cart cart) {
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -583,7 +593,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// Konten Utama Halaman
   Widget _buildContent(BuildContext context, Cart cart) {
     return Stack(
       children: [
@@ -605,11 +614,9 @@ class _DetailPageState extends State<DetailPage> {
             ],
           ),
         ),
-
-        // Overlay jika ada item di keranjang
         if (cart.cart.isNotEmpty)
           Positioned.fill(
-            top: 300, // Mulai overlay di bawah gambar
+            top: 300,
             child: Container(
               color: Colors.white.withOpacity(0.95),
               child: Column(
@@ -657,7 +664,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// Header Gambar
   Widget _buildImageHeader(BuildContext context) {
     return Hero(
       tag: widget.lapang.imagePath.toString(),
@@ -676,22 +682,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// Widget untuk Judul setiap section
-  Widget _buildSectionTitle(String title, {bool enabled = true}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: enabled ? Colors.black : Colors.grey,
-        ),
-      ),
-    );
-  }
-
-  /// Section Info (Nama, Harga, Deskripsi)
   Widget _buildInfoSection(BuildContext context) {
     return Container(
       transform: Matrix4.translationValues(0.0, -20.0, 0.0),
@@ -726,7 +716,7 @@ class _DetailPageState extends State<DetailPage> {
               ),
             ],
           ),
-          if (isMember)
+          if (_isDiscountApplicable())
             Padding(
               padding: const EdgeInsets.only(top: 6.0),
               child: Text(
@@ -754,7 +744,20 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// Section Fasilitas
+  Widget _buildSectionTitle(String title, {bool enabled = true}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: enabled ? Colors.black : Colors.grey,
+        ),
+      ),
+    );
+  }
+
   Widget _buildFacilitiesSection(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -804,7 +807,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// Section Form Booking Utama
   Widget _buildBookingForm(BuildContext context, Cart cart) {
     bool isFormDisabled = cart.cart.isNotEmpty;
 
@@ -884,7 +886,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// Picker Jam Booking (Dengan logika visual yang diperbarui)
   Widget _buildTimePicker() {
     bool enabled = isFormValid && selectedDate != null;
     return Padding(
@@ -906,7 +907,6 @@ class _DetailPageState extends State<DetailPage> {
               bool isPast = bookingTime.isBefore(DateTime.now());
               bool isBooked = unavailableTimes.contains(timeStr);
 
-              // --- [LOGIKA VISUAL DIPERBARUI] ---
               final int startHour = selectedHour.isNotEmpty
                   ? int.parse(selectedHour.split(":")[0])
                   : -1;
@@ -966,7 +966,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// Picker Durasi Booking
   Widget _buildDurationPicker() {
     bool enabled =
         isFormValid && selectedDate != null && selectedHour.isNotEmpty;
@@ -1035,7 +1034,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// Section Layanan Tambahan (Add-ons)
   Widget _buildAddonServicesSection(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -1081,8 +1079,9 @@ class _DetailPageState extends State<DetailPage> {
                         _updateTotalPrice();
                       }),
                     ),
-                    if (isMember && widget.lapang.name == "Lapang Minisoccer" ||
-                        isMember && widget.lapang.name == "Lapang Basket Vynil")
+                    if (isMember &&
+                        (widget.lapang.name == "Lapang Minisoccer" ||
+                            widget.lapang.name == "Lapang Basket Vynil"))
                       Padding(
                         padding: const EdgeInsets.only(top: 10.0),
                         child: _buildServiceOption(
@@ -1106,7 +1105,6 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
-  /// [PERUBAHAN] Tombol Aksi Bawah (Bottom Bar) dengan layout terpisah yang responsif
   Widget _buildBottomBar(Cart cart) {
     bool canBook = selectedHour.isNotEmpty &&
         bookingDuration > 0 &&
@@ -1125,7 +1123,6 @@ class _DetailPageState extends State<DetailPage> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
         child: Row(
           children: [
-            // Bagian Harga (Fleksibel agar tidak terpotong)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1149,7 +1146,6 @@ class _DetailPageState extends State<DetailPage> {
               ),
             ),
             const SizedBox(width: 16),
-            // Bagian Tombol
             ElevatedButton(
               onPressed: _handleBookingAction,
               style: ElevatedButton.styleFrom(
@@ -1173,9 +1169,6 @@ class _DetailPageState extends State<DetailPage> {
   }
 }
 
-// =======================================================================
-// [UI TIDAK BERUBAH] - Widget Kalender Mingguan
-// =======================================================================
 class WeeklyCalendar extends StatelessWidget {
   final DateTime currentStartOfWeek;
   final Function(DateTime) onDateSelected;
@@ -1293,9 +1286,6 @@ class WeeklyCalendar extends StatelessWidget {
   }
 }
 
-// =======================================================================
-// [UI TIDAK BERUBAH] - Widget Opsi Layanan Tambahan
-// =======================================================================
 Widget _buildServiceOption({
   required IconData icon,
   required String title,

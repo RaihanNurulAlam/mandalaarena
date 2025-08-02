@@ -58,7 +58,7 @@ class UserProvider with ChangeNotifier {
         _isMember = data['isMember'] ?? false;
         _memberUntil = (data['memberUntil'] as Timestamp?)?.toDate();
         _isAdmin = data['isAdmin'] ?? false;
-        _membershipType = (data['membershipType'] as String?)!;
+        _membershipType = data['membershipType'] ?? '';
 
         _userName = data['name'] ?? 'No Name';
         _userEmail = data['email'] ?? 'No Email';
@@ -136,7 +136,7 @@ class UserProvider with ChangeNotifier {
         _isMember = data['isMember'] ?? false; // Koreksi
         _points = data['points'] ?? 0;
         _memberUntil = (data['memberUntil'] as Timestamp?)?.toDate();
-        _membershipType = (data['membershipType'] as String?)!;
+        _membershipType = data['membershipType'] ?? '';
       }
     } catch (e) {
       print("Gagal mengambil data user: $e");

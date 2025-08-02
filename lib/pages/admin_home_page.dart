@@ -39,6 +39,9 @@ class AdminHomePage extends StatefulWidget {
 }
 
 class _AdminHomePageState extends State<AdminHomePage> {
+  // Kunci Global untuk mengontrol Scaffold
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   List<Lapang> lapangs = [];
   bool isExpanded = false;
   bool isHoveredToggle = false;
@@ -152,378 +155,338 @@ class _AdminHomePageState extends State<AdminHomePage> {
     final userProvider = Provider.of<UserProvider>(context);
     final user = FirebaseAuth.instance.currentUser;
 
-    // Gunakan LayoutBuilder untuk mendapatkan padding yang responsif
-    return LayoutBuilder(builder: (context, constraints) {
-      // Tentukan padding horizontal berdasarkan lebar layar
-      final double horizontalPadding;
-      const double mobileBreakpoint = 600;
-      const double desktopMaxWidth = 1200;
-
-      if (constraints.maxWidth < mobileBreakpoint) {
-        horizontalPadding = 20.0;
-      } else {
-        horizontalPadding = (constraints.maxWidth - desktopMaxWidth) / 2 > 20
-            ? (constraints.maxWidth - desktopMaxWidth) / 2
-            : 20.0;
-      }
-
-      return BlocProvider(
-        create: (context) => NavigationCubit(),
-        child: Builder(builder: (BuildContext newContext) {
-          return Scaffold(
-            endDrawer: const ProfileSlider(),
-            appBar: AppBar(
-              toolbarHeight: 80,
-              title: Padding(
-                padding: EdgeInsets.only(left: horizontalPadding > 20 ? 0 : 15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Admin',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          CupertinoIcons.map_pin,
-                          size: 12,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(width: 1),
-                        Text(
-                          'Garut, Indonesia',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                          ),
+    return BlocProvider(
+      create: (context) => NavigationCubit(),
+      child: Scaffold(
+        key: _scaffoldKey,
+        endDrawer: const ProfileSlider(),
+        appBar: AppBar(
+          automaticallyImplyLeading: false, // <-- INI FIX UTAMANYA
+          toolbarHeight: 80,
+          title: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Admin',
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            Icon(CupertinoIcons.map_pin,
+                                size: 12, color: Colors.grey),
+                            SizedBox(width: 1),
+                            Text('Garut, Indonesia',
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: 12)),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              actions: [
-                if (user != null)
-                  TextButton.icon(
+                  ),
+                  const Spacer(),
+                  if (user != null)
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const PointsPage()),
+                        );
+                      },
+                      icon: const Icon(Icons.star,
+                          color: Colors.orange, size: 17),
+                      label: Text(
+                        userProvider.points.toString(),
+                        style: const TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  if (user != null) const SizedBox(width: 2),
+                  IconButton(
                     onPressed: () {
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const PointsPage()),
-                      );
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => AlamatPage()));
                     },
-                    icon:
-                        const Icon(Icons.star, color: Colors.orange, size: 17),
-                    label: Text(
-                      userProvider.points.toString(),
-                      style: const TextStyle(
-                          color: Colors.black, fontWeight: FontWeight.bold),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: const Size(30, 30),
-                    ),
+                    icon: const Icon(Icons.location_on, size: 25),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
-                if (user != null) const SizedBox(width: 2),
-                IconButton(
-                  onPressed: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => AlamatPage()));
-                  },
-                  icon: const Icon(Icons.location_on, size: 25),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 2),
-                Consumer<Cart>(
-                  builder: (context, value, child) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          IconButton(
-                            onPressed: goToCart,
-                            icon: const Icon(CupertinoIcons.bag, size: 25),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                          if (value.cart.isNotEmpty)
-                            Positioned(
-                              top: 2,
-                              right: -2,
-                              child: CircleAvatar(
-                                radius: 7,
-                                backgroundColor: Colors.yellow,
-                                child: Center(
-                                  child: Text(
-                                    value.cart.length.toString(),
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 2),
+                  Consumer<Cart>(
+                    builder: (context, value, child) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            IconButton(
+                              onPressed: goToCart,
+                              icon: const Icon(CupertinoIcons.bag, size: 25),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            if (value.cart.isNotEmpty)
+                              Positioned(
+                                top: 2,
+                                right: -2,
+                                child: CircleAvatar(
+                                  radius: 7,
+                                  backgroundColor: Colors.yellow,
+                                  child: Center(
+                                    child: Text(
+                                      value.cart.length.toString(),
+                                      style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 7),
-                Padding(
-                  padding: EdgeInsets.only(right: horizontalPadding),
-                  child: Builder(
-                    builder: (context) => GestureDetector(
-                      onTap: () {
-                        Scaffold.of(context).openEndDrawer();
-                      },
-                      child: CircleAvatar(
-                        radius: 15,
-                        backgroundImage: NetworkImage(
-                          userProvider.profileImageUrl.isNotEmpty
-                              ? userProvider.profileImageUrl
-                              : "https://via.placeholder.com/150",
+                          ],
                         ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 7),
+                  GestureDetector(
+                    onTap: () {
+                      _scaffoldKey.currentState?.openEndDrawer();
+                    },
+                    child: CircleAvatar(
+                      radius: 15,
+                      backgroundImage: NetworkImage(
+                        userProvider.profileImageUrl.isNotEmpty
+                            ? userProvider.profileImageUrl
+                            : "https://via.placeholder.com/150",
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            body: Stack(
-              children: [
-                BlocBuilder<NavigationCubit, NavigationState>(
-                  builder: (context, state) {
-                    switch (state) {
-                      case NavigationState.sparring:
-                        return SparringTeamPage();
-                      case NavigationState.information:
-                        return InformationPage();
-                      case NavigationState.about:
-                        return AboutPage();
-                      default:
-                        return _buildHomeContent(context, horizontalPadding);
-                    }
-                  },
-                ),
-                Positioned(
-                  bottom: 16,
-                  right: 16,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Visibility(
-                        visible: isExpanded,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: FloatingActionButton(
-                            heroTag: "whatsapp",
-                            onPressed: () =>
-                                _launchURL('https://wa.me/6281111122525'),
-                            backgroundColor: Colors.green,
-                            child: Image.network(
-                              "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
-                              width: 25,
-                              height: 25,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Visibility(
-                        visible: isExpanded,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: FloatingActionButton(
-                            heroTag: "facebook",
-                            onPressed: () => _launchURL(
-                                'https://www.facebook.com/mandala.arena'),
-                            backgroundColor: Colors.blue,
-                            child:
-                                const Icon(Icons.facebook, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      Visibility(
-                        visible: isExpanded,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: FloatingActionButton(
-                              heroTag: "instagram",
-                              onPressed: () => _launchURL(
-                                  'https://www.instagram.com/mandalaarena'),
-                              backgroundColor: Colors.purple,
-                              child: Image.network(
-                                "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
-                                width: 25,
-                                height: 25,
-                              )),
-                        ),
-                      ),
-                      Visibility(
-                        visible: isExpanded,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: FloatingActionButton(
-                            heroTag: "email",
-                            onPressed: () =>
-                                _launchURL('mailto:mandalaarena@gmail.com'),
-                            backgroundColor: Colors.red,
-                            child: Image.network(
-                              "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
-                              width: 25,
-                              height: 25,
-                            ),
-                          ),
-                        ),
-                      ),
-                      MouseRegion(
-                        onEnter: (_) => setState(() {
-                          isHoveredToggle = true;
-                        }),
-                        onExit: (_) => setState(() {
-                          isHoveredToggle = false;
-                        }),
-                        child: FloatingActionButton(
-                          heroTag: "toggle",
-                          onPressed: _toggleMenu,
-                          backgroundColor: Colors.black
-                              .withOpacity(isHoveredToggle ? 1.0 : 0.5),
-                          child: Icon(
-                            isExpanded ? Icons.close : Icons.add_comment,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
+          ),
+        ),
+        body: Stack(
+          children: [
+            BlocBuilder<NavigationCubit, NavigationState>(
               builder: (context, state) {
-                return BottomNavigationBar(
-                  currentIndex: state.index,
-                  selectedItemColor: Colors.black,
-                  unselectedItemColor: Colors.black,
-                  onTap: (index) {
-                    context.read<NavigationCubit>().navigateToIndex(index);
-                  },
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.home),
-                      label: 'Beranda',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.group),
-                      label: 'Sparring',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.article_rounded),
-                      label: 'Artikel',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.question_answer_rounded),
-                      label: 'Ulasan',
-                    ),
-                  ],
-                );
+                switch (state) {
+                  case NavigationState.sparring:
+                    return SparringTeamPage();
+                  case NavigationState.information:
+                    return InformationPage();
+                  case NavigationState.about:
+                    return AboutPage();
+                  default:
+                    return _buildHomeContent(context);
+                }
               },
             ),
-          );
-        }),
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (isExpanded) ...[
+                    _buildFab(
+                      heroTag: "whatsapp",
+                      onPressed: () =>
+                          _launchURL('https://wa.me/6281111122525'),
+                      color: Colors.green,
+                      iconUrl:
+                          "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
+                    ),
+                    const SizedBox(height: 10),
+                    _buildFab(
+                      heroTag: "facebook",
+                      onPressed: () =>
+                          _launchURL('https://www.facebook.com/mandala.arena'),
+                      color: Colors.blue,
+                      iconWidget:
+                          const Icon(Icons.facebook, color: Colors.white),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildFab(
+                      heroTag: "instagram",
+                      onPressed: () =>
+                          _launchURL('https://www.instagram.com/mandalaarena'),
+                      color: Colors.purple,
+                      iconUrl:
+                          "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                    ),
+                    const SizedBox(height: 10),
+                    _buildFab(
+                      heroTag: "email",
+                      onPressed: () =>
+                          _launchURL('mailto:mandalaarena@gmail.com'),
+                      color: Colors.red,
+                      iconUrl:
+                          "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  MouseRegion(
+                    onEnter: (_) => setState(() => isHoveredToggle = true),
+                    onExit: (_) => setState(() => isHoveredToggle = false),
+                    child: FloatingActionButton(
+                      heroTag: "toggle",
+                      onPressed: _toggleMenu,
+                      backgroundColor:
+                          Colors.black.withOpacity(isHoveredToggle ? 1.0 : 0.5),
+                      child: Icon(
+                        isExpanded ? Icons.close : Icons.add_comment,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: BlocBuilder<NavigationCubit, NavigationState>(
+          builder: (context, state) {
+            return BottomNavigationBar(
+              currentIndex: state.index,
+              selectedItemColor: Colors.black,
+              unselectedItemColor: Colors.black,
+              onTap: (index) {
+                context.read<NavigationCubit>().navigateToIndex(index);
+              },
+              items: const [
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.home), label: 'Beranda'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.group), label: 'Sparring'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.article_rounded), label: 'Artikel'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.question_answer_rounded), label: 'Ulasan'),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Helper FAB widget
+  Widget _buildFab({
+    required String heroTag,
+    required VoidCallback onPressed,
+    required Color color,
+    String? iconUrl,
+    Widget? iconWidget,
+  }) {
+    return FloatingActionButton(
+      heroTag: heroTag,
+      onPressed: onPressed,
+      backgroundColor: color,
+      child: iconUrl != null
+          ? Image.network(
+              iconUrl,
+              width: 25,
+              height: 25,
+            )
+          : iconWidget,
+    );
+  }
+
+  Widget _buildHomeContent(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = FirebaseAuth.instance.currentUser;
+
+    return LayoutBuilder(builder: (context, constraints) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (user != null)
+                  if (userProvider.isMembershipActive)
+                    _buildMemberStatusCard(context, userProvider)
+                  else
+                    _buildMembershipBanner(context),
+                const SizedBox(height: 24),
+                _buildDiscountBanner(context),
+                const SizedBox(height: 24),
+                _buildGalleryPreview(context),
+                const SizedBox(height: 24),
+                const Text(
+                  'Pilih Lapang',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildGridLapangs(context, constraints.maxWidth),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
       );
     });
   }
 
-  Widget _buildHomeContent(BuildContext context, double horizontalPadding) {
-    final userProvider = Provider.of<UserProvider>(context);
-    final user = FirebaseAuth.instance.currentUser;
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (user != null)
-            if (userProvider.isMembershipActive)
-              _buildMemberStatusCard(context, userProvider, horizontalPadding)
-            else
-              _buildMembershipBanner(context, horizontalPadding),
-          _buildDiscountBanner(context, horizontalPadding),
-          _buildGalleryPreview(context, horizontalPadding),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-                horizontalPadding, 20, horizontalPadding, 10),
-            child: const Text(
-              'Pilih Lapang',
+  Widget _buildGalleryPreview(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Galeri Aktivitas',
               style: TextStyle(
                 color: Colors.black,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-          _buildGridLapangs(context, horizontalPadding),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGalleryPreview(BuildContext context, double horizontalPadding) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding:
-              EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Galeri Aktivitas',
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => GalleryPage()),
+                );
+              },
+              child: const Text(
+                'Lihat Lainnya >',
                 style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: Colors.black54, fontWeight: FontWeight.bold),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => GalleryPage()),
-                  );
-                },
-                child: const Text(
-                  'Lihat Lainnya >',
-                  style: TextStyle(
-                      color: Colors.black54, fontWeight: FontWeight.bold),
-                ),
-              )
-            ],
-          ),
+            )
+          ],
         ),
+        const SizedBox(height: 10),
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('gallery')
               .orderBy('timestamp', descending: true)
-              .limit(3)
+              .limit(5)
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
-                height: 220,
+                height: 250,
                 child: Center(child: CircularProgressIndicator()),
               );
             }
@@ -536,11 +499,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
             return CarouselSlider.builder(
               itemCount: galleryDocs.length,
               options: CarouselOptions(
-                height: 220,
+                height: 250,
                 autoPlay: galleryDocs.length > 1,
                 autoPlayInterval: const Duration(seconds: 5),
-                enlargeCenterPage: true,
-                viewportFraction: 0.9,
+                enlargeCenterPage: false,
+                viewportFraction: 1.0,
                 aspectRatio: 16 / 9,
               ),
               itemBuilder: (context, index, realIndex) {
@@ -548,8 +511,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 final imageUrl = doc['imageUrl'];
 
                 return Card(
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 5.0, vertical: 4.0),
+                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
                   elevation: 4,
                   shadowColor: Colors.black.withOpacity(0.2),
                   clipBehavior: Clip.antiAlias,
@@ -576,227 +538,214 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  Widget _buildDiscountBanner(BuildContext context, double horizontalPadding) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('banners')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Container(
-              height: 220,
-              alignment: Alignment.center,
-              child: const CircularProgressIndicator(),
-            );
-          }
-          if (snapshot.hasError) {
-            return const SizedBox.shrink();
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Column(
-                  children: [
-                    const Icon(Icons.image_not_supported_outlined,
-                        size: 40, color: Colors.grey),
-                    const SizedBox(height: 8),
-                    const Text("Belum ada banner promo.",
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    const Text("Ketuk untuk menambah banner baru.",
-                        style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => _navigateToBannerForm(),
-                      child: const Text("Tambah Banner"),
-                    )
-                  ],
-                ),
+  Widget _buildDiscountBanner(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('banners')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: 250,
+            alignment: Alignment.center,
+            child: const CircularProgressIndicator(),
+          );
+        }
+        if (snapshot.hasError) {
+          return const SizedBox.shrink();
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.image_not_supported_outlined,
+                    size: 40, color: Colors.grey),
+                const SizedBox(height: 8),
+                const Text("Belum ada banner promo.",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                const Text("Ketuk untuk menambah banner baru.",
+                    style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () => _navigateToBannerForm(),
+                  child: const Text("Tambah Banner"),
+                )
+              ],
+            ),
+          );
+        }
+
+        final banners = snapshot.data!.docs
+            .map((doc) => BannerModel.fromFirestore(doc))
+            .toList();
+
+        return Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            CarouselSlider.builder(
+              itemCount: banners.length,
+              options: CarouselOptions(
+                height: 250,
+                autoPlay: banners.length > 1,
+                autoPlayInterval: const Duration(seconds: 4),
+                enlargeCenterPage: false,
+                viewportFraction: 1.0,
+                aspectRatio: 16 / 9,
               ),
-            );
-          }
-
-          final banners = snapshot.data!.docs
-              .map((doc) => BannerModel.fromFirestore(doc))
-              .toList();
-
-          return Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              CarouselSlider.builder(
-                itemCount: banners.length,
-                options: CarouselOptions(
-                  height: 220,
-                  autoPlay: banners.length > 1,
-                  autoPlayInterval: const Duration(seconds: 4),
-                  enlargeCenterPage: true,
-                  viewportFraction: 0.9,
-                  aspectRatio: 16 / 9,
-                ),
-                itemBuilder: (context, index, realIndex) {
-                  final banner = banners[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 5.0, vertical: 4.0),
-                    elevation: 4,
-                    shadowColor: Colors.black.withOpacity(0.2),
-                    clipBehavior: Clip.antiAlias,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.0),
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.network(
-                          banner.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Center(
-                                  child: Icon(Icons.error, color: Colors.red)),
-                        ),
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.center,
-                              colors: [
-                                Colors.black.withOpacity(0.7),
-                                Colors.transparent
-                              ],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 20.0,
-                          left: 20.0,
-                          right: 20.0,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(banner.title,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 8.0),
-                              Text(banner.description,
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 14)),
+              itemBuilder: (context, index, realIndex) {
+                final banner = banners[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                  elevation: 4,
+                  shadowColor: Colors.black.withOpacity(0.2),
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        banner.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(
+                                child: Icon(Icons.error, color: Colors.red)),
+                      ),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.center,
+                            colors: [
+                              Colors.black.withOpacity(0.7),
+                              Colors.transparent
                             ],
                           ),
                         ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(20)),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                    icon: const Icon(Icons.edit,
-                                        color: Colors.white, size: 20),
-                                    onPressed: () =>
-                                        _navigateToBannerForm(banner: banner)),
-                                IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Colors.red, size: 20),
-                                    onPressed: () => _deleteBanner(
-                                        context, banner.id, banner.imageUrl)),
-                              ],
-                            ),
+                      ),
+                      Positioned(
+                        bottom: 20.0,
+                        left: 20.0,
+                        right: 20.0,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(banner.title,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8.0),
+                            Text(banner.description,
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(20)),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                  icon: const Icon(Icons.edit,
+                                      color: Colors.white, size: 20),
+                                  onPressed: () =>
+                                      _navigateToBannerForm(banner: banner)),
+                              IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red, size: 20),
+                                  onPressed: () => _deleteBanner(
+                                      context, banner.id, banner.imageUrl)),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                },
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              bottom: 12,
+              right: 24,
+              child: FloatingActionButton(
+                mini: true,
+                heroTag: 'add_banner',
+                onPressed: _navigateToBannerForm,
+                tooltip: 'Tambah Banner Baru',
+                child: const Icon(Icons.add),
               ),
-              Positioned(
-                bottom: 12,
-                right: 24,
-                child: FloatingActionButton(
-                  mini: true,
-                  heroTag: 'add_banner',
-                  onPressed: _navigateToBannerForm,
-                  tooltip: 'Tambah Banner Baru',
-                  child: const Icon(Icons.add),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildMembershipBanner(
-      BuildContext context, double horizontalPadding) {
-    return Padding(
-      padding:
-          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10.0),
-      child: Card(
-        elevation: 4,
-        shadowColor: Colors.black.withOpacity(0.2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => MembershipPage()),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.black87, Colors.black],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+  Widget _buildMembershipBanner(BuildContext context) {
+    return Card(
+      elevation: 4,
+      shadowColor: Colors.black.withOpacity(0.2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => MembershipPage()),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.black87, Colors.black],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Row(
-              children: const [
-                Icon(Icons.star, color: Colors.amber, size: 40),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Upgrade Jadi Member!',
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white)),
-                      SizedBox(height: 4),
-                      Text('Nikmati diskon dan keuntungan eksklusif.',
-                          style: TextStyle(color: Colors.white70)),
-                    ],
-                  ),
+          ),
+          child: Row(
+            children: const [
+              Icon(Icons.star, color: Colors.amber, size: 40),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Upgrade Jadi Member!',
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                    SizedBox(height: 4),
+                    Text('Nikmati diskon dan keuntungan eksklusif.',
+                        style: TextStyle(color: Colors.white70)),
+                  ],
                 ),
-                Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
-              ],
-            ),
+              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildMemberStatusCard(
-      BuildContext context, UserProvider provider, double horizontalPadding) {
+  Widget _buildMemberStatusCard(BuildContext context, UserProvider provider) {
     final expiryDate = provider.memberUntil != null
         ? DateFormat('dd MMMM yyyy').format(provider.memberUntil!)
         : 'Tidak diketahui';
@@ -815,55 +764,52 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
     final membershipName = getFriendlyMembershipName(provider.membershipType);
 
-    return Padding(
-      padding:
-          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10.0),
-      child: Card(
-        color: Colors.green[50],
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.green, size: 40),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      membershipName,
-                      style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green),
-                    ),
-                    const SizedBox(height: 4),
-                    Text('Aktif sampai: $expiryDate'),
-                  ],
-                ),
-              )
-            ],
-          ),
+    return Card(
+      color: Colors.green[50],
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 40),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    membershipName,
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green),
+                  ),
+                  const SizedBox(height: 4),
+                  Text('Aktif sampai: $expiryDate'),
+                ],
+              ),
+            )
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildGridLapangs(BuildContext context, double horizontalPadding) {
+  Widget _buildGridLapangs(BuildContext context, double screenWidth) {
+    final double effectiveWidth = screenWidth > 1100 ? 1100 : screenWidth;
+    int crossAxisCount = 2;
+    if (effectiveWidth > 900) {
+      crossAxisCount = 4;
+    } else if (effectiveWidth > 600) {
+      crossAxisCount = 3;
+    }
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 10),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 1650
-            ? 5
-            : MediaQuery.of(context).size.width > 1200
-                ? 4
-                : MediaQuery.of(context).size.width > 750
-                    ? 3
-                    : 2,
+        crossAxisCount: crossAxisCount,
         mainAxisSpacing: 20,
         crossAxisSpacing: 20,
         childAspectRatio: 4 / 5,
@@ -879,7 +825,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 }
 
-// ... Sisa kode (ProfileSlider, LapangGridItem) tetap sama
 class ProfileSlider extends StatefulWidget {
   const ProfileSlider({Key? key}) : super(key: key);
 
@@ -917,6 +862,7 @@ class _ProfileSliderState extends State<ProfileSlider> {
             isMember: userData['isMember'] ?? false,
             points: userData['points'] ?? 0,
             memberUntil: (userData['memberUntil'] as Timestamp?)?.toDate(),
+            membershipType: userData['membershipType'] ?? '',
           );
         }
       }
@@ -946,7 +892,6 @@ class _ProfileSliderState extends State<ProfileSlider> {
             'Ubah Profil',
             Icons.edit,
             () async {
-              Navigator.pop(context);
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -961,6 +906,9 @@ class _ProfileSliderState extends State<ProfileSlider> {
 
               if (result == true && mounted) {
                 await _syncUserData(context);
+              }
+              if (mounted) {
+                Navigator.pop(context);
               }
             },
           ),

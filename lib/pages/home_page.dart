@@ -94,24 +94,16 @@ class _HomePageState extends State<HomePage> {
     final userProvider = Provider.of<UserProvider>(context);
     final user = FirebaseAuth.instance.currentUser;
 
-    // Gunakan LayoutBuilder untuk mendapatkan padding yang responsif
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Tentukan padding horizontal berdasarkan lebar layar
-        final double horizontalPadding;
-        const double mobileBreakpoint =
-            600; // Titik batas untuk dianggap "bukan HP"
-        const double desktopMaxWidth = 1200; // Lebar konten maksimum di desktop
-
-        if (constraints.maxWidth < mobileBreakpoint) {
-          // Jika layar adalah HP
-          horizontalPadding = 20.0;
-        } else {
-          // Jika layar lebih lebar (tablet/desktop), buat padding agar konten di tengah
-          horizontalPadding = (constraints.maxWidth - desktopMaxWidth) / 2 > 20
-              ? (constraints.maxWidth - desktopMaxWidth) / 2
-              : 20.0;
-        }
+        // Responsive padding and max content width
+        const double mobileBreakpoint = 600;
+        const double desktopMaxWidth = 1200;
+        final bool isMobile = constraints.maxWidth < mobileBreakpoint;
+        final double horizontalPadding = isMobile
+            ? 20.0
+            : ((constraints.maxWidth - desktopMaxWidth) / 2)
+                .clamp(20.0, double.infinity);
 
         return BlocProvider(
           create: (context) => NavigationCubit(),
@@ -120,10 +112,8 @@ class _HomePageState extends State<HomePage> {
               endDrawer: const ProfileSlider(),
               appBar: AppBar(
                 toolbarHeight: 80,
-                // Terapkan padding responsif di sini
                 title: Padding(
-                  padding:
-                      EdgeInsets.only(left: horizontalPadding > 20 ? 0 : 15),
+                  padding: EdgeInsets.only(left: horizontalPadding),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: const [
@@ -142,7 +132,7 @@ class _HomePageState extends State<HomePage> {
                             size: 12,
                             color: Colors.grey,
                           ),
-                          SizedBox(width: 1),
+                          SizedBox(width: 4),
                           Text(
                             'Garut, Indonesia',
                             style: TextStyle(
@@ -177,7 +167,7 @@ class _HomePageState extends State<HomePage> {
                         minimumSize: const Size(30, 30),
                       ),
                     ),
-                  if (user != null) const SizedBox(width: 2),
+                  if (user != null) const SizedBox(width: 8),
                   IconButton(
                     onPressed: () {
                       Navigator.push(
@@ -189,11 +179,11 @@ class _HomePageState extends State<HomePage> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: 8),
                   Consumer<Cart>(
                     builder: (context, value, child) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -227,8 +217,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-                  const SizedBox(width: 7),
-                  // Terapkan padding responsif di sini
+                  const SizedBox(width: 8),
                   Padding(
                     padding: EdgeInsets.only(right: horizontalPadding),
                     child: user == null
@@ -281,7 +270,6 @@ class _HomePageState extends State<HomePage> {
                         case NavigationState.about:
                           return AboutPage();
                         default:
-                          // Kirim padding ke konten utama
                           return _buildHomeContent(context, horizontalPadding);
                       }
                     },
@@ -292,74 +280,37 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Visibility(
-                          visible: isExpanded,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: FloatingActionButton(
-                              heroTag: "whatsapp",
-                              onPressed: () =>
-                                  _launchURL('https://wa.me/6281111122525'),
-                              backgroundColor: Colors.green,
-                              child: Image.network(
-                                "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
-                                width: 25,
-                                height: 25,
-                              ),
-                            ),
+                        if (isExpanded) ...[
+                          _buildSocialButton(
+                            "whatsapp",
+                            Colors.green,
+                            "https://img.icons8.com/?size=100&id=16733&format=png&color=FFFFFF",
+                            'https://wa.me/6281111122525',
                           ),
-                        ),
-                        Visibility(
-                          visible: isExpanded,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: FloatingActionButton(
-                              heroTag: "facebook",
-                              onPressed: () => _launchURL(
-                                  'https://www.facebook.com/mandala.arena'),
-                              backgroundColor: Colors.blue,
-                              child: const Icon(Icons.facebook,
-                                  color: Colors.white),
-                            ),
+                          const SizedBox(height: 8),
+                          _buildSocialButton(
+                            "facebook",
+                            Colors.blue,
+                            Icons.facebook,
+                            'https://www.facebook.com/mandala.arena',
+                            isIcon: true,
                           ),
-                        ),
-                        Visibility(
-                          visible: isExpanded,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: FloatingActionButton(
-                                heroTag: "instagram",
-                                onPressed: () => _launchURL(
-                                    'https://www.instagram.com/mandalaarena'),
-                                backgroundColor: Colors.purple,
-                                child: Image.network(
-                                  "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
-                                  width: 25,
-                                  height: 25,
-                                )),
+                          const SizedBox(height: 8),
+                          _buildSocialButton(
+                            "instagram",
+                            Colors.purple,
+                            "https://img.icons8.com/?size=100&id=59813&format=png&color=FFFFFF",
+                            'https://www.instagram.com/mandalaarena',
                           ),
-                        ),
-                        Visibility(
-                          visible: isExpanded,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: FloatingActionButton(
-                              heroTag: "email",
-                              onPressed: () =>
-                                  _launchURL('mailto:mandalaarena@gmail.com'),
-                              backgroundColor: Colors.red,
-                              child: Image.network(
-                                "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
-                                width: 25,
-                                height: 25,
-                              ),
-                            ),
+                          const SizedBox(height: 8),
+                          _buildSocialButton(
+                            "email",
+                            Colors.red,
+                            "https://img.icons8.com/?size=100&id=ptAjLogGbrSi&format=png&color=FFFFFF",
+                            'mailto:mandalaarena@gmail.com',
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                        ],
                         MouseRegion(
                           onEnter: (_) => setState(() {
                             isHoveredToggle = true;
@@ -421,14 +372,30 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildSocialButton(
+      String heroTag, Color color, dynamic iconData, String url,
+      {bool isIcon = false}) {
+    return FloatingActionButton(
+      heroTag: heroTag,
+      onPressed: () => _launchURL(url),
+      backgroundColor: color,
+      child: isIcon
+          ? Icon(iconData, color: Colors.white)
+          : Image.network(
+              iconData,
+              width: 25,
+              height: 25,
+            ),
+    );
+  }
+
   Widget _buildGalleryPreview(BuildContext context, double horizontalPadding) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Terapkan padding responsif di sini
         Padding(
           padding:
-              EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
+              EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -456,106 +423,114 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('gallery')
-              .orderBy('timestamp', descending: true)
-              .limit(3)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(
-                height: 220,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            final galleryDocs = snapshot.data!.docs;
-
-            return CarouselSlider.builder(
-              itemCount: galleryDocs.length,
-              options: CarouselOptions(
-                height: 220,
-                autoPlay: galleryDocs.length > 1,
-                autoPlayInterval: const Duration(seconds: 5),
-                enlargeCenterPage: true,
-                viewportFraction: 0.9,
-                aspectRatio: 16 / 9,
-              ),
-              itemBuilder: (context, index, realIndex) {
-                final doc = galleryDocs[index];
-                final imageUrl = doc['imageUrl'];
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 5.0, vertical: 4.0),
-                  elevation: 4,
-                  shadowColor: Colors.black.withOpacity(0.2),
-                  clipBehavior: Clip.antiAlias,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (context, error, stackTrace) => const Center(
-                        child: Icon(Icons.error, color: Colors.red)),
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                  ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('gallery')
+                .orderBy('timestamp', descending: true)
+                .limit(3)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 220,
+                  child: Center(child: CircularProgressIndicator()),
                 );
-              },
-            );
-          },
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              final galleryDocs = snapshot.data!.docs;
+
+              return CarouselSlider.builder(
+                itemCount: galleryDocs.length,
+                options: CarouselOptions(
+                  height: 220,
+                  autoPlay: galleryDocs.length > 1,
+                  autoPlayInterval: const Duration(seconds: 5),
+                  enlargeCenterPage: true,
+                  viewportFraction: 0.9,
+                  aspectRatio: 16 / 9,
+                ),
+                itemBuilder: (context, index, realIndex) {
+                  final doc = galleryDocs[index];
+                  final imageUrl = doc['imageUrl'];
+
+                  return Card(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 5.0, vertical: 4.0),
+                    elevation: 4,
+                    shadowColor: Colors.black.withOpacity(0.2),
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.0),
+                    ),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(
+                              child: Icon(Icons.error, color: Colors.red)),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );
   }
 
-  // Terima `horizontalPadding` sebagai parameter
   Widget _buildHomeContent(BuildContext context, double horizontalPadding) {
     final userProvider = Provider.of<UserProvider>(context);
     final user = FirebaseAuth.instance.currentUser;
     return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (user != null)
-            if (userProvider.isMembershipActive)
-              _buildMemberStatusCard(context, userProvider, horizontalPadding)
-            else
-              _buildMembershipBanner(context, horizontalPadding),
-          _buildDiscountBanner(context),
-          _buildGalleryPreview(context, horizontalPadding),
-          // Terapkan padding responsif di sini
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-                horizontalPadding, 20, horizontalPadding, 10),
-            child: const Text(
-              'Pilih Lapang',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (user != null)
+              if (userProvider.isMembershipActive)
+                _buildMemberStatusCard(context, userProvider, horizontalPadding)
+              else
+                _buildMembershipBanner(context, horizontalPadding),
+            _buildDiscountBanner(context, horizontalPadding),
+            _buildGalleryPreview(context, horizontalPadding),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  horizontalPadding, 20, horizontalPadding, 16),
+              child: const Text(
+                'Pilih Lapang',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          _buildGridLapangs(context, horizontalPadding),
-          const SizedBox(height: 20),
-        ],
+            _buildGridLapangs(context, horizontalPadding),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDiscountBanner(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
+  Widget _buildDiscountBanner(BuildContext context, double horizontalPadding) {
+    return Padding(
+      padding: EdgeInsets.only(
+          left: horizontalPadding, right: horizontalPadding, bottom: 16),
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('banners')
@@ -659,9 +634,8 @@ class _HomePageState extends State<HomePage> {
   Widget _buildMembershipBanner(
       BuildContext context, double horizontalPadding) {
     return Padding(
-      // Terapkan padding responsif di sini
       padding:
-          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10.0),
+          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
       child: Card(
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.2),
@@ -716,6 +690,7 @@ class _HomePageState extends State<HomePage> {
     final expiryDate = provider.memberUntil != null
         ? DateFormat('dd MMMM yyyy').format(provider.memberUntil!)
         : 'Tidak diketahui';
+
     String getFriendlyMembershipName(String typeId) {
       switch (typeId) {
         case 'minisoccer':
@@ -725,16 +700,15 @@ class _HomePageState extends State<HomePage> {
         case 'basket_karet':
           return 'Member Basket Karet';
         default:
-          return 'Member'; // Fallback jika tidak dikenali
+          return 'Member';
       }
     }
 
     final membershipName = getFriendlyMembershipName(provider.membershipType);
 
     return Padding(
-      // Terapkan padding responsif di sini
       padding:
-          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10.0),
+          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
       child: Card(
         color: Colors.green[50],
         elevation: 2,
@@ -750,7 +724,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      membershipName, // <-- TAMPILKAN NAMA MEMBER DI SINI
+                      membershipName,
                       style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -769,35 +743,35 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildGridLapangs(BuildContext context, double horizontalPadding) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      // Terapkan padding responsif di sini
-      padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 10),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: MediaQuery.of(context).size.width > 1650
-            ? 5
-            : MediaQuery.of(context).size.width > 1200
-                ? 4
-                : MediaQuery.of(context).size.width > 750
-                    ? 3
-                    : 2,
-        mainAxisSpacing: 20,
-        crossAxisSpacing: 20,
-        childAspectRatio: 4 / 5,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: MediaQuery.of(context).size.width > 1650
+              ? 5
+              : MediaQuery.of(context).size.width > 1200
+                  ? 4
+                  : MediaQuery.of(context).size.width > 750
+                      ? 3
+                      : 2,
+          mainAxisSpacing: 20,
+          crossAxisSpacing: 20,
+          childAspectRatio: 4 / 5,
+        ),
+        itemCount: lapangs.length,
+        itemBuilder: (context, index) {
+          return LapangGridItem(
+            lapang: lapangs[index],
+            onTap: () => goToDetailLapang(index),
+          );
+        },
       ),
-      itemCount: lapangs.length,
-      itemBuilder: (context, index) {
-        return LapangGridItem(
-          lapang: lapangs[index],
-          onTap: () => goToDetailLapang(index),
-        );
-      },
     );
   }
 }
 
-// ... (Sisa kode: ProfileSlider, LapangGridItem, dan BannerModel tetap sama)
 class ProfileSlider extends StatefulWidget {
   const ProfileSlider({Key? key}) : super(key: key);
 
@@ -835,6 +809,7 @@ class _ProfileSliderState extends State<ProfileSlider> {
             isMember: userData['isMember'] ?? false,
             points: userData['points'] ?? 0,
             memberUntil: (userData['memberUntil'] as Timestamp?)?.toDate(),
+            membershipType: userData['membershipType'] ?? '',
           );
         }
       }
@@ -864,7 +839,6 @@ class _ProfileSliderState extends State<ProfileSlider> {
             'Ubah Profil',
             Icons.edit,
             () async {
-              Navigator.pop(context);
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -879,6 +853,9 @@ class _ProfileSliderState extends State<ProfileSlider> {
 
               if (result == true && mounted) {
                 await _syncUserData(context);
+              }
+              if (mounted) {
+                Navigator.pop(context);
               }
             },
           ),
