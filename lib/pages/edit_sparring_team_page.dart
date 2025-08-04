@@ -186,48 +186,54 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
         foregroundColor: Colors.black,
         elevation: 1,
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildImagePickerSection(),
-              const SizedBox(height: 8),
-              Center(
-                  child: Text("Ganti Logo Tim",
-                      style: TextStyle(color: Colors.grey[600]))),
-              const SizedBox(height: 24),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            padding:
+                const EdgeInsets.symmetric(vertical: 32.0, horizontal: 16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  // --- Bagian Gambar ---
+                  _buildImagePickerSection(),
+                  const SizedBox(height: 8),
+                  Text("Ganti Logo Tim",
+                      style: TextStyle(color: Colors.grey[600])),
+                  const SizedBox(height: 24),
 
-              _buildInfoCard(),
-              const SizedBox(height: 24),
+                  // --- Bagian Informasi Dasar ---
+                  _buildInfoCard(),
+                  const SizedBox(height: 24),
 
-              _buildScheduleCard(),
-              const SizedBox(height: 32),
+                  // --- Bagian Jadwal ---
+                  _buildScheduleCard(),
+                  const SizedBox(height: 32),
 
-              // --- PERUBAHAN: Style tombol disamakan ---
-              Center(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.save, color: Colors.white),
-                  label: const Text('Simpan Perubahan'),
-                  onPressed: _updateTeam,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12, horizontal: 24),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  // --- Tombol Simpan ---
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.save, color: Colors.white),
+                    label: const Text('Simpan Perubahan'),
+                    onPressed: _updateTeam,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -402,12 +408,16 @@ class _EditSparringTeamPageState extends State<EditSparringTeamPage> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: Colors.grey[600]),
+      prefixIcon: Icon(icon, color: Colors.grey[700]),
       filled: true,
-      fillColor: Colors.grey[100],
+      fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

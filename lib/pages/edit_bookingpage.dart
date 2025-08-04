@@ -1,6 +1,6 @@
-// [edit_booking_page.dart] - DENGAN LOGIKA MEMBER YANG DISEMPURNAKAN
+// [edit_booking_page.dart] - DENGAN TAMPILAN BARU & LOGIKA MEMBER
 
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,7 +8,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-
 import 'package:intl/intl.dart';
 
 class EditBookingPage extends StatefulWidget {
@@ -40,6 +39,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
   late PaymentStatus _paymentStatus;
   late int _downPaymentAmount;
   final TextEditingController _downPaymentController = TextEditingController();
+  bool _isUpdating = false;
 
   // Image handling
   Uint8List? _webImage;
@@ -50,7 +50,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
   late String lapangan;
   late String bookingDate;
   late String time;
-  late bool isMember; // <-- Status member disimpan di sini
+  late bool isMember;
 
   final int photographerPrice = 200000;
   final int refereePrice = 70000;
@@ -75,8 +75,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
     teamName = firstItem['teamName'] ?? "";
     bookingDate = firstItem['bookingDate'] ?? "";
     time = firstItem['time'] ?? "";
-
-    // [PENTING] Mengambil status member dari data awal booking
     isMember = widget.initialData['isMember'] ?? false;
 
     final statusString =
@@ -97,7 +95,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
     _updateTotalPrice();
   }
 
-  // [LOGIKA KALKULASI HARGA DENGAN DISKON MEMBER]
   int _calculateBaseRentalPrice() {
     if (time.isEmpty || bookingDuration <= 0) return 0;
 
@@ -107,12 +104,9 @@ class _EditBookingPageState extends State<EditBookingPage> {
     for (int i = 0; i < bookingDuration; i++) {
       final int currentHour = startHour + i;
       double priceForThisHour = _getPriceForHour(currentHour).toDouble();
-
-      // [LOGIKA DISKON] Jika user adalah member, harga per jam dikalikan 0.9 (diskon 10%)
       if (isMember) {
         priceForThisHour *= 0.9;
       }
-
       cumulativePrice += priceForThisHour;
     }
     return cumulativePrice.round();
@@ -120,27 +114,17 @@ class _EditBookingPageState extends State<EditBookingPage> {
 
   void _updateTotalPrice() {
     int newTotal = _calculateBaseRentalPrice();
-
-    if (usePhotographer) {
-      newTotal += photographerPrice;
-    }
-    if (useReferee) {
-      newTotal += refereePrice;
-    }
+    if (usePhotographer) newTotal += photographerPrice;
+    if (useReferee) newTotal += refereePrice;
     if (useIceBath) newTotal += iceBathPrice;
-
-    setState(() {
-      totalAmount = newTotal;
-    });
+    setState(() => totalAmount = newTotal);
   }
 
   int _getPriceForHour(int hour) {
     int basePrice = 0;
     if (lapangan == "Lapang Basket A") basePrice = 150000;
     if (lapangan == "Lapang Basket B") basePrice = 75000;
-    if (lapangan == "Lapang Basket 3x3") basePrice = 150000;
     if (lapangan == "Lapang Minisoccer") basePrice = 450000;
-    if (lapangan == "Gokart") basePrice = 100000;
 
     String lapangName = lapangan;
 
@@ -160,20 +144,30 @@ class _EditBookingPageState extends State<EditBookingPage> {
     return basePrice;
   }
 
-  // Fungsi untuk menyimpan perubahan ke Firestore
   Future<void> _updateBooking() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     final dpAmount = int.tryParse(_downPaymentController.text) ?? 0;
     if (_paymentStatus == PaymentStatus.dp &&
         (dpAmount <= 0 || dpAmount >= totalAmount)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Jumlah DP tidak valid!")),
-      );
+          const SnackBar(content: Text("Jumlah DP tidak valid!")));
       return;
     }
+
+    if ((_paymentStatus == PaymentStatus.dp ||
+            _paymentStatus == PaymentStatus.lunas) &&
+        _paymentProofUrl == null &&
+        _webImage == null &&
+        _imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Bukti pembayaran wajib diunggah untuk status DP atau Lunas!'),
+          backgroundColor: Colors.orange));
+      return;
+    }
+
+    setState(() => _isUpdating = true);
 
     try {
       String? newPaymentProofUrl = await _uploadImage();
@@ -214,7 +208,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
         'remainingAmount': finalRemainingAmount,
         'paymentProofUrl': newPaymentProofUrl,
         'updatedAt': FieldValue.serverTimestamp(),
-        'isMember': isMember, // <-- [PENTING] Simpan kembali status member
+        'isMember': isMember,
         'items': [
           {
             ...firstItem,
@@ -227,22 +221,19 @@ class _EditBookingPageState extends State<EditBookingPage> {
         ],
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Booking berhasil diperbarui!'),
-            backgroundColor: Colors.green),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Booking berhasil diperbarui!'),
+          backgroundColor: Colors.green));
       Navigator.of(context).pop();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text("Error memperbarui booking: $e"),
-            backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Error memperbarui booking: $e"),
+          backgroundColor: Colors.red));
+    } finally {
+      setState(() => _isUpdating = false);
     }
   }
 
-  // --- Sisa fungsi helper tidak ada perubahan ---
   Future<String?> _uploadImage() async {
     try {
       if (_imageFile == null && _webImage == null) return _paymentProofUrl;
@@ -281,6 +272,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
   }
 
   Future<void> _deletePaymentProof() async {
+    // Di sini Anda bisa menambahkan logika untuk menghapus file dari Firebase Storage jika diperlukan
     setState(() {
       _imageFile = null;
       _webImage = null;
@@ -292,37 +284,61 @@ class _EditBookingPageState extends State<EditBookingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Booking'),
+        title: const Text('Edit Booking'),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
         elevation: 1,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInfoCard(),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Ubah Data Booking'),
-              _buildEditableFields(),
-              const SizedBox(height: 20),
-              _buildSectionTitle('Status Pembayaran'),
-              _buildPaymentSection(),
-              const SizedBox(height: 20),
-              if (lapangan != "Gokart") ...[
-                _buildSectionTitle('Layanan Tambahan'),
-                _buildAddonServices(),
-                const SizedBox(height: 20),
-              ],
-              _buildPriceDetailsCard(),
-            ],
+      backgroundColor: Colors.grey[200],
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.all(24.0),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.07),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Form(
+                key: _formKey,
+                child: AbsorbPointer(
+                  absorbing: _isUpdating,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInfoCard(),
+                      const SizedBox(height: 24),
+                      _buildSectionTitle('Ubah Data Booking'),
+                      _buildEditableFields(),
+                      const SizedBox(height: 24),
+                      _buildSectionTitle('Status Pembayaran'),
+                      _buildPaymentSection(),
+                      const SizedBox(height: 24),
+                      if (lapangan != "Gokart") ...[
+                        _buildSectionTitle('Layanan Tambahan'),
+                        _buildAddonServices(),
+                        const SizedBox(height: 24),
+                      ],
+                      _buildPriceDetailsCard(),
+                      const Divider(height: 40),
+                      _buildSubmitButton(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -341,8 +357,11 @@ class _EditBookingPageState extends State<EditBookingPage> {
 
   Widget _buildInfoCard() {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      color: Colors.grey.shade100,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade300)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -358,13 +377,11 @@ class _EditBookingPageState extends State<EditBookingPage> {
                 Icons.person_outline, widget.initialData['userName'] ?? 'N/A'),
             _buildInfoRow(
                 Icons.calendar_today,
-                DateFormat('EEEE, dd MMMM yyyy')
+                DateFormat('EEEE, dd MMMM yyyy', 'id_ID')
                     .format(DateTime.parse(bookingDate))),
             _buildInfoRow(Icons.access_time, 'Jam $time'),
-            // [INDIKATOR VISUAL MEMBER]
             if (isMember)
-              _buildInfoRow(Icons.star_border_purple500_outlined,
-                  'Status: Member (Diskon 10%)',
+              _buildInfoRow(Icons.star, 'Status: Member (Diskon 10%)',
                   color: Colors.purple.shade700),
           ],
         ),
@@ -391,8 +408,10 @@ class _EditBookingPageState extends State<EditBookingPage> {
 
   Widget _buildEditableFields() {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade300)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -400,9 +419,8 @@ class _EditBookingPageState extends State<EditBookingPage> {
             TextFormField(
               initialValue: teamName,
               decoration: const InputDecoration(
-                labelText: "Nama Tim / Atas Nama",
-                border: OutlineInputBorder(),
-              ),
+                  labelText: "Nama Tim / Atas Nama",
+                  border: OutlineInputBorder()),
               onChanged: (value) => setState(() => teamName = value),
               validator: (v) =>
                   v == null || v.isEmpty ? 'Nama tim wajib diisi' : null,
@@ -422,7 +440,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
                           _updateTotalPrice();
                         }
                       },
-                      icon: Icon(Icons.remove_circle_outline),
+                      icon: const Icon(Icons.remove_circle_outline),
                     ),
                     Text('$bookingDuration',
                         style: Theme.of(context)
@@ -434,7 +452,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
                         setState(() => bookingDuration++);
                         _updateTotalPrice();
                       },
-                      icon: Icon(Icons.add_circle_outline),
+                      icon: const Icon(Icons.add_circle_outline),
                     ),
                   ],
                 )
@@ -448,8 +466,10 @@ class _EditBookingPageState extends State<EditBookingPage> {
 
   Widget _buildPaymentSection() {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade300)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -484,10 +504,9 @@ class _EditBookingPageState extends State<EditBookingPage> {
                 controller: _downPaymentController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Jumlah DP',
-                  prefixText: 'Rp ',
-                  border: OutlineInputBorder(),
-                ),
+                    labelText: 'Jumlah DP',
+                    prefixText: 'Rp ',
+                    border: OutlineInputBorder()),
                 validator: (v) {
                   if (_paymentStatus != PaymentStatus.dp) return null;
                   final amount = int.tryParse(v ?? '');
@@ -521,7 +540,7 @@ class _EditBookingPageState extends State<EditBookingPage> {
                 _webImage != null)
               IconButton(
                   onPressed: _deletePaymentProof,
-                  icon: Icon(Icons.delete),
+                  icon: const Icon(Icons.delete),
                   color: Colors.red,
                   tooltip: 'Hapus Bukti Bayar'),
           ],
@@ -532,9 +551,10 @@ class _EditBookingPageState extends State<EditBookingPage> {
           child: Container(
             height: 150,
             width: double.infinity,
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               border: Border.all(color: Colors.grey.shade400),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: (_webImage != null)
                 ? Image.memory(_webImage!, fit: BoxFit.cover)
@@ -545,12 +565,16 @@ class _EditBookingPageState extends State<EditBookingPage> {
                             fit: BoxFit.cover,
                             errorBuilder: (c, e, s) =>
                                 const Center(child: Text('Gagal Muat')))
-                        : const Center(
+                        : Center(
                             child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                Icon(Icons.add_a_photo_outlined),
-                                Text('Unggah Bukti')
+                                Icon(Icons.add_a_photo_outlined,
+                                    color: Colors.grey.shade600),
+                                const SizedBox(height: 4),
+                                Text('Unggah Bukti',
+                                    style:
+                                        TextStyle(color: Colors.grey.shade700))
                               ])),
           ),
         )
@@ -560,41 +584,36 @@ class _EditBookingPageState extends State<EditBookingPage> {
 
   Widget _buildAddonServices() {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade300)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Column(
           children: [
             SwitchListTile(
-              title: Text('Photographer'),
-              subtitle: Text(
-                  'Rp ${NumberFormat.simpleCurrency(locale: 'id_ID', decimalDigits: 0).format(photographerPrice)}'),
+              title: const Text('Photographer'),
               value: usePhotographer,
               onChanged: (val) {
                 setState(() => usePhotographer = val);
                 _updateTotalPrice();
               },
-              secondary: Icon(Icons.camera_alt_outlined),
+              secondary: const Icon(Icons.camera_alt_outlined),
             ),
-            const Divider(),
             SwitchListTile(
-              title: Text('Wasit'),
-              subtitle: Text(
-                  'Rp ${NumberFormat.simpleCurrency(locale: 'id_ID', decimalDigits: 0).format(refereePrice)}'),
+              title: const Text('Wasit'),
               value: useReferee,
               onChanged: (val) {
                 setState(() => useReferee = val);
                 _updateTotalPrice();
               },
-              secondary: Icon(Icons.sports_outlined),
+              secondary: const Icon(Icons.sports_outlined),
             ),
-            if (lapangan == "Lapang Minisoccer" && isMember) ...[
-              const Divider(),
+            if (lapangan == "Lapang Minisoccer" ||
+                lapangan == "Lapang Basket A")
               SwitchListTile(
-                title: const Text('Ice Bath (Khusus Member)'),
-                subtitle: Text(
-                    'Rp ${NumberFormat.simpleCurrency(locale: 'id_ID', decimalDigits: 0).format(iceBathPrice)}'),
+                title: const Text('Ice Bath'),
                 value: useIceBath,
                 onChanged: (val) {
                   setState(() => useIceBath = val);
@@ -602,7 +621,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
                 },
                 secondary: const Icon(Icons.ac_unit),
               ),
-            ],
           ],
         ),
       ),
@@ -627,7 +645,6 @@ class _EditBookingPageState extends State<EditBookingPage> {
             if (usePhotographer)
               _buildPriceRow('Photographer', photographerPrice),
             if (useReferee) _buildPriceRow('Wasit', refereePrice),
-            const Divider(height: 20, thickness: 1),
             if (useIceBath) _buildPriceRow('Ice Bath', iceBathPrice),
             const Divider(height: 20, thickness: 1),
             _buildPriceRow('Total Harga', totalAmount, isTotal: true),
@@ -653,43 +670,41 @@ class _EditBookingPageState extends State<EditBookingPage> {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: textStyle),
           Text(
-            NumberFormat.currency(
-                    locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
-                .format(amount),
-            style: textStyle.copyWith(color: color ?? Colors.black),
-          ),
+              NumberFormat.currency(
+                      locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+                  .format(amount),
+              style: textStyle.copyWith(color: color ?? Colors.black)),
         ],
       ),
     );
   }
 
-  Widget _buildBottomBar() {
-    return Container(
-      padding: const EdgeInsets.all(16.0).copyWith(top: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: Offset(0, -2)),
-        ],
-      ),
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
       child: FilledButton(
-        onPressed: _updateBooking,
+        onPressed: _isUpdating ? null : _updateBooking,
         style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
             backgroundColor: Colors.black,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50))),
-        child: const Text('Simpan Perubahan',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        child: _isUpdating
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ))
+            : const Text('Simpan Perubahan',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
   }

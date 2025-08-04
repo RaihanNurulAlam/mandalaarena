@@ -118,73 +118,6 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     setState(() {});
   }
 
-  // Widget Info Section yang disesuaikan untuk menampilkan teks diskon
-  Widget _buildInfoSection(BuildContext context) {
-    return Container(
-      transform: Matrix4.translationValues(0.0, -20.0, 0.0),
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            selectedLapang!.name.toString(),
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Text(
-                _getPriceRangeString(),
-                style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black),
-              ),
-              const Text(
-                " / jam",
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey),
-              ),
-            ],
-          ),
-          if (_isDiscountApplicable()) // Tampilkan teks diskon jika berlaku
-            Padding(
-              padding: const EdgeInsets.only(top: 6.0),
-              child: Text(
-                "Harga belum termasuk diskon member 10%",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.green[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          const Divider(height: 30, thickness: 1),
-          const Text(
-            "Deskripsi",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            selectedLapang!.description.toString(),
-            style:
-                TextStyle(fontSize: 15, color: Colors.grey[700], height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =======================================================================
-  // Sisa kode di bawah ini mayoritas tidak berubah
-  // =======================================================================
-
   int _getPriceForHour(int hour) {
     if (selectedLapang == null || selectedLapang!.price == null) return 0;
 
@@ -517,14 +450,17 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
     );
   }
 
+  // --- PERUBAHAN TAMPILAN DIMULAI DI SINI ---
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<Cart>();
 
+    // Menampilkan loading indicator jika data lapang belum siap
     if (selectedLapang == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Booking Lapang Sparing')),
-        body: const Center(child: CircularProgressIndicator()),
+        body:
+            const Center(child: CircularProgressIndicator(color: Colors.black)),
       );
     }
 
@@ -532,7 +468,14 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       backgroundColor: Colors.grey.shade100,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, cart),
-      body: _buildContent(context, cart),
+      // Body dibungkus dengan Center dan ConstrainedBox agar
+      // tampilannya berada di tengah pada layar lebar.
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: _buildContent(context, cart),
+        ),
+      ),
       bottomNavigationBar: _buildBottomBar(cart),
     );
   }
@@ -638,6 +581,68 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
                 Colors.black.withOpacity(0.3), BlendMode.darken),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(BuildContext context) {
+    return Container(
+      transform: Matrix4.translationValues(0.0, -20.0, 0.0),
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            selectedLapang!.name.toString(),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                _getPriceRangeString(),
+                style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black),
+              ),
+              const Text(
+                " / jam",
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.grey),
+              ),
+            ],
+          ),
+          if (_isDiscountApplicable()) // Tampilkan teks diskon jika berlaku
+            Padding(
+              padding: const EdgeInsets.only(top: 6.0),
+              child: Text(
+                "Harga belum termasuk diskon member 10%",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.green[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          const Divider(height: 30, thickness: 1),
+          const Text(
+            "Deskripsi",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            selectedLapang!.description.toString(),
+            style:
+                TextStyle(fontSize: 15, color: Colors.grey[700], height: 1.5),
+          ),
+        ],
       ),
     );
   }
@@ -953,50 +958,58 @@ class _SparringBookingPageState extends State<SparringBookingPage> {
       height: 90,
       color: Colors.white,
       elevation: 8,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Total Bayar",
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+      // Konten BottomAppBar juga dibungkus agar berada di tengah
+      // dan sejajar dengan konten utama di layar lebar.
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Total Bayar",
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                      Text(
+                        NumberFormat.currency(
+                                locale: 'id', symbol: 'Rp ', decimalDigits: 0)
+                            .format(totalPrice),
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  Text(
-                    NumberFormat.currency(
-                            locale: 'id', symbol: 'Rp ', decimalDigits: 0)
-                        .format(totalPrice),
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            ElevatedButton(
-              onPressed: addToCart,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
                 ),
-              ),
-              child: const Text(
-                "Booking Sekarang",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: addToCart,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    "Booking Sekarang",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

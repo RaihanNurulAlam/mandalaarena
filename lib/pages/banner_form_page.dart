@@ -1,8 +1,7 @@
-// ignore_for_file: use_build_context_synchronously, prefer_const_constructors
+// ignore_for_file: use_build_context_synchronously, deprecated_member_use
 
-import 'dart:io'; // Hanya untuk mobile (Android/iOS)
-import 'package:flutter/foundation.dart'
-    show kIsWeb; // Untuk mendeteksi platform Web
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -49,6 +48,7 @@ class _BannerFormPageState extends State<BannerFormPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Gagal mengambil gambar: $e")),
       );
@@ -61,17 +61,14 @@ class _BannerFormPageState extends State<BannerFormPage> {
           'banners/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
       Reference ref = FirebaseStorage.instance.ref().child(fileName);
 
-      // Logika upload berbeda untuk Web dan Mobile
       if (kIsWeb) {
-        // 🌐 Untuk Web: Upload menggunakan byte data
         await ref.putData(await image.readAsBytes());
       } else {
-        // 📱 Untuk Mobile: Upload menggunakan path file
         await ref.putFile(File(image.path));
       }
-
       return await ref.getDownloadURL();
     } catch (e) {
+      if (!mounted) return null;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Gagal mengunggah gambar: $e")),
       );
@@ -80,14 +77,10 @@ class _BannerFormPageState extends State<BannerFormPage> {
   }
 
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
     // Validasi gambar: harus ada gambar jika membuat banner baru
     if (_imageFile == null && widget.banner == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Silakan pilih gambar untuk banner.")),
+        const SnackBar(content: Text("Silakan pilih gambar untuk banner.")),
       );
       return;
     }
@@ -96,12 +89,11 @@ class _BannerFormPageState extends State<BannerFormPage> {
 
     String? imageUrl = _networkImageUrl;
 
-    // Jika ada file gambar baru yang dipilih, unggah dulu
     if (_imageFile != null) {
       imageUrl = await _uploadImage(_imageFile!);
       if (imageUrl == null) {
         setState(() => _isLoading = false);
-        return; // Proses berhenti jika upload gagal
+        return;
       }
     }
 
@@ -114,131 +106,192 @@ class _BannerFormPageState extends State<BannerFormPage> {
       };
 
       if (widget.banner == null) {
-        // Buat banner baru
         await FirebaseFirestore.instance.collection('banners').add(data);
       } else {
-        // Update banner yang ada
         await FirebaseFirestore.instance
             .collection('banners')
             .doc(widget.banner!.id)
             .update(data);
       }
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Banner berhasil disimpan!")),
+        const SnackBar(content: Text("Banner berhasil disimpan!")),
       );
       Navigator.of(context).pop();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Gagal menyimpan data banner: $e")),
       );
     } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Widget _buildImagePreview() {
-    if (_imageFile != null) {
-      // Tampilkan gambar baru yang dipilih
-      if (kIsWeb) {
-        return Image.network(
-          _imageFile!.path,
-          height: 200,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        );
-      } else {
-        return Image.file(
-          File(_imageFile!.path),
-          height: 200,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        );
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
-    } else if (_networkImageUrl != null) {
-      // Tampilkan gambar lama dari internet (saat edit)
-      return Image.network(
-        _networkImageUrl!,
-        height: 200,
-        width: double.infinity,
-        fit: BoxFit.cover,
-      );
-    } else {
-      // Tampilan placeholder jika tidak ada gambar
-      return Container(
-        height: 200,
-        width: double.infinity,
-        color: Colors.grey[300],
-        child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title:
-            Text(widget.banner == null ? 'Tambah Banner Baru' : 'Edit Banner'),
+    bool isEditing = widget.banner != null;
+
+    final inputDecoration = InputDecoration(
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade400),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildImagePreview(),
-              SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _pickImage,
-                icon: Icon(Icons.photo_library),
-                label: Text('Pilih Gambar'),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade400),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.black, width: 2),
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: Text(isEditing ? 'Edit Banner' : 'Tambah Banner Baru'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+      ),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 5,
+                    blurRadius: 15,
+                  )
+                ],
               ),
-              SizedBox(height: 20),
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  labelText: 'Judul Banner',
-                  border: OutlineInputBorder(),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- Komponen Gambar Terpadu ---
+                    GestureDetector(
+                      onTap: _isLoading ? null : _pickImage,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: double.infinity,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: _buildImagePreview(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // --- Judul (Opsional) ---
+                    const Text("Judul (Opsional)",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: inputDecoration.copyWith(
+                          hintText: 'Masukkan judul banner...'),
+                      // Validator dihapus agar opsional
+                    ),
+                    const SizedBox(height: 24),
+
+                    // --- Deskripsi (Opsional) ---
+                    const Text("Deskripsi (Opsional)",
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: inputDecoration.copyWith(
+                          hintText: 'Masukkan deskripsi singkat...'),
+                      maxLines: 3,
+                      // Validator dihapus agar opsional
+                    ),
+                    const SizedBox(height: 30),
+
+                    // --- Tombol Submit ---
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _submitForm,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 3),
+                              )
+                            : Text(
+                                isEditing
+                                    ? 'Simpan Perubahan'
+                                    : 'Tambah Banner',
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
                 ),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Judul tidak boleh kosong'
-                    : null,
               ),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Deskripsi',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Deskripsi tidak boleh kosong'
-                    : null,
-              ),
-              SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _submitForm,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                ),
-                child: _isLoading
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : Text('Simpan Banner'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildImagePreview() {
+    Widget placeholder = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.add_photo_alternate_outlined,
+            size: 50, color: Colors.grey[600]),
+        const SizedBox(height: 12),
+        Text("Pilih Gambar Banner",
+            style: TextStyle(color: Colors.grey[700], fontSize: 16)),
+      ],
+    );
+
+    if (_imageFile != null) {
+      if (kIsWeb) {
+        return Image.network(_imageFile!.path,
+            fit: BoxFit.cover, width: double.infinity);
+      } else {
+        return Image.file(File(_imageFile!.path),
+            fit: BoxFit.cover, width: double.infinity);
+      }
+    } else if (_networkImageUrl != null) {
+      return Image.network(_networkImageUrl!,
+          fit: BoxFit.cover, width: double.infinity);
+    } else {
+      return placeholder;
+    }
   }
 }

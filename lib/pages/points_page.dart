@@ -10,11 +10,9 @@ class PointsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Kita tetap butuh userId dari provider untuk tahu dokumen mana yang harus didengarkan
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final userId = userProvider.userId;
 
-    // Jika karena suatu hal userId kosong, tampilkan halaman kosong untuk mencegah error
     if (userId.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Poin Anda')),
@@ -25,172 +23,158 @@ class PointsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text('Poin Anda'),
-        ),
+        title: const Text('Poin Anda'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TransactionHistoryPage(),
-                  ),
-                );
-              },
-            ),
+          IconButton(
+            tooltip: 'Riwayat Poin',
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TransactionHistoryPage(),
+                ),
+              );
+            },
           ),
         ],
       ),
-      // StreamBuilder akan mendengarkan perubahan pada dokumen user secara real-time
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
             .doc(userId)
             .snapshots(),
         builder: (context, snapshot) {
-          // Tampilkan loading indicator saat data sedang diambil
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          // Tampilkan pesan error jika terjadi masalah
           if (snapshot.hasError) {
             return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
           }
-          // Tampilkan pesan jika user tidak ditemukan di database
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return const Center(child: Text('Data poin tidak ditemukan.'));
           }
 
-          // Ambil data poin terbaru langsung dari snapshot
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final points = data['points'] ?? 0;
 
-          // Bangun UI dengan data poin yang sudah real-time
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Total Poin: $points', // Gunakan data poin dari snapshot
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 20),
-                      // Banner Penukaran 10 Poin
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Card(
-                          elevation: 4,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image:
-                                    const AssetImage('assets/minisoccer.jpg'),
-                                fit: BoxFit.cover,
-                                colorFilter: ColorFilter.mode(
-                                  Colors.black.withOpacity(0.5),
-                                  BlendMode.darken,
-                                ),
-                              ),
-                            ),
-                            child: ListTile(
-                              title: const Text(
-                                'Tukar 10 Poin - Gratis 1 Jam',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              trailing: ElevatedButton.icon(
-                                icon: const Icon(Icons.card_giftcard,
-                                    color: Colors.white),
-                                label: const Text('Tukar',
-                                    style: TextStyle(color: Colors.white)),
-                                // Logika penukaran poin menggunakan data real-time
-                                onPressed: points >= 10
-                                    ? () => showRedeemConfirmationDialog(
-                                          context,
-                                          userId,
-                                          10,
-                                          'Gratis 1 Jam',
-                                          'assets/minisoccer.jpg',
-                                        )
-                                    : () =>
-                                        showInsufficientPointsDialog(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: points >= 10
-                                      ? Colors.blue.withOpacity(0.8)
-                                      : Colors.grey,
-                                ),
-                              ),
-                            ),
-                          ),
+          // Menggunakan Align dan ConstrainedBox untuk layout responsif
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints:
+                  const BoxConstraints(maxWidth: 1000), // Lebar maksimum konten
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    // --- Bagian Total Poin ---
+                    Text(
+                      'Total Poin: $points',
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // --- Bagian Kupon Penukaran ---
+                    // Menggunakan Wrap agar responsif
+                    Wrap(
+                      spacing: 16.0,
+                      runSpacing: 16.0,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        // Kupon 1 (Tukar 10 Poin)
+                        _buildCouponCard(
+                          context: context,
+                          userId: userId,
+                          pointsCost: 10,
+                          userPoints: points,
+                          title: 'Tukar 10 Poin - Gratis 1 Jam',
+                          assetImage: 'assets/minisoccer.jpg',
+                          reward: 'Gratis 1 Jam',
+                          buttonColor: Colors.blue,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Banner Penukaran 3 Poin
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Card(
-                          elevation: 4,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              image: DecorationImage(
-                                image: const AssetImage('assets/coffee.jpg'),
-                                fit: BoxFit.cover,
-                                colorFilter: ColorFilter.mode(
-                                  Colors.black.withOpacity(0.5),
-                                  BlendMode.darken,
-                                ),
-                              ),
-                            ),
-                            child: ListTile(
-                              title: const Text(
-                                'Tukar 3 Poin - Voucher Kopi',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              trailing: ElevatedButton.icon(
-                                icon: const Icon(Icons.card_giftcard,
-                                    color: Colors.white),
-                                label: const Text('Tukar',
-                                    style: TextStyle(color: Colors.white)),
-                                onPressed: points >= 3
-                                    ? () => showRedeemConfirmationDialog(
-                                        context,
-                                        userId,
-                                        3,
-                                        'Voucher Kopi',
-                                        'assets/coffee.jpg')
-                                    : () =>
-                                        showInsufficientPointsDialog(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: points >= 3
-                                      ? Colors.orange.withOpacity(0.8)
-                                      : Colors.grey,
-                                ),
-                              ),
-                            ),
-                          ),
+
+                        // Kupon 2 (Tukar 3 Poin)
+                        _buildCouponCard(
+                          context: context,
+                          userId: userId,
+                          pointsCost: 3,
+                          userPoints: points,
+                          title: 'Tukar 3 Poin - Voucher Kopi',
+                          assetImage: 'assets/coffee.jpg',
+                          reward: 'Voucher Kopi',
+                          buttonColor: Colors.orange,
                         ),
-                      ),
-                    ],
-                  ),
+                        // Tambahkan kupon lain di sini jika perlu
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  // Widget helper untuk membuat kartu kupon, agar kode lebih rapi
+  Widget _buildCouponCard({
+    required BuildContext context,
+    required String userId,
+    required int pointsCost,
+    required int userPoints,
+    required String title,
+    required String assetImage,
+    required String reward,
+    required Color buttonColor,
+  }) {
+    final bool canRedeem = userPoints >= pointsCost;
+
+    return SizedBox(
+      width: 450, // Lebar tetap untuk setiap kartu
+      child: Card(
+        elevation: 4,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage(assetImage),
+              fit: BoxFit.cover,
+              colorFilter: ColorFilter.mode(
+                Colors.black.withOpacity(0.5),
+                BlendMode.darken,
+              ),
+            ),
+          ),
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            title: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            trailing: ElevatedButton(
+              onPressed: canRedeem
+                  ? () => showRedeemConfirmationDialog(
+                      context, userId, pointsCost, reward, assetImage)
+                  : () => showInsufficientPointsDialog(context),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      canRedeem ? buttonColor.withOpacity(0.8) : Colors.grey,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30))),
+              child: const Text('Tukar'),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -225,58 +209,62 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
       appBar: AppBar(
         title: const Text('Riwayat Transaksi Poin'),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _transactionsStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _transactionsStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(child: Text('Belum ada transaksi poin.'));
+              }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('Belum ada transaksi poin.'));
-          }
-
-          var transactions = snapshot.data!.docs;
-          return ListView.builder(
-            itemCount: transactions.length,
-            itemBuilder: (context, index) {
-              var data = transactions[index].data() as Map<String, dynamic>;
-              var pointsValue = data['points'] as num;
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                child: ListTile(
-                  leading: data['imageUrl'] != null
-                      ? Image.asset(
-                          data['imageUrl'],
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.image_not_supported),
-                        )
-                      : const Icon(Icons.card_giftcard),
-                  title: Text(data['description']),
-                  subtitle: Text(
-                    data['timestamp'] != null
-                        ? _formatDate(data['timestamp'].toDate())
-                        : 'No date',
-                  ),
-                  trailing: Text(
-                    '${pointsValue > 0 ? '+' : ''}$pointsValue Poin',
-                    style: TextStyle(
-                      color: pointsValue > 0 ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold,
+              var transactions = snapshot.data!.docs;
+              return ListView.builder(
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  var data = transactions[index].data() as Map<String, dynamic>;
+                  var pointsValue = data['points'] as num;
+                  return Card(
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    child: ListTile(
+                      leading: data['imageUrl'] != null
+                          ? Image.asset(
+                              data['imageUrl'],
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.image_not_supported),
+                            )
+                          : const Icon(Icons.card_giftcard),
+                      title: Text(data['description']),
+                      subtitle: Text(
+                        data['timestamp'] != null
+                            ? _formatDate(data['timestamp'].toDate())
+                            : 'No date',
+                      ),
+                      trailing: Text(
+                        '${pointsValue > 0 ? '+' : ''}$pointsValue Poin',
+                        style: TextStyle(
+                          color: pointsValue > 0 ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -285,6 +273,8 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
     return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
+
+// --- FUNGSI HELPER (DIALOG DAN LOGIKA PENUKARAN) TIDAK DIUBAH ---
 
 Future<void> redeemPoints(BuildContext context, String userId, int cost,
     String reward, String imageUrl) async {
@@ -307,7 +297,6 @@ Future<void> redeemPoints(BuildContext context, String userId, int cost,
 
       transaction.update(userRef, {'points': newPoints});
 
-      // Tetap update provider agar halaman lain yang tidak pakai StreamBuilder ikut update
       userProvider.updateUserPoints(newPoints);
 
       final transactionRef =
@@ -325,7 +314,7 @@ Future<void> redeemPoints(BuildContext context, String userId, int cost,
     });
 
     showSuccessDialog(context, () {
-      Navigator.of(context).pop(); // Cukup tutup dialog sukses
+      Navigator.of(context).pop();
     });
   } catch (e) {
     print('Terjadi kesalahan saat menukarkan poin: $e');
@@ -357,11 +346,11 @@ void showInsufficientPointsDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: Row(
+      title: const Row(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-          const SizedBox(width: 10),
-          const Text('Poin Tidak Cukup'),
+          Icon(Icons.warning_amber_rounded, color: Colors.orange),
+          SizedBox(width: 10),
+          Text('Poin Tidak Cukup'),
         ],
       ),
       content: const Text(
@@ -389,22 +378,17 @@ void showRedeemConfirmationDialog(BuildContext context, String userId, int cost,
       content:
           Text('Apakah Anda yakin ingin menukar $cost poin untuk $reward?'),
       actions: [
-        ElevatedButton(
+        TextButton(
           onPressed: () => Navigator.pop(context),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
-            foregroundColor: Colors.white,
-          ),
           child: const Text('Batal'),
         ),
-        TextButton(
+        FilledButton(
           onPressed: () async {
             Navigator.pop(context);
             await redeemPoints(context, userId, cost, reward, imageUrl);
           },
-          style: TextButton.styleFrom(
+          style: FilledButton.styleFrom(
             backgroundColor: Colors.black,
-            foregroundColor: Colors.white,
           ),
           child: const Text('Ya, Tukar'),
         ),
@@ -417,11 +401,11 @@ void showSuccessDialog(BuildContext context, VoidCallback onClose) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
-      title: Row(
+      title: const Row(
         children: [
-          const Icon(Icons.check_circle, color: Colors.green),
-          const SizedBox(width: 10),
-          const Text('Penukaran Berhasil'),
+          Icon(Icons.check_circle, color: Colors.green),
+          SizedBox(width: 10),
+          Text('Penukaran Berhasil'),
         ],
       ),
       content: const Text('Selamat! Anda berhasil menukarkan poin.'),

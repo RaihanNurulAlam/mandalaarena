@@ -9,6 +9,7 @@ class ArticleDetailPage extends StatelessWidget {
   final List<Widget> content;
 
   const ArticleDetailPage({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.imageUrl,
@@ -18,111 +19,118 @@ class ArticleDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100], // Background yang lembut
       appBar: AppBar(
-        title: Text(title),
+        backgroundColor: Colors.white,
+        elevation: 1,
+        foregroundColor: Colors.black,
+        title: Text(
+          "Detail Artikel",
+          style: TextStyle(fontSize: 18),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            imageUrl.isNotEmpty
-                ? Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 200,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 200,
-                        color: Colors.grey[200],
-                        child: Icon(Icons.broken_image,
-                            size: 50, color: Colors.grey),
-                      );
-                    },
-                  )
-                : Container(
-                    height: 200,
-                    color: Colors.grey[200],
-                    child: Icon(Icons.image, size: 50, color: Colors.grey),
-                  ),
-            const SizedBox(height: 16),
-            // Judul artikel dengan alignment justify
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: RichText(
-                textAlign: TextAlign.justify,
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: title,
-                    ),
-                  ],
-                ),
+      // PERUBAHAN 1: Layout dibuat terpusat dengan lebar maksimal
+      body: Center(
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 800), // Lebar maksimal konten
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
               ),
-            ),
-            const SizedBox(height: 8),
-            // Subjudul artikel dengan alignment justify
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: RichText(
-                textAlign: TextAlign.justify,
-                text: TextSpan(
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: subtitle,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Konten artikel dengan teks justify
-            ...content.map((widget) {
-              if (widget is Text) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: RichText(
-                    textAlign: TextAlign.justify,
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.5,
-                        color: Colors.black,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- Gambar Sampul ---
+                  if (imageUrl.isNotEmpty)
+                    ClipRRect(
+                      // PERUBAHAN 2: Membuat sudut gambar melengkung
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height:
+                            350, // Gambar dibuat lebih besar agar lebih menarik
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 350,
+                            color: Colors.grey[200],
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 350,
+                            color: Colors.grey[200],
+                            child: Icon(Icons.broken_image,
+                                size: 50, color: Colors.grey[400]),
+                          );
+                        },
                       ),
-                      children: [
-                        TextSpan(
-                          text: widget.data,
-                        ),
-                      ],
+                    ),
+                  SizedBox(height: 24),
+
+                  // --- Judul Artikel ---
+                  // PERUBAHAN 3: Menggunakan Text biasa dengan style yang jelas
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      height: 1.3,
                     ),
                   ),
-                );
-              }
-              return widget;
-            }).toList(),
-          ],
+                  SizedBox(height: 12),
+
+                  // --- Subjudul Artikel ---
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.grey.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+                  Divider(height: 48, thickness: 0.5),
+
+                  // --- Konten Artikel ---
+                  // PERUBAHAN 4: Menggunakan Column untuk konten dan mengubah perataan teks
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: content.map((widget) {
+                      if (widget is Text) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Text(
+                            widget.data ?? '',
+                            // PERUBAHAN 5: Rata kiri lebih mudah dibaca
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              fontSize: 17,
+                              height: 1.7, // Jarak antar baris lebih besar
+                              color: Colors.grey.shade900,
+                            ),
+                          ),
+                        );
+                      }
+                      // Jika ada widget selain teks (misal: gambar di tengah artikel)
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: widget,
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

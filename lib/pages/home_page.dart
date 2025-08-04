@@ -151,8 +151,7 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (context) => const PointsPage()),
+                          MaterialPageRoute(builder: (context) => PointsPage()),
                         );
                       },
                       icon: const Icon(Icons.star,

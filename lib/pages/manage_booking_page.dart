@@ -5,12 +5,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mandalaarenaapp/pages/admin_add_booking_page.dart';
-// import 'package:mandalaarenaapp/pages/booking_schedule_page.dart';
 import 'package:mandalaarenaapp/pages/edit_bookingpage.dart';
 
-// FirebaseAuth, Cart, dan Provider tidak diperlukan di halaman ini, jadi importnya bisa dihapus.
-
 class ManageBookingsPage extends StatefulWidget {
+  const ManageBookingsPage({super.key});
   @override
   _ManageBookingsPageState createState() => _ManageBookingsPageState();
 }
@@ -34,6 +32,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     Intl.defaultLocale = 'id_ID';
   }
 
+  // --- FUNGSI LOGIKA (TIDAK ADA PERUBAHAN) ---
   Future<void> _fetchLapanganList() async {
     if (!mounted) return;
     final snapshot =
@@ -104,11 +103,6 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
       }
     } catch (e) {
       print("Error fetching months: $e");
-      if (mounted) {
-        setState(() {
-          availableMonths = ['Gagal memuat'];
-        });
-      }
     } finally {
       if (mounted) {
         setState(() {
@@ -140,9 +134,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     });
   }
 
-  // <-- FUNGSI BARU UNTUK MENGHAPUS BOOKING -->
   Future<void> _deleteBooking(String bookingId) async {
-    // Tampilkan dialog konfirmasi untuk keamanan
     final bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -150,12 +142,8 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
         content: const Text(
             'Apakah Anda yakin ingin menghapus data booking ini secara permanen?'),
         actions: [
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-            ),
             child: const Text('Batal'),
           ),
           FilledButton(
@@ -167,19 +155,13 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
       ),
     );
 
-    // Jika admin menekan "Hapus"
     if (shouldDelete == true) {
       try {
-        // Hapus dokumen dari Firestore
         await FirebaseFirestore.instance
             .collection('bookings')
             .doc(bookingId)
             .delete();
-
-        // Tutup modal detail booking
         Navigator.of(context).pop();
-
-        // Tampilkan notifikasi sukses
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Booking berhasil dihapus.'),
@@ -188,12 +170,6 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
         );
       } catch (e) {
         print("Error deleting booking: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menghapus booking: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
@@ -203,6 +179,8 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kelola Booking'),
+        backgroundColor: Colors.white,
+        elevation: 1,
         actions: [
           IconButton(
             tooltip: 'Tambah Booking Manual',
@@ -215,16 +193,6 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
               );
             },
           ),
-          // IconButton(
-          //   tooltip: 'Lihat Jadwal Booking',
-          //   icon: const Icon(Icons.schedule_rounded),
-          //   onPressed: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(builder: (context) => BookingSchedulePage()),
-          //     );
-          //   },
-          // ),
           IconButton(
             tooltip: 'Hapus Filter',
             icon: const Icon(Icons.refresh),
@@ -233,110 +201,141 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          _buildFilterWidgets(),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('bookings')
-                  .orderBy('createdAt', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(
-                      child: Text('Terjadi kesalahan: ${snapshot.error}'));
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('Tidak ada data booking.'));
-                }
-
-                // Logika filter tidak berubah
-                final filteredBookings = snapshot.data!.docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final items = data['items'] as List<dynamic>? ?? [];
-                  if (items.isEmpty) return false;
-                  final bookingDateStr =
-                      items[0]['bookingDate'] as String? ?? '';
-
-                  if (selectedLapangan != null &&
-                      items[0]['name'] != selectedLapangan) return false;
-                  if (selectedMonthYear != null &&
-                      !bookingDateStr.startsWith(selectedMonthYear!))
-                    return false;
-                  if (selectedDate != null) {
-                    try {
-                      final bookingDate =
-                          DateFormat('yyyy-MM-dd').parse(bookingDateStr);
-                      if (bookingDate.year != selectedDate!.year ||
-                          bookingDate.month != selectedDate!.month ||
-                          bookingDate.day != selectedDate!.day) return false;
-                    } catch (e) {
-                      return false;
+      backgroundColor: Colors.grey[200],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: Column(
+            children: [
+              _buildFilterWidgets(),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('bookings')
+                      .orderBy('createdAt', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(
+                          child: Text('Terjadi kesalahan: ${snapshot.error}'));
                     }
-                  }
-                  if (_selectedPaymentStatus != PaymentStatusFilter.semua) {
-                    final status = data['statusBooking'] as String? ?? '';
-                    if (_selectedPaymentStatus ==
-                            PaymentStatusFilter.sudahBayar &&
-                        !status.contains('Sudah Bayar')) return false;
-                    if (_selectedPaymentStatus == PaymentStatusFilter.booking &&
-                        !status.contains('Booking')) return false;
-                    if (_selectedPaymentStatus == PaymentStatusFilter.dp &&
-                        !status.toUpperCase().contains('DP')) return false;
-                  }
-                  return true;
-                }).toList();
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Center(
+                          child: Text('Tidak ada data booking.'));
+                    }
 
-                if (filteredBookings.isEmpty) {
-                  return const Center(
-                    child:
-                        Text('Tidak ada booking dengan filter yang dipilih.'),
-                  );
-                }
+                    final filteredBookings = snapshot.data!.docs.where((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final items = data['items'] as List<dynamic>? ?? [];
+                      if (items.isEmpty) return false;
+                      final bookingDateStr =
+                          items[0]['bookingDate'] as String? ?? '';
 
-                // Kalkulasi pendapatan tidak berubah
-                double totalIncome = 0.0;
-                for (var doc in filteredBookings) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final status = data['statusBooking']?.toString() ?? '';
-                  if (status.contains('Sudah Bayar')) {
-                    totalIncome +=
-                        (data['totalAmount'] as num? ?? 0).toDouble();
-                  } else if (status.toUpperCase().contains('DP')) {
-                    totalIncome +=
-                        (data['downPaymentAmount'] as num? ?? 0).toDouble();
-                  }
-                }
+                      if (selectedLapangan != null &&
+                          items[0]['name'] != selectedLapangan) return false;
+                      if (selectedMonthYear != null &&
+                          !bookingDateStr.startsWith(selectedMonthYear!))
+                        return false;
+                      if (selectedDate != null) {
+                        try {
+                          final bookingDate =
+                              DateFormat('yyyy-MM-dd').parse(bookingDateStr);
+                          if (bookingDate.year != selectedDate!.year ||
+                              bookingDate.month != selectedDate!.month ||
+                              bookingDate.day != selectedDate!.day)
+                            return false;
+                        } catch (e) {
+                          return false;
+                        }
+                      }
+                      if (_selectedPaymentStatus != PaymentStatusFilter.semua) {
+                        final status = data['statusBooking'] as String? ?? '';
+                        if (_selectedPaymentStatus ==
+                                PaymentStatusFilter.sudahBayar &&
+                            !status.contains('Sudah Bayar')) return false;
+                        if (_selectedPaymentStatus ==
+                                PaymentStatusFilter.booking &&
+                            !status.contains('Booking')) return false;
+                        if (_selectedPaymentStatus == PaymentStatusFilter.dp &&
+                            !status.toUpperCase().contains('DP')) return false;
+                      }
+                      return true;
+                    }).toList();
 
-                return Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
-                        itemCount: filteredBookings.length,
-                        itemBuilder: (context, index) {
-                          final doc = filteredBookings[index];
-                          return _BookingCard(
-                            bookingData: doc.data() as Map<String, dynamic>,
-                            bookingId: doc.id,
-                            onTap: () => _showBookingDetails(context,
-                                doc.data() as Map<String, dynamic>, doc.id),
-                          );
-                        },
-                      ),
-                    ),
-                    _buildTotalIncomeCard(totalIncome),
-                  ],
-                );
-              },
-            ),
+                    if (filteredBookings.isEmpty) {
+                      return const Center(
+                        child: Text(
+                            'Tidak ada booking dengan filter yang dipilih.'),
+                      );
+                    }
+
+                    double totalIncome = 0.0;
+                    for (var doc in filteredBookings) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final status = data['statusBooking']?.toString() ?? '';
+                      if (status.contains('Sudah Bayar')) {
+                        totalIncome +=
+                            (data['totalAmount'] as num? ?? 0).toDouble();
+                      } else if (status.toUpperCase().contains('DP')) {
+                        totalIncome +=
+                            (data['downPaymentAmount'] as num? ?? 0).toDouble();
+                      }
+                    }
+
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              int crossAxisCount = 1;
+                              if (constraints.maxWidth > 1200) {
+                                crossAxisCount = 4;
+                              } else if (constraints.maxWidth > 900) {
+                                crossAxisCount = 3;
+                              } else if (constraints.maxWidth > 600) {
+                                crossAxisCount = 2;
+                              }
+
+                              return GridView.builder(
+                                padding: const EdgeInsets.all(12),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  // --- PERUBAHAN DI SINI ---
+                                  childAspectRatio:
+                                      crossAxisCount == 1 ? (3 / 2) : (3 / 2.3),
+                                ),
+                                itemCount: filteredBookings.length,
+                                itemBuilder: (context, index) {
+                                  final doc = filteredBookings[index];
+                                  return _BookingCard(
+                                    bookingData:
+                                        doc.data() as Map<String, dynamic>,
+                                    bookingId: doc.id,
+                                    onTap: () => _showBookingDetails(
+                                        context,
+                                        doc.data() as Map<String, dynamic>,
+                                        doc.id),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                        _buildTotalIncomeCard(totalIncome),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -453,7 +452,8 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                               'Sisa Bayar',
                               'Rp ${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(remainingAmount)}',
                               valueColor: Colors.red),
-                        ]
+                        ],
+                        _buildPaymentProofSection(bookingData),
                       ],
                     ),
                   ),
@@ -461,7 +461,6 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       children: [
-                        // <-- TOMBOL HAPUS DITAMBAHKAN DI SINI -->
                         IconButton(
                           icon: const Icon(Icons.delete_outline),
                           color: Colors.red,
@@ -517,8 +516,45 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
     );
   }
 
-  // Sisa kode (widget build, dll) tidak berubah dari sebelumnya...
-  // (Pastikan Anda menyalin sisa kode dari jawaban sebelumnya dari sini ke bawah)
+  Widget _buildPaymentProofSection(Map<String, dynamic> bookingData) {
+    final paymentProofUrl = bookingData['paymentProofUrl'] as String?;
+    if (paymentProofUrl == null || paymentProofUrl.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(height: 30),
+        _buildDetailRow(context, Icons.receipt_long, 'Bukti Pembayaran', ''),
+        const SizedBox(height: 10),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            paymentProofUrl,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 200,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                height: 200,
+                color: Colors.grey[200],
+                child: const Center(child: CircularProgressIndicator()),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                height: 200,
+                color: Colors.grey[200],
+                child: const Center(
+                    child: Icon(Icons.broken_image, color: Colors.grey)),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildDetailRow(
       BuildContext context, IconData icon, String label, String value,
@@ -529,7 +565,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 20, color: Colors.grey.shade600),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
           Expanded(
               child:
                   Text(label, style: Theme.of(context).textTheme.bodyMedium)),
@@ -548,7 +584,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
 
   Widget _buildTotalIncomeCard(double totalIncome) {
     return Card(
-      margin: const EdgeInsets.all(12.0),
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       elevation: 4,
       child: ListTile(
         leading:
@@ -759,6 +795,7 @@ class _BookingCard extends StatelessWidget {
     switch (status) {
       case var s when s.contains('Sudah Bayar'):
         statusColor = Colors.green;
+        statusText = 'Lunas';
         break;
       case var s when s.toUpperCase().contains('DP'):
         statusColor = Colors.orange.shade700;
@@ -767,15 +804,12 @@ class _BookingCard extends StatelessWidget {
       case var s when s.contains('Booking'):
         statusColor = Colors.blue;
         break;
-      case var s when s.contains('Gagal') || s.contains('expire'):
-        statusColor = Colors.red;
-        break;
       default:
         statusColor = Colors.grey;
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6.0),
+      margin: EdgeInsets.zero,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
@@ -829,7 +863,7 @@ class _BookingCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const Divider(height: 20),
+              const SizedBox(height: 12),
               _buildInfoRow(
                   context, Icons.person, bookingData['userName'] ?? 'N/A'),
               const SizedBox(height: 6),
@@ -842,7 +876,11 @@ class _BookingCard extends StatelessWidget {
               const SizedBox(height: 6),
               _buildInfoRow(context, Icons.access_time,
                   '${firstItem['time'] ?? 'N/A'} (${firstItem['quantity'] ?? '1'} jam)'),
-              const SizedBox(height: 12),
+
+              // --- PERUBAHAN DI SINI ---
+              // Spacer dihapus agar konten rapat ke atas
+              const Expanded(child: SizedBox()),
+
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(

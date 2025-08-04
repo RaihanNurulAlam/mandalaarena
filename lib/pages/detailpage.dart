@@ -512,6 +512,7 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  // --- PERUBAHAN DIMULAI DI SINI ---
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<Cart>();
@@ -520,10 +521,18 @@ class _DetailPageState extends State<DetailPage> {
       backgroundColor: Colors.grey.shade100,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, cart),
-      body: _buildContent(context, cart),
+      // Konten utama dibungkus untuk layout responsif
+      body: Center(
+        child: ConstrainedBox(
+          // Menetapkan lebar maksimum untuk tampilan di desktop/tablet
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: _buildContent(context, cart),
+        ),
+      ),
       bottomNavigationBar: _buildBottomBar(cart),
     );
   }
+  // --- PERUBAHAN BERAKHIR DI SINI ---
 
   AppBar _buildAppBar(BuildContext context, Cart cart) {
     return AppBar(
@@ -1103,6 +1112,7 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
+  // --- PERUBAHAN DIMULAI DI SINI ---
   Widget _buildBottomBar(Cart cart) {
     bool canBook = selectedHour.isNotEmpty &&
         bookingDuration > 0 &&
@@ -1113,59 +1123,67 @@ class _DetailPageState extends State<DetailPage> {
       return const SizedBox.shrink();
     }
 
+    // Dibungkus dengan Center dan ConstrainedBox agar tetap di tengah di layar lebar
     return BottomAppBar(
       height: 90,
       color: Colors.white,
       elevation: 8,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Total Bayar",
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Total Bayar",
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                      Text(
+                        NumberFormat.currency(
+                                locale: 'id', symbol: 'Rp ', decimalDigits: 0)
+                            .format(totalPrice),
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  Text(
-                    NumberFormat.currency(
-                            locale: 'id', symbol: 'Rp ', decimalDigits: 0)
-                        .format(totalPrice),
-                    style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            ElevatedButton(
-              onPressed: _handleBookingAction,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
                 ),
-              ),
-              child: const Text(
-                "Booking Sekarang",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+                const SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: _handleBookingAction,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    "Booking Sekarang",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+// --- PERUBAHAN BERAKHIR DI SINI ---
 
 class WeeklyCalendar extends StatelessWidget {
   final DateTime currentStartOfWeek;

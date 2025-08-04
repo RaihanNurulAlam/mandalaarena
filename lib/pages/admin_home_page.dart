@@ -209,8 +209,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => const PointsPage()),
+                        MaterialPageRoute(builder: (context) => PointsPage()),
                       );
                     },
                     icon:
@@ -313,11 +312,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 ),
                 Positioned(
                   bottom: 16,
-                  right: 16,
+                  right: horizontalPadding,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // ### PERUBAHAN ### Menggunakan if-statement yang lebih bersih
                       if (isExpanded) ...[
                         _buildSocialButton(
                             "whatsapp",
@@ -720,6 +718,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 heroTag: 'add_banner',
                 onPressed: _navigateToBannerForm,
                 tooltip: 'Tambah Banner Baru',
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
                 child: const Icon(Icons.add),
               ),
             ),

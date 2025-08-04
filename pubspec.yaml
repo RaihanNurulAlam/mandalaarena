@@ -72,6 +72,7 @@ dependencies:
   webview_flutter: ^4.2.1
   youtube_player_flutter: ^9.0.1
   youtube_explode_dart: ^2.2.0
+  flutter_localization: ^0.3.3
 
 dev_dependencies:
   flutter_test:
