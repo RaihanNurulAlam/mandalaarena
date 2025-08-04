@@ -269,7 +269,7 @@ class _GalleryPageState extends State<GalleryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Galeri Aktivitas', style: TextStyle(color: Colors.black)),
+        title: Text('Galeri', style: TextStyle(color: Colors.black)),
         actions: [
           if (_isAdmin)
             Padding(

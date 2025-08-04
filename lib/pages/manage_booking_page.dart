@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_to_list_in_spreads, avoid_print, sort_child_properties_last, use_super_parameters, curly_braces_in_flow_control_structures
 
+import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +18,8 @@ class ManageBookingsPage extends StatefulWidget {
 enum PaymentStatusFilter { semua, sudahBayar, booking, dp }
 
 class _ManageBookingsPageState extends State<ManageBookingsPage> {
+  static const String _allMonthsValue = 'ALL_MONTHS';
+
   String? selectedLapangan;
   String? selectedMonthYear;
   DateTime? selectedDate;
@@ -28,32 +32,32 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
   @override
   void initState() {
     super.initState();
-    _fetchLapanganList();
+    _fetchLapanganFromJson();
     Intl.defaultLocale = 'id_ID';
   }
 
-  // --- FUNGSI LOGIKA (TIDAK ADA PERUBAHAN) ---
-  Future<void> _fetchLapanganList() async {
+  Future<void> _fetchLapanganFromJson() async {
     if (!mounted) return;
-    final snapshot =
-        await FirebaseFirestore.instance.collection('bookings').get();
-    final lapanganSet = <String>{};
+    try {
+      final String response = await rootBundle.loadString('assets/lapang.json');
+      final List<dynamic> data = json.decode(response);
+      final List<String> names =
+          data.map((lapangan) => lapangan['name'] as String).toList();
 
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final items = data['items'] as List<dynamic>?;
-      if (items != null && items.isNotEmpty) {
-        final firstItem = items[0];
-        if (firstItem['name'] != null) {
-          lapanganSet.add(firstItem['name']);
-        }
+      names.sort();
+
+      if (mounted) {
+        setState(() {
+          lapanganList = ['Semua Lapangan', ...names];
+        });
       }
-    }
-    final sortedLapangan = lapanganSet.toList()..sort();
-    if (mounted) {
-      setState(() {
-        lapanganList = ['Semua Lapangan', ...sortedLapangan];
-      });
+    } catch (e) {
+      print("Error loading lapang.json: $e");
+      if (mounted) {
+        setState(() {
+          lapanganList = ['Semua Lapangan', 'Gagal memuat data'];
+        });
+      }
     }
   }
 
@@ -63,34 +67,31 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
       selectedMonthYear = null;
       selectedDate = null;
       _isFetchingMonths = true;
-      availableMonths = [];
+      availableMonths = ['Semua Bulan'];
     });
 
     if (lapanganName == null || lapanganName == 'Semua Lapangan') {
       if (mounted) {
-        setState(() {
-          availableMonths = ['Semua Bulan'];
-          _isFetchingMonths = false;
-        });
+        setState(() => _isFetchingMonths = false);
       }
       return;
     }
 
     try {
       final monthSet = <String>{};
-      final query = FirebaseFirestore.instance
-          .collection('bookings')
-          .where('items.0.name', isEqualTo: lapanganName);
-
-      final snapshot = await query.get();
+      final snapshot =
+          await FirebaseFirestore.instance.collection('bookings').get();
 
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final items = data['items'] as List<dynamic>?;
+
         if (items != null && items.isNotEmpty) {
-          final bookingDateStr = items[0]['bookingDate'] as String?;
-          if (bookingDateStr != null && bookingDateStr.length >= 7) {
-            monthSet.add(bookingDateStr.substring(0, 7));
+          if (items[0]['name'] == lapanganName) {
+            final bookingDateStr = items[0]['bookingDate'] as String?;
+            if (bookingDateStr != null && bookingDateStr.length >= 7) {
+              monthSet.add(bookingDateStr.substring(0, 7));
+            }
           }
         }
       }
@@ -98,7 +99,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
       final sortedMonths = monthSet.toList()..sort((a, b) => b.compareTo(a));
       if (mounted) {
         setState(() {
-          availableMonths = ['Semua Bulan', ...sortedMonths];
+          availableMonths.addAll(sortedMonths);
         });
       }
     } catch (e) {
@@ -113,8 +114,10 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
   }
 
   String _formatMonthYear(String monthYear) {
-    if (monthYear == 'Semua Bulan' || monthYear == 'Gagal memuat') {
-      return monthYear;
+    if (monthYear == 'Semua Bulan' ||
+        monthYear == 'Gagal memuat' ||
+        monthYear == _allMonthsValue) {
+      return 'Semua Bulan';
     }
     try {
       final date = DateFormat('yyyy-MM').parse(monthYear);
@@ -144,6 +147,10 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Batal'),
           ),
           FilledButton(
@@ -157,11 +164,15 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
 
     if (shouldDelete == true) {
       try {
+        // Hapus juga dari detail sheet jika sedang terbuka
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
         await FirebaseFirestore.instance
             .collection('bookings')
             .doc(bookingId)
             .delete();
-        Navigator.of(context).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Booking berhasil dihapus.'),
@@ -170,6 +181,12 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
         );
       } catch (e) {
         print("Error deleting booking: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menghapus booking: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -288,32 +305,16 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                     return Column(
                       children: [
                         Expanded(
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              int crossAxisCount = 1;
-                              if (constraints.maxWidth > 1200) {
-                                crossAxisCount = 4;
-                              } else if (constraints.maxWidth > 900) {
-                                crossAxisCount = 3;
-                              } else if (constraints.maxWidth > 600) {
-                                crossAxisCount = 2;
-                              }
-
-                              return GridView.builder(
-                                padding: const EdgeInsets.all(12),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: crossAxisCount,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  // --- PERUBAHAN DI SINI ---
-                                  childAspectRatio:
-                                      crossAxisCount == 1 ? (3 / 2) : (3 / 2.3),
-                                ),
-                                itemCount: filteredBookings.length,
-                                itemBuilder: (context, index) {
-                                  final doc = filteredBookings[index];
-                                  return _BookingCard(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Wrap(
+                              spacing: 16.0,
+                              runSpacing: 16.0,
+                              alignment: WrapAlignment.center,
+                              children: filteredBookings.map((doc) {
+                                return SizedBox(
+                                  width: 350,
+                                  child: _BookingCard(
                                     bookingData:
                                         doc.data() as Map<String, dynamic>,
                                     bookingId: doc.id,
@@ -321,10 +322,10 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                                         context,
                                         doc.data() as Map<String, dynamic>,
                                         doc.id),
-                                  );
-                                },
-                              );
-                            },
+                                  ),
+                                );
+                              }).toList(),
+                            ),
                           ),
                         ),
                         _buildTotalIncomeCard(totalIncome),
@@ -700,7 +701,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
       children: [
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: selectedMonthYear,
+            value: selectedMonthYear ?? _allMonthsValue,
             hint: _isFetchingMonths
                 ? const Row(
                     children: [
@@ -715,9 +716,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                 : const Text('Pilih Bulan'),
             items: availableMonths.map((String monthYear) {
               return DropdownMenuItem<String>(
-                value: monthYear == 'Semua Bulan' || monthYear == 'Gagal memuat'
-                    ? null
-                    : monthYear,
+                value: monthYear == 'Semua Bulan' ? _allMonthsValue : monthYear,
                 child: Text(_formatMonthYear(monthYear)),
               );
             }).toList(),
@@ -725,7 +724,11 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
                 ? null
                 : (String? value) {
                     setState(() {
-                      selectedMonthYear = value;
+                      if (value == _allMonthsValue) {
+                        selectedMonthYear = null;
+                      } else {
+                        selectedMonthYear = value;
+                      }
                       selectedDate = null;
                     });
                   },
@@ -819,6 +822,7 @@ class _BookingCard extends StatelessWidget {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -876,11 +880,7 @@ class _BookingCard extends StatelessWidget {
               const SizedBox(height: 6),
               _buildInfoRow(context, Icons.access_time,
                   '${firstItem['time'] ?? 'N/A'} (${firstItem['quantity'] ?? '1'} jam)'),
-
-              // --- PERUBAHAN DI SINI ---
-              // Spacer dihapus agar konten rapat ke atas
-              const Expanded(child: SizedBox()),
-
+              const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
                 child: Text(

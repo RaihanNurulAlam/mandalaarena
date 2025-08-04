@@ -192,115 +192,121 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ubah Profil'), // UI CHANGE: centerTitle dihapus
+        title: const Text('Ubah Profil'),
       ),
-      body: SingleChildScrollView(
-        padding:
-            const EdgeInsets.all(16.0), // UI CHANGE: Padding utama dikembalikan
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: _imageBytes != null
-                          ? MemoryImage(_imageBytes!)
-                          : (widget.profileImageUrl.isNotEmpty
-                              ? NetworkImage(widget.profileImageUrl)
-                              : null) as ImageProvider?,
-                      child:
-                          _imageBytes == null && widget.profileImageUrl.isEmpty
+      body: Align(
+        alignment: Alignment.topCenter,
+        // [MODIFIKASI] 1. Tambahkan widget Center
+        child: ConstrainedBox(
+          // [MODIFIKASI] 2. Tambahkan ConstrainedBox untuk membatasi lebar
+          constraints: const BoxConstraints(
+              maxWidth: 600), // Atur lebar maksimal, misal 600px
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey.shade200,
+                          backgroundImage: _imageBytes != null
+                              ? MemoryImage(_imageBytes!)
+                              : (widget.profileImageUrl.isNotEmpty
+                                  ? NetworkImage(widget.profileImageUrl)
+                                  : null) as ImageProvider?,
+                          child: _imageBytes == null &&
+                                  widget.profileImageUrl.isEmpty
                               ? Icon(Icons.person,
                                   size: 70, color: Colors.grey.shade700)
                               : null,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: InkWell(
+                            onTap: _pickImage,
+                            child: const CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.black,
+                              child: Icon(Icons.edit, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: InkWell(
-                        onTap: _pickImage,
-                        child: const CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.black,
-                          child: Icon(Icons.edit, color: Colors.white),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildTextField(_nameController, 'Nama'),
+                  const SizedBox(height: 20),
+                  _buildTextField(_emailController, 'Email', isReadOnly: true),
+                  const SizedBox(height: 20),
+                  _buildTextField(_phoneController, 'Nomor Telepon',
+                      keyboardType: TextInputType.phone),
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Text('Ganti Password',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildPasswordField(
+                      _oldPasswordController,
+                      'Password Lama',
+                      _isOldPasswordVisible,
+                      () => setState(() =>
+                          _isOldPasswordVisible = !_isOldPasswordVisible)),
+                  const SizedBox(height: 20),
+                  _buildPasswordField(
+                      _newPasswordController,
+                      'Password Baru',
+                      _isNewPasswordVisible,
+                      () => setState(() =>
+                          _isNewPasswordVisible = !_isNewPasswordVisible)),
+                  const SizedBox(height: 20),
+                  _buildPasswordField(
+                      _confirmPasswordController,
+                      'Konfirmasi Password Baru',
+                      _isConfirmPasswordVisible,
+                      () => setState(() => _isConfirmPasswordVisible =
+                          !_isConfirmPasswordVisible)),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IntrinsicWidth(
+                        child: ElevatedButton(
+                          onPressed: isLoading ? null : _updateProfile,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 20),
+                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Text(
+                                  'Simpan Perubahan',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 16),
+                                ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20), // UI CHANGE: Jarak dikembalikan
-              _buildTextField(_nameController, 'Nama'),
-              const SizedBox(height: 20),
-              _buildTextField(_emailController, 'Email', isReadOnly: true),
-              const SizedBox(height: 20),
-              _buildTextField(_phoneController, 'Nomor Telepon',
-                  keyboardType: TextInputType.phone),
-              const SizedBox(height: 20),
-              const Divider(), // UI CHANGE: Divider dikembalikan
-              Padding(
-                // UI CHANGE: Padding untuk judul dikembalikan
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: const Text('Ganti Password',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 20),
-              _buildPasswordField(
-                  _oldPasswordController,
-                  'Password Lama',
-                  _isOldPasswordVisible,
-                  () => setState(
-                      () => _isOldPasswordVisible = !_isOldPasswordVisible)),
-              const SizedBox(height: 20),
-              _buildPasswordField(
-                  _newPasswordController,
-                  'Password Baru',
-                  _isNewPasswordVisible,
-                  () => setState(
-                      () => _isNewPasswordVisible = !_isNewPasswordVisible)),
-              const SizedBox(height: 20),
-              _buildPasswordField(
-                  _confirmPasswordController,
-                  'Konfirmasi Password Baru',
-                  _isConfirmPasswordVisible,
-                  () => setState(() =>
-                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible)),
-              const SizedBox(height: 20),
-              // UI CHANGE: Struktur tombol Simpan dikembalikan seperti asli
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IntrinsicWidth(
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : _updateProfile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 20),
-                      ),
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
-                            )
-                          : const Text(
-                              'Simpan Perubahan',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
-                            ),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

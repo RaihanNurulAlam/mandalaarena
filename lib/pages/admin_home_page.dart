@@ -176,10 +176,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
                     Text(
-                      'Admin Mandala Arena', // ### PERUBAHAN ### Judul lebih deskriptif
+                      'Admin',
                       style: TextStyle(
                         color: Colors.black,
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -187,7 +187,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       children: [
                         Icon(
                           CupertinoIcons.map_pin,
-                          size: 12,
+                          size: 10,
                           color: Colors.grey,
                         ),
                         SizedBox(width: 4),
@@ -195,7 +195,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           'Garut, Indonesia',
                           style: TextStyle(
                             color: Colors.grey,
-                            fontSize: 12,
+                            fontSize: 10,
                           ),
                         ),
                       ],
@@ -220,11 +220,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
                           color: Colors.black, fontWeight: FontWeight.bold),
                     ),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
                       minimumSize: const Size(30, 30),
                     ),
                   ),
-                if (user != null) const SizedBox(width: 8),
+                if (user != null) const SizedBox(width: 5),
                 IconButton(
                   onPressed: () {
                     Navigator.push(context,
@@ -234,11 +234,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 5),
                 Consumer<Cart>(
                   builder: (context, value, child) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 5.0),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
@@ -272,7 +272,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     );
                   },
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 5),
                 // ### PERUBAHAN ### Padding AppBar yang konsisten untuk item terakhir
                 Padding(
                   padding: EdgeInsets.only(right: horizontalPadding),
@@ -426,7 +426,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 16),
           if (user != null)
             if (userProvider.isMembershipActive)
               _buildMemberStatusCard(context, userProvider, horizontalPadding)

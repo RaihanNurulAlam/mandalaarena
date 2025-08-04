@@ -24,7 +24,8 @@ class BookingSummaryPage extends StatefulWidget {
 }
 
 class _BookingSummaryPageState extends State<BookingSummaryPage> {
-  // State dari PaymentPage
+  // --- SEMUA LOGIKA STATE ANDA TETAP SAMA ---
+  // (State dari PaymentPage, initState, dispose, dan semua fungsi helper lainnya)
   String? transactionStatus;
   bool isProcessingPayment = false;
   bool showPaymentPopup = false;
@@ -35,14 +36,11 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
   @override
   void initState() {
     super.initState();
-    // Memuat data keranjang dan melakukan pembersihan awal
+    Intl.defaultLocale = 'id_ID';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAndCleanCart();
     });
-
-    // BARU: Setel Timer untuk memeriksa keranjang secara berkala (misal: setiap 30 detik)
     _cartCleanUpTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      // Pastikan widget masih ada di tree sebelum menjalankan pengecekan
       if (mounted) {
         print("Timer berjalan: Memeriksa booking yang kedaluwarsa...");
         _removeExpiredBookings();
@@ -56,30 +54,25 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
     super.dispose();
   }
 
-  /// Memuat data keranjang dari Firebase dan membersihkan item yang sudah kedaluwarsa.
   Future<void> _loadAndCleanCart() async {
     final User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final cart = Provider.of<Cart>(context, listen: false);
       await cart.loadCart(user.uid);
-      // Panggil fungsi untuk menghapus item kedaluwarsa setelah data dimuat
       await _removeExpiredBookings();
     }
   }
 
-  /// **FITUR BARU: Hapus item booking yang waktunya sudah terlewat.**
   Future<void> _removeExpiredBookings() async {
     final cart = Provider.of<Cart>(context, listen: false);
     if (cart.cart.isEmpty) return;
 
     final now = DateTime.now();
-    // BARU: Sesuaikan format parser dengan data Anda
     final formatter = DateFormat('yyyy-MM-dd HH:mm');
     List<CartModel> expiredItems = [];
 
     for (final item in cart.cart) {
       try {
-        // String gabungan akan menjadi "2025-07-25 09:00"
         final String dateTimeString = '${item.bookingDate} ${item.time}';
         final DateTime bookingDateTime = formatter.parse(dateTimeString);
 
@@ -98,7 +91,6 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
       for (final item in expiredItems) {
         await cart.deleteItemCart(item);
       }
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -110,8 +102,6 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
       }
     }
   }
-
-  // --- SEMUA LOGIKA DARI CARTPAGE & PAYMENTPAGE DIGABUNG DI SINI ---
 
   int _getPriceForHour(int hour, String lapangName, int basePrice) {
     if (lapangName == "Lapang Minisoccer") {
@@ -138,37 +128,33 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
     return baseUrl;
   }
 
-  // Fungsi-fungsi dari PaymentPage (di-copy-paste ke sini)
   Future<void> _createBookingDocument(String orderId, double grandTotal) async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final cart = Provider.of<Cart>(context, listen: false);
-
-    // Hitung ulang rincian harga untuk disimpan
     double totalBaseBookingPrice = 0;
     double totalDiscountAmount = 0;
     double totalAddonsPrice = 0;
+    const photographerPrice = 200000;
+    const refereePrice = 70000;
+    const iceBathPrice = 50000;
 
     for (final item in cart.cart) {
       int baseBookingPriceForItem = 0;
       final int startHour = int.tryParse(item.time?.split(":")[0] ?? '0') ?? 0;
       final int duration = int.tryParse(item.quantity ?? '1') ?? 1;
       final int basePricePerHour = int.tryParse(item.price ?? '0') ?? 0;
-
       for (int i = 0; i < duration; i++) {
         baseBookingPriceForItem +=
             _getPriceForHour(startHour + i, item.name ?? '', basePricePerHour);
       }
       totalBaseBookingPrice += baseBookingPriceForItem;
-
       if (userProvider.isMember) {
         totalDiscountAmount += baseBookingPriceForItem * 0.10;
       }
-
-      if (item.usePhotographer ?? false) totalAddonsPrice += 200000;
-      if (item.useReferee ?? false) totalAddonsPrice += 70000;
-      if (item.useIceBath ?? false) totalAddonsPrice += 50000;
+      if (item.usePhotographer ?? false) totalAddonsPrice += photographerPrice;
+      if (item.useReferee ?? false) totalAddonsPrice += refereePrice;
+      if (item.useIceBath ?? false) totalAddonsPrice += iceBathPrice;
     }
-
     final bookingData = {
       'orderId': orderId,
       'userId': userProvider.userId,
@@ -185,7 +171,6 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
       'isMember': userProvider.isMember,
       'pointsAwarded': false,
     };
-
     await FirebaseFirestore.instance
         .collection('bookings')
         .doc(orderId)
@@ -516,6 +501,7 @@ Terima kasih.
     );
   }
 
+  // --- WIDGET BUILD UTAMA (INI YANG AKAN KITA UBAH) ---
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -526,6 +512,10 @@ Terima kasih.
     // Kalkulasi harga dari CartPage
     List<Map<String, dynamic>> detailedItems = [];
     double grandTotal = 0;
+
+    const photographerPrice = 200000;
+    const refereePrice = 70000;
+    const iceBathPrice = 50000;
 
     for (final item in cart.cart) {
       int baseBookingPrice = 0;
@@ -541,9 +531,9 @@ Terima kasih.
       double discountAmount =
           userProvider.isMember ? baseBookingPrice * 0.10 : 0;
       double addonsTotalPrice = 0;
-      if (item.usePhotographer ?? false) addonsTotalPrice += 200000;
-      if (item.useReferee ?? false) addonsTotalPrice += 70000;
-      if (item.useIceBath ?? false) addonsTotalPrice += 50000;
+      if (item.usePhotographer ?? false) addonsTotalPrice += photographerPrice;
+      if (item.useReferee ?? false) addonsTotalPrice += refereePrice;
+      if (item.useIceBath ?? false) addonsTotalPrice += iceBathPrice;
 
       double finalItemPrice =
           (baseBookingPrice - discountAmount) + addonsTotalPrice;
@@ -625,108 +615,139 @@ Terima kasih.
                   ),
                 )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: detailedItems.length,
-                        itemBuilder: (context, index) {
-                          final details = detailedItems[index];
-                          final CartModel item = details['item'];
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      // Tambahkan Center
+                      child: ConstrainedBox(
+                        // Batasi lebar
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: Column(
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: detailedItems.length,
+                              itemBuilder: (context, index) {
+                                final details = detailedItems[index];
+                                final CartModel item = details['item'];
 
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 16.0),
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius:
-                                            BorderRadius.circular(8.0),
-                                        child: Image.asset(item.imagePath ?? '',
-                                            width: 60,
-                                            height: 60,
-                                            fit: BoxFit.cover),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 16.0),
+                                  elevation: 4,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(item.name ?? 'Nama Lapang',
-                                                style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                                'Jadwal: ${item.bookingDate}, ${item.time} (${item.quantity} jam)'),
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                              child: Image.asset(
+                                                  item.imagePath ?? '',
+                                                  width: 80,
+                                                  height: 80,
+                                                  fit: BoxFit.cover),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                      item.name ??
+                                                          'Nama Lapang',
+                                                      style: const TextStyle(
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.bold)),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                      'Jadwal: ${item.bookingDate}, ${item.time} (${item.quantity} jam)'),
+                                                ],
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.red),
+                                              onPressed: () async {
+                                                await cart.deleteItemCart(item);
+                                              },
+                                            ),
                                           ],
                                         ),
-                                      ),
-                                      // **FITUR: Tombol hapus per item**
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: Colors.red),
-                                        onPressed: () async {
-                                          await cart.deleteItemCart(item);
-                                        },
-                                      ),
-                                    ],
+                                        const Divider(height: 24),
+                                        const Text('Rincian Harga',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16)),
+                                        const SizedBox(height: 8),
+                                        _buildPriceRow('Harga Booking',
+                                            details['baseBookingPrice']),
+                                        if (details['discountAmount'] > 0)
+                                          _buildPriceRow('Diskon Member (10%)',
+                                              -details['discountAmount'],
+                                              isDiscount: true),
+
+                                        // PERUBAHAN DI SINI: Rincian Layanan Tambahan
+                                        if (item.usePhotographer == true ||
+                                            item.useReferee == true ||
+                                            item.useIceBath == true) ...[
+                                          const SizedBox(height: 8),
+                                          const Text('Layanan Tambahan:',
+                                              style: TextStyle(
+                                                  color: Colors.black54)),
+                                        ],
+                                        if (item.usePhotographer == true)
+                                          _buildPriceRow('  - Photographer',
+                                              photographerPrice.toDouble()),
+                                        if (item.useReferee == true)
+                                          _buildPriceRow('  - Wasit',
+                                              refereePrice.toDouble()),
+                                        if (item.useIceBath == true)
+                                          _buildPriceRow('  - Ice Bath',
+                                              iceBathPrice.toDouble()),
+
+                                        const Divider(thickness: 1, height: 24),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const Text('Subtotal Item',
+                                                style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16)),
+                                            Text(
+                                                currencyFormatter.format(
+                                                    details['finalPrice']),
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 16)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  const Divider(height: 24),
-                                  const Text('Rincian Harga',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 8),
-                                  _buildPriceRow('Harga Booking',
-                                      details['baseBookingPrice']),
-                                  if (details['discountAmount'] > 0)
-                                    _buildPriceRow('Diskon Member (10%)',
-                                        -details['discountAmount'],
-                                        isDiscount: true),
-                                  if (details['addonsPrice'] > 0)
-                                    _buildPriceRow('Layanan Tambahan',
-                                        details['addonsPrice']),
-                                  const Divider(thickness: 1, height: 24),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Subtotal Item',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16)),
-                                      Text(
-                                          currencyFormatter
-                                              .format(details['finalPrice']),
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16)),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                                );
+                              },
                             ),
-                          );
-                        },
+                            const SizedBox(height: 20),
+                            _buildTimerNote(),
+                            const SizedBox(
+                                height: 80), // Jarak tambahan untuk bottom bar
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 20),
-                      _buildTimerNote(),
-                      const SizedBox(
-                          height: 80), // Jarak tambahan untuk bottom bar
-                    ],
+                    ),
                   ),
                 ),
           bottomNavigationBar: grandTotal == 0
@@ -734,13 +755,13 @@ Terima kasih.
               : Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black12,
+                          color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
-                          offset: Offset(0, -2))
+                          offset: const Offset(0, -2))
                     ],
                   ),
                   child: Row(

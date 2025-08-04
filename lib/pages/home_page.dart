@@ -121,7 +121,7 @@ class _HomePageState extends State<HomePage> {
                         'Mandala Arena',
                         style: TextStyle(
                           color: Colors.black,
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -129,7 +129,7 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Icon(
                             CupertinoIcons.map_pin,
-                            size: 12,
+                            size: 10,
                             color: Colors.grey,
                           ),
                           SizedBox(width: 4),
@@ -137,7 +137,7 @@ class _HomePageState extends State<HomePage> {
                             'Garut, Indonesia',
                             style: TextStyle(
                               color: Colors.grey,
-                              fontSize: 12,
+                              fontSize: 10,
                             ),
                           ),
                         ],
@@ -151,7 +151,8 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => PointsPage()),
+                          MaterialPageRoute(
+                              builder: (context) => const PointsPage()),
                         );
                       },
                       icon: const Icon(Icons.star,
@@ -162,11 +163,11 @@ class _HomePageState extends State<HomePage> {
                             color: Colors.black, fontWeight: FontWeight.bold),
                       ),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
                         minimumSize: const Size(30, 30),
                       ),
                     ),
-                  if (user != null) const SizedBox(width: 8),
+                  if (user != null) const SizedBox(width: 5),
                   IconButton(
                     onPressed: () {
                       Navigator.push(
@@ -178,11 +179,11 @@ class _HomePageState extends State<HomePage> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 5),
                   Consumer<Cart>(
                     builder: (context, value, child) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 5.0),
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
@@ -216,7 +217,7 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 5),
                   Padding(
                     padding: EdgeInsets.only(right: horizontalPadding),
                     child: user == null
@@ -633,7 +634,7 @@ class _HomePageState extends State<HomePage> {
       BuildContext context, double horizontalPadding) {
     return Padding(
       padding:
-          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
+          EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
       child: Card(
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.2),
